@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "react-router-v7": {
+      "source": "existential-birds/beagle",
+      "sourceType": "github",
+      "skillPath": "plugins/beagle-react/skills/react-router-v7/SKILL.md",
+      "computedHash": "5a1346a9a39af3519d30ba11162b3f251cff92e5e02146934a667988dac90c49"
+    },
     "rust-best-practices": {
       "source": "apollographql/skills",
       "sourceType": "github",

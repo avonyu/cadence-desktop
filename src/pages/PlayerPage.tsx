@@ -2,9 +2,8 @@ import { VideoPlayer } from "@/components/player";
 import { Subtitles, X } from "lucide-react";
 import { useState } from "react";
 
-interface PlayerPageProps {
-  src: string;
-}
+const VIDEO_SRC =
+  "https://stream.mux.com/BV3YZtogl89mg9VcNBhhnHm02Y34zI1nlMuMQfAbl3dM/highest.mp4";
 
 const captions = [
   {
@@ -54,7 +53,7 @@ const captions = [
   },
 ];
 
-export const PlayerPage = ({ src }: PlayerPageProps) => {
+export const PlayerPage = () => {
   const [activeCaption, setActiveCaption] = useState(2);
 
   return (
@@ -62,7 +61,7 @@ export const PlayerPage = ({ src }: PlayerPageProps) => {
       <main className="relative flex min-w-0 flex-col border-r border-white/10 bg-[#0b0b0b]">
         <div className="flex gap-2 min-h-0 flex-1 flex-col justify-center px-8">
           <div className="relative mx-auto aspect-video w-full max-w-7xl overflow-hidden bg-black shadow-2xl shadow-black/60">
-            <VideoPlayer src={src} />
+            <VideoPlayer src={VIDEO_SRC} />
           </div>
 
           <div className="mx-auto flex min-h-37 w-full max-w-7xl flex-col items-center justify-center text-center">

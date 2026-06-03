@@ -8,6 +8,7 @@
 
 - Tauri v2
 - React
+- React Router
 - Video.js
 - Zustand: global status manager
 - Tailwind CSS V4+: CSS framework
