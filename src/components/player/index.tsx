@@ -97,7 +97,7 @@ export const MyPlayer = ({ src }: MyPlayerProps) => {
   return (
     <section className="grid h-screen min-h-180 grid-cols-[minmax(0,1fr)_430px] bg-[#0a0a0a] text-zinc-100">
       <main className="relative flex min-w-0 flex-col border-r border-white/10 bg-[#0b0b0b]">
-        <div className="flex gap-2 min-h-0 flex-1 flex-col justify-center px-12 pt-8">
+        <div className="flex gap-2 min-h-0 flex-1 flex-col justify-center px-8">
           {/* Video Area */}
           <div className="relative mx-auto aspect-video w-full max-w-7xl overflow-hidden bg-black shadow-2xl shadow-black/60">
             <Player.Provider>
