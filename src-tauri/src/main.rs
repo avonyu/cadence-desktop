@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    caption_cue_desktop_lib::run()
+    cadence_desktop_lib::run()
 }
