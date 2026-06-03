@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "caption-cue-desktop",
+  "productName": "cadence-desktop",
   "version": "0.1.0",
-  "identifier": "com.avony.caption-cue-desktop",
+  "identifier": "com.avonyu.cadence-desktop",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "caption-cue-desktop",
+        "title": "cadence-desktop",
         "width": 800,
         "height": 600
       }
