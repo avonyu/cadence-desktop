@@ -1,9 +1,8 @@
 import { VideoPlayer } from "@/components/player";
-import { Settings, Subtitles, X } from "lucide-react";
+import { FolderOpen, Settings, Subtitles, X } from "lucide-react";
+import { open } from "@tauri-apps/plugin-dialog";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { useState } from "react";
-
-const VIDEO_SRC =
-  "https://stream.mux.com/BV3YZtogl89mg9VcNBhhnHm02Y34zI1nlMuMQfAbl3dM/highest.mp4";
 
 const captions = [
   {
@@ -56,6 +55,22 @@ const captions = [
 export const PlayerPage = () => {
   const [activeCaption, setActiveCaption] = useState(2);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [videoSrc, setVideoSrc] = useState<string | null>(null);
+
+  const handleOpenFile = async () => {
+    const selected = await open({
+      multiple: false,
+      filters: [
+        {
+          name: "Video",
+          extensions: ["mp4", "webm", "mkv", "avi", "mov", "flv", "wmv"],
+        },
+      ],
+    });
+    if (selected) {
+      setVideoSrc(convertFileSrc(selected));
+    }
+  };
 
   return (
     <section
@@ -68,7 +83,7 @@ export const PlayerPage = () => {
         <div className="min-h-0 flex-1 px-3 py-4">
           {/* Video Player */}
           <div className="max-h-200 p-4 relative mx-auto aspect-video min-w-200 overflow-hidden bg-black shadow-2xl shadow-black/60">
-            <VideoPlayer src={VIDEO_SRC} />
+            <VideoPlayer src={videoSrc} />
           </div>
 
           {/* Captions */}
@@ -85,6 +100,13 @@ export const PlayerPage = () => {
         {/* Controls */}
         <div className="mt-auto h-15 px-4 py-3 border-t border-t-zinc-600 w-full bg-zinc-800">
           <div className="flex justify-end items-center gap-2 text-zinc-300">
+            <button
+              className="transition hover:text-white"
+              onClick={handleOpenFile}
+              title="Open Video"
+            >
+              <FolderOpen size={20} />
+            </button>
             <button
               className={`transition ${sidebarOpen ? "text-[#f5cc64]" : "text-zinc-300 hover:text-white"}`}
               onClick={() => setSidebarOpen((open) => !open)}
