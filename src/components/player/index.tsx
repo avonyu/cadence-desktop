@@ -95,11 +95,11 @@ export const MyPlayer = ({ src }: MyPlayerProps) => {
   const [activeCaption, setActiveCaption] = useState(2);
 
   return (
-    <section className="grid h-screen min-h-[720px] grid-cols-[minmax(0,1fr)_430px] bg-[#0a0a0a] text-zinc-100">
+    <section className="grid h-screen min-h-180 grid-cols-[minmax(0,1fr)_430px] bg-[#0a0a0a] text-zinc-100">
       <main className="relative flex min-w-0 flex-col border-r border-white/10 bg-[#0b0b0b]">
         <div className="flex gap-2 min-h-0 flex-1 flex-col justify-center px-12 pt-8">
           {/* Video Area */}
-          <div className="relative mx-auto aspect-video w-full max-w-[1280px] overflow-hidden bg-black shadow-2xl shadow-black/60">
+          <div className="relative mx-auto aspect-video w-full max-w-7xl overflow-hidden bg-black shadow-2xl shadow-black/60">
             <Player.Provider>
               <VideoSkin>
                 <Video
@@ -112,7 +112,7 @@ export const MyPlayer = ({ src }: MyPlayerProps) => {
           </div>
 
           {/* Captions */}
-          <div className="mx-auto flex min-h-[148px] w-full max-w-[1280px] flex-col items-center justify-center text-center">
+          <div className="mx-auto flex min-h-37 w-full max-w-7xl flex-col items-center justify-center text-center">
             <p className="max-w-5xl text-2xl font-semibold leading-tight tracking-normal text-zinc-200">
               {captions[activeCaption].text}
             </p>
@@ -191,34 +191,35 @@ export const MyPlayer = ({ src }: MyPlayerProps) => {
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-7 py-5 [scrollbar-color:#4b4b4b_transparent] [scrollbar-width:thin]">
+        {/* Scrollable Captions */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 [scrollbar-color:#4b4b4b_transparent] scrollbar-thin">
           <div className="space-y-2">
             {captions.map((caption, index) => {
               const isActive = index === activeCaption;
 
               return (
                 <button
-                  className={`grid w-full grid-cols-[62px_1fr] gap-4 rounded-md px-0 py-3 text-left transition ${
+                  className={`grid w-full grid-cols-[62px_1fr] gap-1 rounded-md px-0 py-2 text-left transition ${
                     isActive
                       ? "text-[#f5cc64]"
-                      : "text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-300"
+                      : "text-zinc-500 hover:bg-white/3 hover:text-zinc-300"
                   }`}
                   key={`${caption.time}-${caption.text}`}
                   onClick={() => setActiveCaption(index)}
                 >
                   <span
-                    className={`pt-0.5 text-lg font-bold ${
+                    className={`text-md font-bold text-center ${
                       isActive ? "text-[#f5cc64]" : "text-zinc-600"
                     }`}
                   >
                     {caption.time}
                   </span>
                   <span>
-                    <span className="block text-[22px] font-bold leading-snug tracking-normal">
+                    <span className="block text-md font-bold leading-snug tracking-normal">
                       {caption.text}
                     </span>
                     <span
-                      className={`mt-2 block text-xl leading-snug tracking-normal ${
+                      className={`mt-2 block text-md leading-snug tracking-normal ${
                         isActive ? "text-zinc-300" : "text-zinc-500"
                       }`}
                     >
