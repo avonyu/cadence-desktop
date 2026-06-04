@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="../src-tauri/icons/icon.png" width="128" height="128" alt="幕听图标" />
+
 **沉浸式双语字幕视频学习工具**
 
 [![Tauri](https://img.shields.io/badge/Tauri-v2-FFC131?logo=tauri&logoColor=white)](https://tauri.app)

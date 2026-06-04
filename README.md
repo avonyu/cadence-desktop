@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="src-tauri/icons/icon.png" width="128" height="128" alt="Cadence Icon" />
+
 **Immersive Bilingual Subtitle Video Learning Tool**
 
 [![Tauri](https://img.shields.io/badge/Tauri-v2-FFC131?logo=tauri&logoColor=white)](https://tauri.app)
