@@ -1,9 +1,10 @@
 import { VideoPlayer } from "@/components/player";
-import { FolderOpen, Subtitles, X, FileText } from "lucide-react";
+import { FolderOpen, Subtitles, X, Settings, FileText } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { parseSubtitles, type Caption } from "@/lib/subtitles";
+import { Button } from "@/components/ui/button";
 
 export const PlayerPage = () => {
   const [activeCaption, setActiveCaption] = useState<number | null>(null);
@@ -169,7 +170,7 @@ export const PlayerPage = () => {
       <main className="relative flex min-h-0 flex-col border-r border-white/10 bg-[#0b0b0b]">
         <div className="min-h-0 flex-1 px-3 py-4">
           {/* Video Player */}
-          <div className="max-h-140 p-4 relative mx-auto aspect-video min-w-200 overflow-hidden bg-black shadow-2xl shadow-black/60">
+          <div className="max-h-140 relative mx-auto aspect-video min-w-200 overflow-hidden border border-zinc-800 rounded-2xl">
             <VideoPlayer
               src={videoSrc}
               videoRef={videoRef}
@@ -198,37 +199,34 @@ export const PlayerPage = () => {
 
         {/* Controls */}
         <div className="mt-auto z-100 flex h-14 items-center justify-end gap-1 border-t border-white/8 px-4 bg-[#0b0b0b]">
-          <button
-            className="flex size-9 items-center justify-center rounded-md text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200"
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={handleOpenFile}
             title="Open Video"
           >
             <FolderOpen size={18} />
-          </button>
-          <button
-            className="flex size-9 items-center justify-center rounded-md text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200"
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={handleLoadSubtitle}
             title="Load Subtitle"
           >
             <FileText size={18} />
-          </button>
-          <button
-            className={`flex size-9 items-center justify-center rounded-md transition hover:bg-white/5 ${
-              sidebarOpen
-                ? "text-[#f5cc64]"
-                : "text-zinc-500 hover:text-zinc-200"
-            }`}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className={sidebarOpen ? "text-[#f5cc64]" : "text-zinc-500"}
             onClick={() => setSidebarOpen((open) => !open)}
             title="Subtitles"
           >
             <Subtitles size={18} />
-          </button>
-          {/*<button
-            className="flex size-9 items-center justify-center rounded-md text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200"
-            title="Settings"
-          >
+          </Button>
+          <Button variant="ghost" size="icon-sm" title="Settings" disabled>
             <Settings size={18} />
-          </button>*/}
+          </Button>
         </div>
       </main>
 
@@ -242,12 +240,13 @@ export const PlayerPage = () => {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                className="flex size-8 items-center justify-center rounded-md border border-white/20 text-zinc-500 transition hover:text-white"
+              <Button
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setSidebarOpen(false)}
               >
                 <X size={20} />
-              </button>
+              </Button>
             </div>
           </div>
 
