@@ -1,5 +1,5 @@
 import { VideoPlayer } from "@/components/player";
-import { FolderOpen, Settings, Subtitles, X, FileText } from "lucide-react";
+import { FolderOpen, Subtitles, X, FileText } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { useRef, useState, useCallback, useEffect } from "react";
