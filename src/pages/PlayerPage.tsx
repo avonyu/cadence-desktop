@@ -102,9 +102,22 @@ export const PlayerPage = () => {
     }
   }, [activeCaption]);
 
-  // Keyboard shortcuts: ArrowLeft = previous caption, ArrowRight = next caption
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Space = toggle play/pause (always available)
+      if (e.key === " ") {
+        e.preventDefault();
+        if (videoRef.current) {
+          if (videoRef.current.paused) {
+            videoRef.current.play();
+          } else {
+            videoRef.current.pause();
+          }
+        }
+        return;
+      }
+
       if (captions.length === 0) return;
 
       if (e.key === "ArrowLeft") {
