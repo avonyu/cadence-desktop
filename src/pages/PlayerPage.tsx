@@ -5,60 +5,11 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { parseSubtitles, type Caption } from "@/lib/subtitles";
 
-// Demo captions for initial testing
-const demoCaptions: Caption[] = [
-  {
-    time: "00:00",
-    text: "Welcome back everyone to another",
-    translation: "欢迎大家回来，大家又来到另一集",
-  },
-  {
-    time: "00:02",
-    text: "comprehensible input vlog in my old style.",
-    translation: "用我老风格的可理解输入视频日志。",
-  },
-  {
-    time: "00:06",
-    text: "Today we are in Hao Long Bay, here in Vietnam.",
-    translation: "今天我们身处越南的浩龙湾。",
-  },
-  {
-    time: "00:36",
-    text: "Here you can see we just checked",
-    translation: "你可以看到我们刚检查过",
-  },
-  {
-    time: "00:38",
-    text: "into our room on this cruise ship.",
-    translation: "进了我们这艘游轮的房间。",
-  },
-  {
-    time: "00:40",
-    text: "Here you have two twin beds.",
-    translation: "这里有两张双人床。",
-  },
-  {
-    time: "00:44",
-    text: "Two twin beds.",
-    translation: "两张单人床。",
-  },
-  {
-    time: "00:45",
-    text: "This is my brother's bed, and this is my bed.",
-    translation: "这是我哥哥的床，这张是我的床。",
-  },
-  {
-    time: "00:50",
-    text: "The balcony opens right onto the water.",
-    translation: "阳台正对着海面。",
-  },
-];
-
 export const PlayerPage = () => {
   const [activeCaption, setActiveCaption] = useState(2);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [videoSrc, setVideoSrc] = useState<string | null>(null);
-  const [captions, setCaptions] = useState<Caption[]>(demoCaptions);
+  const [captions, setCaptions] = useState<Caption[]>([]);
 
   const handleOpenFile = async () => {
     const selected = await open({
@@ -116,12 +67,18 @@ export const PlayerPage = () => {
 
           {/* Captions */}
           <div className="h-0.3 mx-auto flex min-h-37 w-full flex-col items-center justify-center text-center">
-            <p className="max-w-5xl text-2xl font-semibold leading-tight tracking-normal text-zinc-200">
-              {captions[activeCaption].text}
-            </p>
-            <p className="mt-5 text-2xl leading-tight tracking-normal text-zinc-400">
-              {captions[activeCaption].translation}
-            </p>
+            {captions.length > 0 && captions[activeCaption] ? (
+              <>
+                <p className="max-w-5xl text-2xl font-semibold leading-tight tracking-normal text-zinc-200">
+                  {captions[activeCaption].text}
+                </p>
+                <p className="mt-5 text-2xl leading-tight tracking-normal text-zinc-400">
+                  {captions[activeCaption].translation}
+                </p>
+              </>
+            ) : (
+              <p className="text-lg text-zinc-600">No subtitles loaded</p>
+            )}
           </div>
         </div>
 
@@ -173,43 +130,49 @@ export const PlayerPage = () => {
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 [scrollbar-color:#4b4b4b_transparent] scrollbar-thin">
-            <div className="space-y-2">
-              {captions.map((caption, index) => {
-                const isActive = index === activeCaption;
+            {captions.length > 0 ? (
+              <div className="space-y-2">
+                {captions.map((caption, index) => {
+                  const isActive = index === activeCaption;
 
-                return (
-                  <button
-                    className={`grid w-full grid-cols-[62px_1fr] gap-1 rounded-md px-0 py-2 text-left transition ${
-                      isActive
-                        ? "text-[#f5cc64]"
-                        : "text-zinc-500 hover:bg-white/3 hover:text-zinc-300"
-                    }`}
-                    key={`${caption.time}-${caption.text}`}
-                    onClick={() => setActiveCaption(index)}
-                  >
-                    <span
-                      className={`text-md font-bold text-center ${
-                        isActive ? "text-[#f5cc64]" : "text-zinc-600"
+                  return (
+                    <button
+                      className={`grid w-full grid-cols-[62px_1fr] gap-1 rounded-md px-0 py-2 text-left transition ${
+                        isActive
+                          ? "text-[#f5cc64]"
+                          : "text-zinc-500 hover:bg-white/3 hover:text-zinc-300"
                       }`}
+                      key={`${caption.time}-${caption.text}`}
+                      onClick={() => setActiveCaption(index)}
                     >
-                      {caption.time}
-                    </span>
-                    <span>
-                      <span className="block text-md font-bold leading-snug tracking-normal">
-                        {caption.text}
-                      </span>
                       <span
-                        className={`mt-2 block text-md leading-snug tracking-normal ${
-                          isActive ? "text-zinc-300" : "text-zinc-500"
+                        className={`text-md font-bold text-center ${
+                          isActive ? "text-[#f5cc64]" : "text-zinc-600"
                         }`}
                       >
-                        {caption.translation}
+                        {caption.time}
                       </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                      <span>
+                        <span className="block text-md font-bold leading-snug tracking-normal">
+                          {caption.text}
+                        </span>
+                        <span
+                          className={`mt-2 block text-md leading-snug tracking-normal ${
+                            isActive ? "text-zinc-300" : "text-zinc-500"
+                          }`}
+                        >
+                          {caption.translation}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-sm text-zinc-600">No subtitles loaded</p>
+              </div>
+            )}
           </div>
         </aside>
       )}
