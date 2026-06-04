@@ -36,6 +36,12 @@ Cadence，意为韵律与节奏。这是一款专为**听力 + 字幕学习**设
 
 ![幕听预览](preview.png)
 
+### 字幕网站
+
+- [SubHD](https://subhd.tv/)
+- [字幕库](https://srtku.com/)
+- [射手网](https://2.assrt.net/)
+
 ### 技术栈
 
 | 类别 | 技术 |

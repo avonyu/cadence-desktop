@@ -36,6 +36,12 @@ Cadence — rhythm and flow. A desktop video player designed specifically for **
 
 ![Cadence Preview](docs/preview.png)
 
+### Subtitle Websites
+
+- [SubHD](https://subhd.tv/)
+- [字幕库](https://srtku.com/)
+- [射手网](https://2.assrt.net/)
+
 ### Tech Stack
 
 | Category | Tech |
