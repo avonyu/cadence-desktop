@@ -4,32 +4,44 @@
  */
 
 export interface Caption {
+  /** Display time string in "MM:SS" format */
   time: string;
+  /** Start time in seconds (for sync) */
+  start: number;
+  /** End time in seconds (for sync) */
+  end: number;
   text: string;
   translation: string;
 }
 
 /**
- * Parse the start time from a timestamp string.
+ * Parse a timestamp string to seconds.
  * Handles formats like "00:00:02,000" (SRT) or "0:00:02.00" (ASS).
- * Returns simplified "MM:SS" format.
  */
-function parseTime(timestamp: string): string {
+function timestampToSeconds(timestamp: string): number {
   const match = timestamp.trim().match(/(\d+):(\d{2}):(\d{2})[,.]\d+/);
-  if (!match) {
-    const simpleMatch = timestamp.trim().match(/(\d+):(\d{2})[,.]?\d*/);
-    if (simpleMatch) {
-      const mins = parseInt(simpleMatch[1], 10);
-      const secs = parseInt(simpleMatch[2], 10);
-      return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-    }
-    return "00:00";
+  if (match) {
+    const hours = parseInt(match[1], 10);
+    const mins = parseInt(match[2], 10);
+    const secs = parseInt(match[3], 10);
+    return hours * 3600 + mins * 60 + secs;
   }
-  const hours = parseInt(match[1], 10);
-  const mins = parseInt(match[2], 10);
-  const secs = parseInt(match[3], 10);
-  const totalMins = hours * 60 + mins;
-  return `${String(totalMins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  const simpleMatch = timestamp.trim().match(/(\d+):(\d{2})[,.]?\d*/);
+  if (simpleMatch) {
+    const mins = parseInt(simpleMatch[1], 10);
+    const secs = parseInt(simpleMatch[2], 10);
+    return mins * 60 + secs;
+  }
+  return 0;
+}
+
+/**
+ * Format seconds to "MM:SS" display string.
+ */
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
 /**
@@ -44,10 +56,12 @@ function stripAssTags(text: string): string {
  * Detect whether the content is SRT or ASS format.
  */
 function detectFormat(content: string): "srt" | "ass" {
-  const trimmed = content.trim().toLowerCase();
+  const trimmed = content.trim();
+  const lower = trimmed.toLowerCase();
   if (
-    trimmed.startsWith("[script info]") ||
-    trimmed.startsWith("[v4+ styles]")
+    lower.startsWith("[script info]") ||
+    lower.startsWith("[v4+ styles]") ||
+    lower.startsWith("[v4 styles]")
   ) {
     return "ass";
   }
@@ -67,11 +81,12 @@ function detectFormat(content: string): "srt" | "ass" {
  * Second line
  */
 function parseSRT(content: string): Caption[] {
-  const blocks = content.trim().split(/\r?\n\r?\n/);
+  // Split on one or more blank lines (handles \r\r, \n\n, \r\n\r\n, and trailing spaces)
+  const blocks = content.trim().split(/(?:\r?\n|\r){2,}/);
   const captions: Caption[] = [];
 
   for (const block of blocks) {
-    const lines = block.trim().split(/\r?\n/);
+    const lines = block.trim().split(/\r?\n|\r/);
     if (lines.length < 2) continue;
 
     // Find the timestamp line (pattern: "HH:MM:SS,mmm --> HH:MM:SS,mmm")
@@ -87,7 +102,7 @@ function parseSRT(content: string): Caption[] {
     const timestampLine = lines[timestampLineIdx];
     const textLines = lines.slice(timestampLineIdx + 1);
 
-    const [startStr] = timestampLine.split("-->").map((s) => s.trim());
+    const [startStr, endStr] = timestampLine.split("-->").map((s) => s.trim());
     const text = stripAssTags(textLines.join("\n").trim());
 
     // Try to detect bilingual: first line = text, second line = translation
@@ -108,7 +123,11 @@ function parseSRT(content: string): Caption[] {
     }
 
     captions.push({
-      time: parseTime(startStr),
+      time: formatTime(timestampToSeconds(startStr)),
+      start: timestampToSeconds(startStr),
+      end: endStr
+        ? timestampToSeconds(endStr)
+        : timestampToSeconds(startStr) + 2,
       text: captionText,
       translation,
     });
@@ -127,24 +146,43 @@ function parseSRT(content: string): Caption[] {
  * Dialogue: 0,0:00:00.00,0:00:02.00,Default,,0,0,0,,Hello World
  */
 function parseASS(content: string): Caption[] {
-  const lines = content.split(/\r?\n/);
+  const lines = content.split(/\r?\n|\r/);
   const captions: Caption[] = [];
 
   for (const line of lines) {
     if (!line.startsWith("Dialogue:")) continue;
 
-    // Remove "Dialogue: " prefix and split by comma (max 10 parts)
+    // Remove "Dialogue: " prefix
     const contentPart = line.slice("Dialogue:".length).trim();
-    const parts = contentPart.split(/,(?=(?:[^,]*,){0,9}[^,]*$)/);
 
-    if (parts.length < 10) continue;
+    // Split on the first 9 commas; everything after is the text field
+    // ASS format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text
+    const commaIndices: number[] = [];
+    for (let i = 0; i < contentPart.length && commaIndices.length < 9; i++) {
+      if (contentPart[i] === ",") {
+        commaIndices.push(i);
+      }
+    }
 
-    const startStr = parts[1];
-    const rawText = parts.slice(9).join(",").trim();
+    if (commaIndices.length < 9) continue;
+
+    // Extract the 9 metadata fields
+    const fields: string[] = [];
+    let prevIdx = 0;
+    for (const idx of commaIndices) {
+      fields.push(contentPart.slice(prevIdx, idx));
+      prevIdx = idx + 1;
+    }
+    // Everything after the 9th comma is the text field
+    const rawText = contentPart.slice(prevIdx).trim();
     const text = stripAssTags(rawText);
 
+    const startStr = fields[1];
+    const endStr = fields[2];
+
+    // ASS uses \N for line breaks; also handle literal \n
     const textParts = text
-      .split("\\N")
+      .split(/\\N|\\n/)
       .map((l) => l.trim())
       .filter(Boolean);
 
@@ -160,7 +198,11 @@ function parseASS(content: string): Caption[] {
     }
 
     captions.push({
-      time: parseTime(startStr),
+      time: formatTime(timestampToSeconds(startStr)),
+      start: timestampToSeconds(startStr),
+      end: endStr
+        ? timestampToSeconds(endStr)
+        : timestampToSeconds(startStr) + 2,
       text: captionText,
       translation,
     });
@@ -189,10 +231,11 @@ export function mergeCaptions(
   secondary: Caption[],
 ): Caption[] {
   return primary.map((cap) => {
-    // Find matching caption by time
     const match = secondary.find((s) => s.time === cap.time);
     return {
       time: cap.time,
+      start: cap.start,
+      end: cap.end,
       text: cap.text || secondary[0]?.text || "",
       translation: match?.text || cap.translation || "",
     };
