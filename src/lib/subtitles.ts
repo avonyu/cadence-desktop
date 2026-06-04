@@ -80,13 +80,14 @@ function detectFormat(content: string): "srt" | "ass" {
  * 00:00:02,000 --> 00:00:06,000
  * Second line
  */
-function parseSRT(content: string): Caption[] {
-  // Split on one or more blank lines (handles \r\r, \n\n, \r\n\r\n, and trailing spaces)
-  const blocks = content.trim().split(/(?:\r?\n|\r){2,}/);
+export function parseSRT(content: string): Caption[] {
+  // Normalize line endings to \n, then split on 2+ blank lines
+  const normalized = content.trim().replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const blocks = normalized.split(/\n{2,}/);
   const captions: Caption[] = [];
 
   for (const block of blocks) {
-    const lines = block.trim().split(/\r?\n|\r/);
+    const lines = block.trim().split(/\n/);
     if (lines.length < 2) continue;
 
     // Find the timestamp line (pattern: "HH:MM:SS,mmm --> HH:MM:SS,mmm")
@@ -133,6 +134,7 @@ function parseSRT(content: string): Caption[] {
     });
   }
 
+  captions.sort((a, b) => a.start - b.start);
   return captions;
 }
 
@@ -145,8 +147,8 @@ function parseSRT(content: string): Caption[] {
  * Example:
  * Dialogue: 0,0:00:00.00,0:00:02.00,Default,,0,0,0,,Hello World
  */
-function parseASS(content: string): Caption[] {
-  const lines = content.split(/\r?\n|\r/);
+export function parseASS(content: string): Caption[] {
+  const lines = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split(/\n/);
   const captions: Caption[] = [];
 
   for (const line of lines) {
@@ -175,6 +177,14 @@ function parseASS(content: string): Caption[] {
     }
     // Everything after the 9th comma is the text field
     const rawText = contentPart.slice(prevIdx).trim();
+
+    // Only process lines with "Default" or "歌词" style
+    const style = fields[3];
+    if (style !== "Default" && style !== "歌词") continue;
+
+    // Skip lines with positioning tags regardless of style
+    if (/\\pos\(/.test(rawText)) continue;
+
     const text = stripAssTags(rawText);
 
     const startStr = fields[1];
@@ -208,12 +218,12 @@ function parseASS(content: string): Caption[] {
     });
   }
 
+  captions.sort((a, b) => a.start - b.start);
   return captions;
 }
 
 /**
  * Parse subtitle content (auto-detects SRT or ASS format).
- * Returns an array of Caption objects ready for frontend use.
  */
 export function parseSubtitles(content: string): Caption[] {
   const format = detectFormat(content);

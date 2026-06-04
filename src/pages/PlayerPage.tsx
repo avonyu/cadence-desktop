@@ -5,6 +5,12 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { parseSubtitles, type Caption } from "@/lib/subtitles";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const PlayerPage = () => {
   const [activeCaption, setActiveCaption] = useState<number | null>(null);
@@ -197,36 +203,51 @@ export const PlayerPage = () => {
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="mt-auto z-100 flex h-14 items-center justify-end gap-1 border-t border-white/8 px-4 bg-[#0b0b0b]">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={handleOpenFile}
-            title="Open Video"
-          >
-            <FolderOpen size={18} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={handleLoadSubtitle}
-            title="Load Subtitle"
-          >
-            <FileText size={18} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className={sidebarOpen ? "text-[#f5cc64]" : "text-zinc-500"}
-            onClick={() => setSidebarOpen((open) => !open)}
-            title="Subtitles"
-          >
-            <Subtitles size={18} />
-          </Button>
-          <Button variant="ghost" size="icon-sm" title="Settings" disabled>
-            <Settings size={18} />
-          </Button>
+        {/* Controls Area */}
+        <div className="mt-auto z-1 flex h-14 items-center justify-end gap-1 border-t border-white/8 px-4 bg-[#0b0b0b]">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon-sm" onClick={handleOpenFile}>
+                  <FolderOpen size={18} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Open Video</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={handleLoadSubtitle}
+                >
+                  <FileText size={18} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Load Subtitle</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className={sidebarOpen ? "text-[#f5cc64]" : "text-zinc-500"}
+                  onClick={() => setSidebarOpen((open) => !open)}
+                >
+                  <Subtitles size={18} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Subtitles</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon-sm" disabled>
+                  <Settings size={18} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Settings</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </main>
 
