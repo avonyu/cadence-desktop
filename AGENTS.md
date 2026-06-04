@@ -6,6 +6,8 @@
 
 ## 技术栈
 
+- Vite
+- Bun
 - Tauri v2
 - React
 - React Router

@@ -1,10 +1,12 @@
 import { VideoPlayer } from "@/components/player";
-import { FolderOpen, Settings, Subtitles, X } from "lucide-react";
+import { FolderOpen, Settings, Subtitles, X, FileText } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { useState } from "react";
+import { parseSubtitles, type Caption } from "@/lib/subtitles";
 
-const captions = [
+// Demo captions for initial testing
+const demoCaptions: Caption[] = [
   {
     time: "00:00",
     text: "Welcome back everyone to another",
@@ -56,6 +58,7 @@ export const PlayerPage = () => {
   const [activeCaption, setActiveCaption] = useState(2);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [videoSrc, setVideoSrc] = useState<string | null>(null);
+  const [captions, setCaptions] = useState<Caption[]>(demoCaptions);
 
   const handleOpenFile = async () => {
     const selected = await open({
@@ -69,6 +72,31 @@ export const PlayerPage = () => {
     });
     if (selected) {
       setVideoSrc(convertFileSrc(selected));
+    }
+  };
+
+  const handleLoadSubtitle = async () => {
+    const selected = await open({
+      multiple: false,
+      filters: [
+        {
+          name: "Subtitle",
+          extensions: ["srt", "ass"],
+        },
+      ],
+    });
+    if (selected) {
+      try {
+        const { readTextFile } = await import("@tauri-apps/plugin-fs");
+        const content = await readTextFile(selected);
+        const parsed = parseSubtitles(content);
+        if (parsed.length > 0) {
+          setCaptions(parsed);
+          setActiveCaption(0);
+        }
+      } catch (error) {
+        console.error("Failed to load subtitle file:", error);
+      }
     }
   };
 
@@ -106,6 +134,13 @@ export const PlayerPage = () => {
               title="Open Video"
             >
               <FolderOpen size={20} />
+            </button>
+            <button
+              className="transition hover:text-white"
+              onClick={handleLoadSubtitle}
+              title="Load Subtitle"
+            >
+              <FileText size={20} />
             </button>
             <button
               className={`transition ${sidebarOpen ? "text-[#f5cc64]" : "text-zinc-300 hover:text-white"}`}
