@@ -178,12 +178,12 @@ export function parseASS(content: string): Caption[] {
     // Everything after the 9th comma is the text field
     const rawText = contentPart.slice(prevIdx).trim();
 
-    // Only process lines with "Default" or "歌词" style
+    // Process lines whose style contains "Default" (case-insensitive) or equals "歌词"
     const style = fields[3];
-    if (style !== "Default" && style !== "歌词") continue;
+    if (!style.toLowerCase().includes("default") && style !== "歌词") continue;
 
-    // Skip lines with positioning tags regardless of style
-    if (/\\pos\(/.test(rawText)) continue;
+    // Skip lines with positioning/animation tags (credits, on-screen text, karaoke, effects)
+    if (/\\pos\(|\\move\(|\\an8/.test(rawText)) continue;
 
     const text = stripAssTags(rawText);
 

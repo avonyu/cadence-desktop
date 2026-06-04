@@ -401,7 +401,21 @@ describe("parseASS - style filtering", () => {
     expect(result[0].text).toBe("Lyrics text");
   });
 
-  it("skips non-Default/non-歌词 styles", () => {
+  it("accepts styles containing 'Default' (case-insensitive)", () => {
+    const src = assFile([
+      "Dialogue: 0,0:00:01.00,0:00:03.00,*Default,,0,0,0,,Should pass",
+      "Dialogue: 0,0:00:02.00,0:00:05.00,Default,,0,0,0,,Also passes",
+      "Dialogue: 0,0:00:03.00,0:00:06.00,DEFAULT,,0,0,0,,Case insensitive",
+    ]);
+
+    const result = parseASS(src);
+    expect(result).toHaveLength(3);
+    expect(result[0].text).toBe("Should pass");
+    expect(result[1].text).toBe("Also passes");
+    expect(result[2].text).toBe("Case insensitive");
+  });
+
+  it("skips styles without 'Default' (or 歌词)", () => {
     const src = assFile([
       "Dialogue: 0,0:00:01.00,0:00:03.00,Comment,,0,0,0,,Should skip",
       "Dialogue: 0,0:00:02.00,0:00:05.00,Default,,0,0,0,,Should keep",
@@ -447,6 +461,36 @@ describe("parseASS - positioning tags", () => {
 
     const result = parseASS(src);
     expect(result).toHaveLength(0);
+  });
+
+  it("skips lines with \\move( tag (credits scrolling)", () => {
+    const src = assFile([
+      "Dialogue: 0,0:00:01.00,0:00:03.00,*Default,,0,0,0,,{\\move(74,241,-130,241)}Credits name",
+      "Dialogue: 0,0:00:02.00,0:00:05.00,Default,,0,0,0,,Real dialogue",
+    ]);
+
+    const result = parseASS(src);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Real dialogue");
+  });
+
+  it("skips lines with both \\move( and \\clip( animation", () => {
+    const src = assFile([
+      "Dialogue: 0,0:00:01.00,0:00:03.00,*Default,,0,0,0,,{\\clip(74,220,73,227)\\move(74,241,-130,241)}Animating text",
+    ]);
+
+    expect(parseASS(src)).toEqual([]);
+  });
+
+  it("skips lines with \\an8 (on-screen text translation)", () => {
+    const src = assFile([
+      "Dialogue: 0,0:00:01.00,0:00:03.00,*Default,,0,0,0,,{\\an8}{\\fs18}Sign translation",
+      "Dialogue: 0,0:00:02.00,0:00:05.00,Default,,0,0,0,,Real dialogue",
+    ]);
+
+    const result = parseASS(src);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Real dialogue");
   });
 });
 
@@ -560,6 +604,7 @@ describe("parseASS - edge cases", () => {
   it("returns empty array for only non-Default styles", () => {
     const src = assFile([
       "Dialogue: 0,0:00:01.00,0:00:03.00,Comment,,0,0,0,,Nope",
+      "Dialogue: 0,0:00:02.00,0:00:05.00,OP,,0,0,0,,Also nope",
     ]);
 
     expect(parseASS(src)).toEqual([]);
