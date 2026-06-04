@@ -169,7 +169,7 @@ export const PlayerPage = () => {
       <main className="relative flex min-h-0 flex-col border-r border-white/10 bg-[#0b0b0b]">
         <div className="min-h-0 flex-1 px-3 py-4">
           {/* Video Player */}
-          <div className="max-h-200 p-4 relative mx-auto aspect-video min-w-200 overflow-hidden bg-black shadow-2xl shadow-black/60">
+          <div className="max-h-140 p-4 relative mx-auto aspect-video min-w-200 overflow-hidden bg-black shadow-2xl shadow-black/60">
             <VideoPlayer
               src={videoSrc}
               videoRef={videoRef}
@@ -197,30 +197,38 @@ export const PlayerPage = () => {
         </div>
 
         {/* Controls */}
-        <div className="mt-auto h-15 px-4 py-3 border-t border-t-zinc-600 w-full bg-zinc-800">
-          <div className="flex justify-end items-center gap-2 text-zinc-300">
-            <button
-              className="transition hover:text-white"
-              onClick={handleOpenFile}
-              title="Open Video"
-            >
-              <FolderOpen size={20} />
-            </button>
-            <button
-              className="transition hover:text-white"
-              onClick={handleLoadSubtitle}
-              title="Load Subtitle"
-            >
-              <FileText size={20} />
-            </button>
-            <button
-              className={`transition ${sidebarOpen ? "text-[#f5cc64]" : "text-zinc-300 hover:text-white"}`}
-              onClick={() => setSidebarOpen((open) => !open)}
-            >
-              <Subtitles size={20} />
-            </button>
-            <Settings size={20} />
-          </div>
+        <div className="mt-auto z-100 flex h-14 items-center justify-end gap-1 border-t border-white/8 px-4 bg-[#0b0b0b]">
+          <button
+            className="flex size-9 items-center justify-center rounded-md text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200"
+            onClick={handleOpenFile}
+            title="Open Video"
+          >
+            <FolderOpen size={18} />
+          </button>
+          <button
+            className="flex size-9 items-center justify-center rounded-md text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200"
+            onClick={handleLoadSubtitle}
+            title="Load Subtitle"
+          >
+            <FileText size={18} />
+          </button>
+          <button
+            className={`flex size-9 items-center justify-center rounded-md transition hover:bg-white/5 ${
+              sidebarOpen
+                ? "text-[#f5cc64]"
+                : "text-zinc-500 hover:text-zinc-200"
+            }`}
+            onClick={() => setSidebarOpen((open) => !open)}
+            title="Subtitles"
+          >
+            <Subtitles size={18} />
+          </button>
+          {/*<button
+            className="flex size-9 items-center justify-center rounded-md text-zinc-500 transition hover:bg-white/5 hover:text-zinc-200"
+            title="Settings"
+          >
+            <Settings size={18} />
+          </button>*/}
         </div>
       </main>
 
