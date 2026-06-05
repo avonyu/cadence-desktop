@@ -43,6 +43,12 @@
       "skillPath": "skills/react-best-practices/SKILL.md",
       "computedHash": "6b526d013e28073246a36f99b529bc43745d30832ecfa8217b359c34f260ca6b"
     },
+    "videojs-skill": {
+      "source": "danraf77/videojs-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "69ebc863b1a953223b820ae313d2e94be1664779a4c90da0da48c946271034cb"
+    },
     "vitest": {
       "source": "antfu/skills",
       "sourceType": "github",

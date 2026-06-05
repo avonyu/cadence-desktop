@@ -314,6 +314,35 @@
         transition: color 150ms ease;
       }
 
+      .sidebar.blur-primary .subtitle-text {
+        filter: blur(4px);
+        transition: filter 300ms ease;
+      }
+
+      .sidebar.blur-primary .subtitle-item:hover .subtitle-text {
+        filter: blur(0);
+      }
+
+      .sidebar.blur-secondary .subtitle-translation {
+        filter: blur(4px);
+        transition: filter 300ms ease;
+      }
+
+      .sidebar.blur-secondary .subtitle-item:hover .subtitle-translation {
+        filter: blur(0);
+      }
+
+      .sidebar.blur-all .subtitle-text,
+      .sidebar.blur-all .subtitle-translation {
+        filter: blur(4px);
+        transition: filter 300ms ease;
+      }
+
+      .sidebar.blur-all .subtitle-item:hover .subtitle-text,
+      .sidebar.blur-all .subtitle-item:hover .subtitle-translation {
+        filter: blur(0);
+      }
+
       .sidebar-empty {
         display: flex;
         align-items: center;
@@ -321,6 +350,129 @@
         height: 100%;
         color: var(--text-muted);
         font-size: 0.875rem;
+      }
+
+      /* ========== Subtitle Settings Popover ========== */
+      .subtitle-settings-wrapper {
+        position: relative;
+      }
+
+      .subtitle-settings-popover {
+        display: none;
+        position: absolute;
+        bottom: calc(100% + 0.5rem);
+        left: 50%;
+        transform: translateX(-50%);
+        width: 220px;
+        background: #1a1a1a;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.625rem;
+        padding: 0.375rem;
+        z-index: 200;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      }
+
+      .subtitle-settings-popover.show {
+        display: block;
+      }
+
+      .subtitle-settings-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 0.625rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        width: 100%;
+        transition: background 150ms ease;
+      }
+
+      .subtitle-settings-item:hover {
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .subtitle-settings-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8125rem;
+        color: #d4d4d4;
+        white-space: nowrap;
+      }
+
+      .subtitle-settings-label svg {
+        flex-shrink: 0;
+        color: #71717a;
+      }
+
+      .subtitle-settings-value {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        color: #71717a;
+        white-space: nowrap;
+      }
+
+      .toggle-switch {
+        position: relative;
+        width: 36px;
+        height: 20px;
+        background: #3f3f46;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 200ms ease;
+        flex-shrink: 0;
+        border: none;
+        padding: 0;
+      }
+
+      .toggle-switch::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 200ms ease;
+      }
+
+      .toggle-switch.active {
+        background: var(--accent);
+      }
+
+      .toggle-switch.active::after {
+        transform: translateX(16px);
+      }
+
+      .subtitle-display.blur-primary .subtitle-primary {
+        filter: blur(8px);
+        transition: filter 300ms ease;
+        user-select: none;
+      }
+
+      .subtitle-display.blur-secondary .subtitle-secondary {
+        filter: blur(8px);
+        transition: filter 300ms ease;
+        user-select: none;
+      }
+
+      .subtitle-display.blur-all .subtitle-primary,
+      .subtitle-display.blur-all .subtitle-secondary {
+        filter: blur(8px);
+        transition: filter 300ms ease;
+        user-select: none;
+      }
+
+      .subtitle-display.blur-primary:hover .subtitle-primary,
+      .subtitle-display.blur-secondary:hover .subtitle-secondary,
+      .subtitle-display.blur-all:hover .subtitle-primary,
+      .subtitle-display.blur-all:hover .subtitle-secondary {
+        filter: blur(0);
       }
 
       /* ========== Responsive ========== */
@@ -365,12 +517,8 @@
           <div class="subtitle-display">
             <!-- State 1: With subtitles (default) -->
             <div class="subtitle-content" id="subtitle-content">
-              <p class="subtitle-primary">
-                Welcome to Cadence, your local video player.
-              </p>
-              <p class="subtitle-secondary">
-                欢迎使用 Cadence，您的本地视频播放器。
-              </p>
+              <p class="subtitle-primary">This is your local video player.</p>
+              <p class="subtitle-secondary">这是您的本地视频播放器。</p>
             </div>
             <!-- State 2: Empty (hidden by default) -->
             <div
@@ -438,6 +586,90 @@
               <line x1="8" y1="17" x2="13" y2="17" />
             </svg>
           </button>
+
+          <!-- Subtitle Settings Button -->
+          <div class="subtitle-settings-wrapper">
+            <button
+              id="subtitle-settings-btn"
+              class="control-btn"
+              data-i18n-title="subtitleSettings"
+              onclick="toggleSubtitlePopover(event)"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M7 10h3m-3 4h7" />
+                <path
+                  d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"
+                />
+              </svg>
+            </button>
+            <div class="subtitle-settings-popover" id="subtitlePopover">
+              <button class="subtitle-settings-item" onclick="toggleSwap()">
+                <span class="subtitle-settings-label">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M16 3h5v5" />
+                    <path d="M8 3H3v5" />
+                    <path d="M12 22v-6" />
+                    <path d="M12 8v-2" />
+                    <path d="M12 16v-2" />
+                    <path d="M21 3 14 10" />
+                    <path d="m3 3 7 7" />
+                  </svg>
+                  <span data-i18n="swapSubtitles">位置切换</span>
+                </span>
+                <span class="toggle-switch" id="swapToggle"></span>
+              </button>
+              <button class="subtitle-settings-item" onclick="cycleBlurMode()">
+                <span class="subtitle-settings-label">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M10.733 5.076a10.06 10.06 0 0 1 6.535.06" />
+                    <path d="M11.204 15.205a10.06 10.06 0 0 1-5.206-3.205" />
+                    <path d="M11.5 8.5a10 10 0 0 0-3.5-2" />
+                    <path d="M13.5 15.5a10 10 0 0 0 3.5 2" />
+                    <path d="M12 12a10 10 0 0 0 0 0" />
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <span data-i18n="blurSubtitles">模糊</span>
+                </span>
+                <span
+                  class="subtitle-settings-value"
+                  id="blurModeValue"
+                  data-i18n="blurOff"
+                  >关闭</span
+                >
+              </button>
+            </div>
+          </div>
 
           <!-- Toggle Sidebar Button -->
           <button
@@ -1142,6 +1374,90 @@
     </div>
 
     <script>
+      // Toggle subtitle settings popover
+      function toggleSubtitlePopover(e) {
+        e.stopPropagation();
+        const popover = document.getElementById("subtitlePopover");
+        popover.classList.toggle("show");
+      }
+
+      document.addEventListener("click", (e) => {
+        const popover = document.getElementById("subtitlePopover");
+        const btn = document.getElementById("subtitle-settings-btn");
+        if (popover && !popover.contains(e.target) && !btn.contains(e.target)) {
+          popover.classList.remove("show");
+        }
+      });
+
+      function toggleSwap() {
+        const toggle = document.getElementById("swapToggle");
+        toggle.classList.toggle("active");
+        const isSwapped = toggle.classList.contains("active");
+
+        // Swap subtitle display area
+        const primary = document.querySelector(".subtitle-primary");
+        const secondary = document.querySelector(".subtitle-secondary");
+        const tmpText = primary.textContent;
+        primary.textContent = secondary.textContent;
+        secondary.textContent = tmpText;
+
+        // Swap sidebar items
+        const items = document.querySelectorAll(
+          ".subtitle-item > span:last-child",
+        );
+        items.forEach((span) => {
+          const text = span.querySelector(".subtitle-text");
+          const translation = span.querySelector(".subtitle-translation");
+          if (text && translation) {
+            const tmp = text.textContent;
+            text.textContent = translation.textContent;
+            translation.textContent = tmp;
+          }
+        });
+      }
+
+      let currentBlurMode = "off";
+      const blurModes = ["off", "primary", "secondary", "all"];
+
+      function cycleBlurMode() {
+        const currentIndex = blurModes.indexOf(currentBlurMode);
+        const nextIndex = (currentIndex + 1) % blurModes.length;
+        const nextMode = blurModes[nextIndex];
+        setBlurMode(nextMode);
+      }
+
+      function setBlurMode(mode) {
+        currentBlurMode = mode;
+        const display = document.querySelector(".subtitle-display");
+        const sidebar = document.getElementById("sidebar");
+        const valueEl = document.getElementById("blurModeValue");
+
+        display.classList.remove("blur-primary", "blur-secondary", "blur-all");
+        sidebar.classList.remove("blur-primary", "blur-secondary", "blur-all");
+
+        if (mode === "primary") {
+          display.classList.add("blur-primary");
+          sidebar.classList.add("blur-primary");
+        } else if (mode === "secondary") {
+          display.classList.add("blur-secondary");
+          sidebar.classList.add("blur-secondary");
+        } else if (mode === "all") {
+          display.classList.add("blur-all");
+          sidebar.classList.add("blur-all");
+        }
+
+        const i18nKey =
+          mode === "off"
+            ? "blurOff"
+            : mode === "primary"
+              ? "blurPrimaryLine"
+              : mode === "secondary"
+                ? "blurSecondaryLine"
+                : "blurAllLines";
+        valueEl.textContent = i18n[currentLang][i18nKey];
+        valueEl.setAttribute("data-i18n", i18nKey);
+      }
+
       // Toggle sidebar visibility
       function toggleSidebar() {
         const app = document.getElementById("app");
@@ -1179,10 +1495,15 @@
           ["Enjoy your viewing experience.", "祝您观看愉快。"],
         ];
 
-        document.querySelector(".subtitle-primary").textContent =
-          texts[index][0];
+        const isSwapped = document
+          .getElementById("swapToggle")
+          .classList.contains("active");
+        const primaryText = isSwapped ? texts[index][1] : texts[index][0];
+        const secondaryText = isSwapped ? texts[index][0] : texts[index][1];
+
+        document.querySelector(".subtitle-primary").textContent = primaryText;
         document.querySelector(".subtitle-secondary").textContent =
-          texts[index][1];
+          secondaryText;
 
         // Scroll active item into view
         items[index].scrollIntoView({ behavior: "smooth", block: "center" });
@@ -1225,6 +1546,15 @@
           openVideo: "打开视频",
           loadSubtitle: "加载字幕",
           subtitlesSidebar: "字幕侧边栏",
+          subtitleSettings: "字幕设置",
+          swapSubtitles: "位置切换",
+          swapDefault: "默认",
+          swapReversed: "已切换",
+          blurSubtitles: "模糊",
+          blurPrimaryLine: "第一行",
+          blurSecondaryLine: "第二行",
+          blurAllLines: "所有行",
+          blurOff: "关闭",
           settings: "设置",
           subtitlesList: "字幕列表",
           openVideoTitle: "打开视频文件",
@@ -1250,6 +1580,15 @@
           openVideo: "Open Video",
           loadSubtitle: "Load Subtitle",
           subtitlesSidebar: "Subtitle Sidebar",
+          subtitleSettings: "Subtitle Settings",
+          swapSubtitles: "Swap Position",
+          swapDefault: "Default",
+          swapReversed: "Swapped",
+          blurSubtitles: "Blur",
+          blurPrimaryLine: "Line 1",
+          blurSecondaryLine: "Line 2",
+          blurAllLines: "All",
+          blurOff: "Off",
           settings: "Settings",
           subtitlesList: "Subtitles",
           openVideoTitle: "Open Video File",
@@ -1374,6 +1713,7 @@
           );
           // Update settings modal
           updateSettingsModalTheme("dark");
+          updateSubtitlePopoverTheme("dark");
         } else {
           lightBtn.style.cssText =
             "padding: 0.25rem 0.75rem; border: 1px solid #8b5cf6; background: rgba(139, 92, 246, 0.12); color: #8b5cf6; border-radius: 0 0.375rem 0.375rem 0; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 150ms ease;";
@@ -1391,6 +1731,7 @@
           root.style.setProperty("--subtitle-hover-bg", "rgba(0, 0, 0, 0.04)");
           // Update settings modal
           updateSettingsModalTheme("light");
+          updateSubtitlePopoverTheme("light");
         }
       }
 
@@ -1465,6 +1806,53 @@
             s.color = isDark ? "#71717a" : "#a1a1aa";
           }
         });
+      }
+
+      function updateSubtitlePopoverTheme(mode) {
+        const popover = document.getElementById("subtitlePopover");
+        if (!popover) return;
+        const isDark = mode === "dark";
+
+        popover.style.background = isDark ? "#1a1a1a" : "#ffffff";
+        popover.style.border = isDark
+          ? "1px solid rgba(255, 255, 255, 0.1)"
+          : "1px solid rgba(0, 0, 0, 0.1)";
+        popover.style.boxShadow = isDark
+          ? "0 8px 24px rgba(0, 0, 0, 0.4)"
+          : "0 8px 24px rgba(0, 0, 0, 0.15)";
+
+        popover.querySelectorAll(".subtitle-settings-item").forEach((item) => {
+          item.onmouseover = function () {
+            this.style.background = isDark
+              ? "rgba(255,255,255,0.04)"
+              : "rgba(0,0,0,0.04)";
+          };
+          item.onmouseout = function () {
+            this.style.background = "transparent";
+          };
+        });
+
+        popover
+          .querySelectorAll(".subtitle-settings-label")
+          .forEach((label) => {
+            label.style.color = isDark ? "#d4d4d4" : "#18181b";
+            const svg = label.querySelector("svg");
+            if (svg) svg.style.color = isDark ? "#71717a" : "#a1a1aa";
+          });
+
+        const valueEl = document.getElementById("blurModeValue");
+        if (valueEl) {
+          valueEl.style.color = isDark ? "#71717a" : "#a1a1aa";
+        }
+
+        const swapToggle = document.getElementById("swapToggle");
+        if (swapToggle) {
+          swapToggle.style.background = swapToggle.classList.contains("active")
+            ? "var(--accent)"
+            : isDark
+              ? "#3f3f46"
+              : "#d4d4d4";
+        }
       }
 
       // Check for updates
