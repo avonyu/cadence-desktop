@@ -35,6 +35,17 @@ export default defineConfig({
       ignored: ["**/src-tauri/**"],
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "react-router"],
+          "vendor-video": ["@videojs/react"],
+          "vendor-ui": ["radix-ui", "lucide-react", "class-variance-authority", "clsx", "tailwind-merge"],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: "node",
