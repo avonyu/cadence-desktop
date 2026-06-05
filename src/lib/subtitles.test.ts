@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseSRT, parseASS, type Caption } from "./subtitles";
+import { parseSRT, parseASS, parseSubtitles, mergeCaptions, type Caption } from "./subtitles";
 
 /** Helper to build a Caption snapshot without relying on Object instance */
 function strip(c: Caption) {
@@ -730,5 +730,187 @@ describe("parseASS - real-world", () => {
     const result = parseASS(src);
     expect(result).toHaveLength(1);
     expect(result[0].text).toBe("Actual dialogue");
+  });
+});
+
+// ===========================================================================
+// parseSubtitles (auto-detect format)
+// ===========================================================================
+
+describe("parseSubtitles", () => {
+  it("auto-detects and parses SRT format", () => {
+    const src = ["1", "00:00:02,000 --> 00:00:05,000", "Hello World"].join("\n");
+    const result = parseSubtitles(src);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Hello World");
+  });
+
+  it("auto-detects and parses ASS format", () => {
+    const src = [
+      "[Script Info]",
+      "Title: Test",
+      "",
+      "[V4+ Styles]",
+      "Style: Default,Arial,20",
+      "",
+      "[Events]",
+      "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
+      "Dialogue: 0,0:00:02.00,0:00:05.00,Default,,0,0,0,,Hello World",
+    ].join("\n");
+
+    const result = parseSubtitles(src);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Hello World");
+  });
+
+  it("detects ASS with [V4+ Styles] header", () => {
+    const src = ["[V4+ Styles]", "Style: Default,Arial,20"].join("\n");
+    const result = parseSubtitles(src);
+    expect(result).toEqual([]);
+  });
+
+  it("detects ASS with [V4 Styles] header", () => {
+    const src = ["[V4 Styles]", "Style: Default,Arial,20"].join("\n");
+    const result = parseSubtitles(src);
+    expect(result).toEqual([]);
+  });
+
+  it("defaults to SRT for unknown format", () => {
+    const src = "Just some random text";
+    const result = parseSubtitles(src);
+    expect(result).toEqual([]);
+  });
+
+  it("returns empty array for empty input", () => {
+    expect(parseSubtitles("")).toEqual([]);
+  });
+
+  it("returns empty array for whitespace-only input", () => {
+    expect(parseSubtitles("   \n\n  ")).toEqual([]);
+  });
+});
+
+// ===========================================================================
+// mergeCaptions
+// ===========================================================================
+
+describe("mergeCaptions", () => {
+  it("merges captions with matching timestamps", () => {
+    const primary: Caption[] = [
+      { time: "00:02", start: 2, end: 5, text: "Hello", translation: "" },
+    ];
+    const secondary: Caption[] = [
+      { time: "00:02", start: 2, end: 5, text: "你好", translation: "" },
+    ];
+
+    const result = mergeCaptions(primary, secondary);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Hello");
+    expect(result[0].translation).toBe("你好");
+  });
+
+  it("keeps primary translation when no secondary match", () => {
+    const primary: Caption[] = [
+      { time: "00:02", start: 2, end: 5, text: "Hello", translation: "Existing" },
+    ];
+    const secondary: Caption[] = [
+      { time: "00:10", start: 10, end: 12, text: "Other", translation: "" },
+    ];
+
+    const result = mergeCaptions(primary, secondary);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Hello");
+    expect(result[0].translation).toBe("Existing");
+  });
+
+  it("uses secondary[0].text when no match and primary has no text", () => {
+    const primary: Caption[] = [
+      { time: "00:02", start: 2, end: 5, text: "", translation: "" },
+    ];
+    const secondary: Caption[] = [
+      { time: "00:10", start: 10, end: 12, text: "Fallback", translation: "" },
+    ];
+
+    const result = mergeCaptions(primary, secondary);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Fallback");
+    expect(result[0].translation).toBe("");
+  });
+
+  it("uses empty string when secondary is empty", () => {
+    const primary: Caption[] = [
+      { time: "00:02", start: 2, end: 5, text: "Hello", translation: "" },
+    ];
+    const secondary: Caption[] = [];
+
+    const result = mergeCaptions(primary, secondary);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Hello");
+    expect(result[0].translation).toBe("");
+  });
+
+  it("returns empty array when primary is empty", () => {
+    const primary: Caption[] = [];
+    const secondary: Caption[] = [
+      { time: "00:02", start: 2, end: 5, text: "你好", translation: "" },
+    ];
+
+    expect(mergeCaptions(primary, secondary)).toEqual([]);
+  });
+
+  it("preserves primary timing fields", () => {
+    const primary: Caption[] = [
+      { time: "00:02", start: 2, end: 5, text: "Hello", translation: "" },
+    ];
+    const secondary: Caption[] = [
+      { time: "00:02", start: 2, end: 5, text: "你好", translation: "" },
+    ];
+
+    const result = mergeCaptions(primary, secondary);
+    expect(result[0].time).toBe("00:02");
+    expect(result[0].start).toBe(2);
+    expect(result[0].end).toBe(5);
+  });
+
+  it("merges multiple captions correctly", () => {
+    const primary: Caption[] = [
+      { time: "00:02", start: 2, end: 5, text: "Hello", translation: "" },
+      { time: "00:06", start: 6, end: 9, text: "World", translation: "" },
+    ];
+    const secondary: Caption[] = [
+      { time: "00:02", start: 2, end: 5, text: "你好", translation: "" },
+      { time: "00:06", start: 6, end: 9, text: "世界", translation: "" },
+    ];
+
+    const result = mergeCaptions(primary, secondary);
+    expect(result).toHaveLength(2);
+    expect(result[0].translation).toBe("你好");
+    expect(result[1].translation).toBe("世界");
+  });
+
+  it("uses empty string for translation when no match", () => {
+    const primary: Caption[] = [
+      { time: "00:02", start: 2, end: 5, text: "Hello", translation: "" },
+    ];
+    const secondary: Caption[] = [
+      { time: "00:99", start: 99, end: 100, text: "First Secondary", translation: "" },
+    ];
+
+    const result = mergeCaptions(primary, secondary);
+    expect(result[0].text).toBe("Hello");
+    expect(result[0].translation).toBe("");
+  });
+
+  it("handles empty primary text with fallback", () => {
+    const primary: Caption[] = [
+      { time: "00:02", start: 2, end: 5, text: "", translation: "" },
+    ];
+    const secondary: Caption[] = [
+      { time: "00:99", start: 99, end: 100, text: "Fallback Text", translation: "" },
+    ];
+
+    const result = mergeCaptions(primary, secondary);
+    expect(result[0].text).toBe("Fallback Text");
+    expect(result[0].translation).toBe("");
   });
 });

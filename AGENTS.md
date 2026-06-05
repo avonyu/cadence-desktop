@@ -6,6 +6,8 @@
 
 ## 技术栈
 
+相应的技术文档使用 Context 7 MCP 来获取最新的内容
+
 - Vite
 - Bun
 - Tauri v2
