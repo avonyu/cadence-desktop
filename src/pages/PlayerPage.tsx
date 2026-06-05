@@ -1,8 +1,14 @@
 import { VideoPlayer } from "@/components/player";
-import { FolderOpen, Subtitles, X, Settings, FileText } from "lucide-react";
+import {
+  FolderOpen,
+  FileText,
+  Subtitles,
+  X,
+  Settings,
+} from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useState } from "react";
 import { parseSubtitles, type Caption } from "@/lib/subtitles";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,12 +17,46 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { usePlayerStore, type BlurMode } from "@/stores/player-store";
+import { useT } from "@/lib/use-i18n";
+import { SubtitleSettingsPopover } from "@/components/player/subtitle-settings-popover";
+import { SettingsDialog } from "@/components/player/settings-dialog";
+
+function getSidebarBlurClasses(blurMode: BlurMode, target: "text" | "translation") {
+  if (blurMode === "off") return "";
+  if (blurMode === "primary" && target === "text") return "blur-[4px]";
+  if (blurMode === "secondary" && target === "translation")
+    return "blur-[4px]";
+  if (blurMode === "all") return "blur-[4px]";
+  return "";
+}
+
+function formatCaptionTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
 
 export const PlayerPage = () => {
-  const [activeCaption, setActiveCaption] = useState<number | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [videoSrc, setVideoSrc] = useState<string | null>(null);
   const [captions, setCaptions] = useState<Caption[]>([]);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+
+  const {
+    sidebarOpen,
+    blurMode,
+    swapSubtitles,
+    activeCaption,
+    theme,
+    setActiveCaption,
+    toggleSidebar,
+  } = usePlayerStore();
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("light", theme === "light");
+  }, [theme]);
+
+  const t = useT();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const activeItemRef = useRef<HTMLButtonElement | null>(null);
@@ -61,7 +101,6 @@ export const PlayerPage = () => {
     }
   };
 
-  // Find the active caption index based on video current time
   const handleTimeUpdate = useCallback(
     (currentTime: number) => {
       if (captions.length === 0) return;
@@ -74,7 +113,6 @@ export const PlayerPage = () => {
         }
       }
 
-      // If no exact match, find the closest previous caption
       if (newIndex === null) {
         for (let i = captions.length - 1; i >= 0; i--) {
           if (currentTime >= captions[i].start) {
@@ -88,18 +126,19 @@ export const PlayerPage = () => {
         setActiveCaption(newIndex);
       }
     },
-    [captions, activeCaption],
+    [captions, activeCaption, setActiveCaption],
   );
 
-  // Seek video to caption time
-  const handleSeekToCaption = useCallback((caption: Caption) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = caption.start;
-      videoRef.current.play?.();
-    }
-  }, []);
+  const handleSeekToCaption = useCallback(
+    (caption: Caption) => {
+      if (videoRef.current) {
+        videoRef.current.currentTime = caption.start;
+        videoRef.current.play?.();
+      }
+    },
+    [],
+  );
 
-  // Auto-scroll sidebar to active caption
   useEffect(() => {
     if (activeItemRef.current && sidebarRef.current) {
       activeItemRef.current.scrollIntoView({
@@ -109,10 +148,8 @@ export const PlayerPage = () => {
     }
   }, [activeCaption]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Space = toggle play/pause (always available)
       if (e.key === " ") {
         e.preventDefault();
         if (videoRef.current) {
@@ -164,19 +201,37 @@ export const PlayerPage = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [captions, activeCaption, handleSeekToCaption]);
+  }, [captions, activeCaption, handleSeekToCaption, setActiveCaption]);
+
+  const getDisplayText = (
+    caption: Caption,
+  ): { primary: string; secondary: string } => {
+    if (swapSubtitles) {
+      return { primary: caption.translation, secondary: caption.text };
+    }
+    return { primary: caption.text, secondary: caption.translation };
+  };
+
+  const activeCaptionData =
+    activeCaption !== null && captions[activeCaption]
+      ? captions[activeCaption]
+      : null;
+
+  const activeDisplay = activeCaptionData
+    ? getDisplayText(activeCaptionData)
+    : null;
 
   return (
     <section
-      className="overflow-hidden grid h-screen bg-[#0a0a0a] text-zinc-100"
+      className="overflow-hidden grid h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]"
       style={{
         gridTemplateColumns: sidebarOpen ? "1fr minmax(280px, 430px)" : "1fr",
       }}
     >
-      <main className="relative flex min-h-0 flex-col border-r border-white/10 bg-[#0b0b0b]">
-        <div className="min-h-0 flex-1 px-3 py-4">
+      <main className="relative flex min-h-0 flex-col border-r border-[var(--border-color)] bg-[var(--bg-secondary)]">
+        <div className="flex min-h-0 flex-1 flex-col items-center px-6 pt-6 pb-0">
           {/* Video Player */}
-          <div className="max-h-140 relative mx-auto aspect-video min-w-200 overflow-hidden border border-zinc-800 rounded-2xl">
+          <div className="relative mx-auto w-full max-w-[960px] aspect-video overflow-hidden border border-zinc-800 rounded-2xl bg-black flex-shrink-0">
             <VideoPlayer
               src={videoSrc}
               videoRef={videoRef}
@@ -184,36 +239,57 @@ export const PlayerPage = () => {
             />
           </div>
 
-          {/* Captions */}
-          <div className="h-0.3 mx-auto flex min-h-37 w-full flex-col items-center justify-center text-center">
-            {captions.length > 0 &&
-            activeCaption !== null &&
-            captions[activeCaption] ? (
+          {/* Captions Display */}
+          <div
+            className={`group flex w-full max-w-[64rem] flex-col items-center justify-center py-5 text-center min-h-[9rem] ${
+              blurMode !== "off" ? "" : ""
+            }`}
+          >
+            {captions.length > 0 && activeDisplay ? (
               <>
-                <p className="max-w-5xl text-2xl font-semibold leading-tight tracking-normal text-zinc-200">
-                  {captions[activeCaption].text}
+                <p
+                  className={`text-2xl font-semibold leading-[1.4] text-[var(--text-primary)] max-w-[64rem] transition-[filter] duration-300 select-none ${
+                    blurMode === "primary" || blurMode === "all"
+                      ? "blur-[8px] group-hover:blur-0"
+                      : ""
+                  }`}
+                >
+                  {activeDisplay.primary}
                 </p>
-                <p className="mt-5 text-2xl leading-tight tracking-normal text-zinc-400">
-                  {captions[activeCaption].translation}
+                <p
+                  className={`mt-5 text-2xl leading-[1.4] text-[var(--text-secondary)] max-w-[64rem] transition-[filter] duration-300 select-none ${
+                    blurMode === "secondary" || blurMode === "all"
+                      ? "blur-[8px] group-hover:blur-0"
+                      : ""
+                  }`}
+                >
+                  {activeDisplay.secondary}
                 </p>
               </>
             ) : (
-              <p className="text-lg text-zinc-600">No subtitles loaded</p>
+              <p className="text-lg text-[var(--text-muted)]">
+                {t("noSubtitles")}
+              </p>
             )}
           </div>
         </div>
 
-        {/* Controls Area */}
-        <div className="mt-auto z-1 flex h-14 items-center justify-end gap-1 border-t border-white/8 px-4 bg-[#0b0b0b]">
+        {/* Controls Bar */}
+        <div className="mt-auto z-1 flex h-14 items-center justify-end gap-1 border-t border-[var(--border-color-light)] px-4 bg-[var(--bg-secondary)]">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon-sm" onClick={handleOpenFile}>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={handleOpenFile}
+                >
                   <FolderOpen size={18} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Open Video</TooltipContent>
+              <TooltipContent>{t("openVideo")}</TooltipContent>
             </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -224,92 +300,112 @@ export const PlayerPage = () => {
                   <FileText size={18} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Load Subtitle</TooltipContent>
+              <TooltipContent>{t("loadSubtitle")}</TooltipContent>
             </Tooltip>
+
+            <SubtitleSettingsPopover />
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  className={sidebarOpen ? "text-[#f5cc64]" : "text-zinc-500"}
-                  onClick={() => setSidebarOpen((open) => !open)}
+                  className={
+                    sidebarOpen
+                      ? "text-[#8b5cf6]"
+                      : "text-zinc-400"
+                  }
+                  onClick={toggleSidebar}
                 >
                   <Subtitles size={18} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Subtitles</TooltipContent>
+              <TooltipContent>{t("subtitlesSidebar")}</TooltipContent>
             </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon-sm" disabled>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setSettingsDialogOpen(true)}
+                >
                   <Settings size={18} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Settings</TooltipContent>
+              <TooltipContent>{t("settings")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
       </main>
 
+      {/* Sidebar */}
       {sidebarOpen && (
-        <aside className="relative flex min-h-0 flex-col bg-[#101010]">
-          <div className="flex h-14 shrink-0 items-center justify-between border-b border-white/8 px-8">
-            <div className="flex items-center gap-2 text-zinc-300">
+        <aside className="flex min-h-0 flex-col bg-[var(--bg-tertiary)]">
+          <div className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--border-color-light)] px-8">
+            <div className="flex items-center gap-2 text-[var(--text-secondary)]">
               <Subtitles size={20} />
-              <span className="text-sm font-semibold uppercase tracking-[0.16em]">
-                Subtitles
+              <span className="text-xs font-semibold uppercase tracking-[0.16em]">
+                {t("subtitlesList")}
               </span>
             </div>
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <X size={20} />
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={toggleSidebar}
+            >
+              <X size={20} />
+            </Button>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 [scrollbar-color:#4b4b4b_transparent] scrollbar-thin">
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 scrollbar-thin [scrollbar-color:#4b4b4b_transparent]">
             {captions.length > 0 ? (
               <div className="space-y-2" ref={sidebarRef}>
                 {captions.map((caption, index) => {
                   const isActive = index === activeCaption;
                   const ref = isActive ? activeItemRef : null;
+                  const { primary, secondary } = getDisplayText(caption);
 
                   return (
                     <button
                       ref={ref}
-                      className={`grid w-full grid-cols-[62px_1fr] gap-1 rounded-md px-0 py-2 text-left transition ${
+                      className={`group/item grid w-full grid-cols-[62px_1fr] gap-1 rounded-md px-0 py-2 text-left transition ${
                         isActive
-                          ? "text-[#f5cc64]"
-                          : "text-zinc-500 hover:bg-white/3 hover:text-zinc-300"
+                          ? "text-[#8b5cf6]"
+                          : "text-[var(--text-muted)] hover:bg-[var(--subtitle-hover-bg)] hover:text-[var(--text-secondary)]"
                       }`}
-                      key={`${caption.time}-${caption.text}`}
+                      key={`${caption.start}-${caption.text}`}
                       onClick={() => handleSeekToCaption(caption)}
                     >
                       <span
-                        className={`text-md font-bold text-center cursor-pointer hover:text-[#f5cc64] transition ${
-                          isActive ? "text-[#f5cc64]" : "text-zinc-600"
+                        className={`text-sm font-bold text-center transition cursor-pointer hover:text-[#8b5cf6] ${
+                          isActive
+                            ? "text-[#8b5cf6]"
+                            : "text-[var(--text-muted)]"
                         }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSeekToCaption(caption);
-                        }}
                       >
-                        {caption.time}
+                        {formatCaptionTime(caption.start)}
                       </span>
                       <span>
-                        <span className="block text-md font-bold leading-snug tracking-normal">
-                          {caption.text}
+                        <span
+                          className={`block text-sm font-bold leading-snug tracking-tight transition-[filter] duration-300 ${
+                            getSidebarBlurClasses(blurMode, "text") ||
+                            ""
+                          } group-hover/item:blur-none`}
+                        >
+                          {primary}
                         </span>
                         <span
-                          className={`mt-2 block text-md leading-snug tracking-normal ${
-                            isActive ? "text-zinc-300" : "text-zinc-500"
-                          }`}
+                          className={`mt-2 block text-sm leading-snug tracking-tight transition-[filter] duration-300 ${
+                            isActive
+                              ? "text-[var(--subtitle-translation-active)]"
+                              : "text-[var(--text-muted)]"
+                          } ${
+                            getSidebarBlurClasses(blurMode, "translation") ||
+                            ""
+                          } group-hover/item:blur-none`}
                         >
-                          {caption.translation}
+                          {secondary}
                         </span>
                       </span>
                     </button>
@@ -318,12 +414,20 @@ export const PlayerPage = () => {
               </div>
             ) : (
               <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-zinc-600">No subtitles loaded</p>
+                <p className="text-sm text-[var(--text-muted)]">
+                  {t("noSubtitles")}
+                </p>
               </div>
             )}
           </div>
         </aside>
       )}
+
+      {/* Dialogs */}
+      <SettingsDialog
+        open={settingsDialogOpen}
+        onOpenChange={setSettingsDialogOpen}
+      />
     </section>
   );
 };

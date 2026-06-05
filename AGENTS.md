@@ -18,3 +18,4 @@
 - Tailwind CSS V4+: CSS framework
 - Shadcn: UI Component
 - Lucide: Icon Library
+- react-i18next
