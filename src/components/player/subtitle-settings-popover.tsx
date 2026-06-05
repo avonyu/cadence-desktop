@@ -23,8 +23,10 @@ const blurModeKeys: Record<BlurMode, string> = {
 };
 
 export function SubtitleSettingsPopover() {
-  const { blurMode, swapSubtitles, cycleBlurMode, toggleSwap } =
-    usePlayerStore();
+  const blurMode = usePlayerStore((s) => s.blurMode);
+  const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
+  const cycleBlurMode = usePlayerStore((s) => s.cycleBlurMode);
+  const toggleSwap = usePlayerStore((s) => s.toggleSwap);
   const { t } = useTranslation();
 
   return (

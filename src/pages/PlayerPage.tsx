@@ -42,14 +42,12 @@ export const PlayerPage = () => {
   const [captions, setCaptions] = useState<Caption[]>([]);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
-  const {
-    sidebarOpen,
-    blurMode,
-    swapSubtitles,
-    activeCaption,
-    setActiveCaption,
-    toggleSidebar,
-  } = usePlayerStore();
+  const sidebarOpen = usePlayerStore((s) => s.sidebarOpen);
+  const blurMode = usePlayerStore((s) => s.blurMode);
+  const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
+  const activeCaption = usePlayerStore((s) => s.activeCaption);
+  const setActiveCaption = usePlayerStore((s) => s.setActiveCaption);
+  const toggleSidebar = usePlayerStore((s) => s.toggleSidebar);
 
   const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);

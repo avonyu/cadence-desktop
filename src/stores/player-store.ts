@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import i18n from "@/i18n";
+import { flattenActions, type StoreSetter, type StoreGetter } from "./helpers";
 
 export type BlurMode = "off" | "primary" | "secondary" | "all";
 
@@ -10,35 +10,61 @@ interface PlayerState {
   activeCaption: number | null;
 }
 
-interface PlayerActions {
-  toggleSidebar: () => void;
-  setSidebarOpen: (open: boolean) => void;
-  cycleBlurMode: () => void;
-  setBlurMode: (mode: BlurMode) => void;
-  toggleSwap: () => void;
-  setActiveCaption: (index: number | null) => void;
-  changeLanguage: (lng: string) => void;
-}
+type PlayerAction = Pick<PlayerActionImpl, keyof PlayerActionImpl>;
+
+const initialState: PlayerState = {
+  sidebarOpen: true,
+  blurMode: "off",
+  swapSubtitles: false,
+  activeCaption: null,
+};
 
 const blurModes: BlurMode[] = ["off", "primary", "secondary", "all"];
 
-export const usePlayerStore = create<PlayerState & PlayerActions>()((set) => ({
-  sidebarOpen: true,
-  blurMode: "off" as BlurMode,
-  swapSubtitles: false,
-  activeCaption: null,
+export class PlayerActionImpl {
+  readonly #set: StoreSetter<PlayerState>;
+  readonly #get: () => PlayerState;
 
-  toggleSidebar: () => set((s: PlayerState) => ({ sidebarOpen: !s.sidebarOpen })),
-  setSidebarOpen: (open: boolean) => set({ sidebarOpen: open }),
-  cycleBlurMode: () =>
-    set((s: PlayerState) => {
-      const nextIndex = (blurModes.indexOf(s.blurMode) + 1) % blurModes.length;
-      return { blurMode: blurModes[nextIndex] };
-    }),
-  setBlurMode: (mode: BlurMode) => set({ blurMode: mode }),
-  toggleSwap: () => set((s: PlayerState) => ({ swapSubtitles: !s.swapSubtitles })),
-  setActiveCaption: (index: number | null) => set({ activeCaption: index }),
-  changeLanguage: (lng: string) => {
-    i18n.changeLanguage(lng);
-  },
+  constructor(set: StoreSetter<PlayerState>, get: () => PlayerState) {
+    this.#set = set;
+    this.#get = get;
+  }
+
+  toggleSidebar = () => {
+    this.#set((s) => ({ sidebarOpen: !s.sidebarOpen }));
+  };
+
+  setSidebarOpen = (open: boolean) => {
+    this.#set({ sidebarOpen: open });
+  };
+
+  cycleBlurMode = () => {
+    const { blurMode } = this.#get();
+    const nextIndex = (blurModes.indexOf(blurMode) + 1) % blurModes.length;
+    this.#set({ blurMode: blurModes[nextIndex] });
+  };
+
+  setBlurMode = (mode: BlurMode) => {
+    this.#set({ blurMode: mode });
+  };
+
+  toggleSwap = () => {
+    this.#set((s) => ({ swapSubtitles: !s.swapSubtitles }));
+  };
+
+  setActiveCaption = (index: number | null) => {
+    this.#set({ activeCaption: index });
+  };
+}
+
+type PlayerStore = PlayerState & PlayerAction;
+
+const createPlayerSlice = (
+  set: StoreSetter<PlayerStore>,
+  get: StoreGetter<PlayerStore>,
+) => new PlayerActionImpl(set as StoreSetter<PlayerState>, get as StoreGetter<PlayerState>);
+
+export const usePlayerStore = create<PlayerStore>()((set, get) => ({
+  ...initialState,
+  ...flattenActions<PlayerAction>([createPlayerSlice(set, get)]),
 }));
