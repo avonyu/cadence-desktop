@@ -1,0 +1,39 @@
+{
+  "video": {
+    "placeholder": "选择视频文件开始播放",
+    "openVideo": "打开视频",
+    "openVideoTitle": "打开视频文件",
+    "openVideoDesc": "支持的视频格式：mp4, webm, mkv, avi, mov, flv, wmv",
+    "selectFile": "选择文件"
+  },
+  "subtitle": {
+    "noSubtitles": "未加载字幕",
+    "loadSubtitle": "加载字幕",
+    "loadSubtitleTitle": "加载字幕文件",
+    "loadSubtitleDesc": "支持的字幕格式：SRT, ASS",
+    "subtitlesSidebar": "字幕侧边栏",
+    "subtitleSettings": "字幕设置",
+    "subtitlesList": "字幕列表",
+    "swapPosition": "位置切换",
+    "blur": "模糊",
+    "blurOff": "关闭",
+    "blurPrimaryLine": "第一行",
+    "blurSecondaryLine": "第二行",
+    "blurAllLines": "所有行"
+  },
+  "settings": {
+    "title": "设置",
+    "language": "语言",
+    "theme": "主题",
+    "themeDark": "暗色",
+    "themeLight": "亮色",
+    "themeSystem": "自动",
+    "checkUpdate": "检查更新",
+    "checking": "检查中...",
+    "upToDate": "已是最新版本",
+    "version": "版本",
+    "cancel": "取消",
+    "langZh": "中文",
+    "langEn": "English"
+  }
+}

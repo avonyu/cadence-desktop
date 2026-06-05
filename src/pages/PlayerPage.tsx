@@ -18,15 +18,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { usePlayerStore, type BlurMode } from "@/stores/player-store";
-import { useT } from "@/lib/use-i18n";
+import { useTranslation } from "react-i18next";
 import { SubtitleSettingsPopover } from "@/components/player/subtitle-settings-popover";
 import { SettingsDialog } from "@/components/player/settings-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 function getSidebarBlurClasses(blurMode: BlurMode, target: "text" | "translation") {
   if (blurMode === "off") return "";
   if (blurMode === "primary" && target === "text") return "blur-[4px]";
-  if (blurMode === "secondary" && target === "translation")
-    return "blur-[4px]";
+  if (blurMode === "secondary" && target === "translation") return "blur-[4px]";
   if (blurMode === "all") return "blur-[4px]";
   return "";
 }
@@ -47,16 +47,11 @@ export const PlayerPage = () => {
     blurMode,
     swapSubtitles,
     activeCaption,
-    theme,
     setActiveCaption,
     toggleSidebar,
   } = usePlayerStore();
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("light", theme === "light");
-  }, [theme]);
-
-  const t = useT();
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const activeItemRef = useRef<HTMLButtonElement | null>(null);
@@ -169,10 +164,7 @@ export const PlayerPage = () => {
         let idx = activeCaption;
         if (idx === null) {
           for (let i = 0; i < captions.length; i++) {
-            if (
-              videoRef.current &&
-              videoRef.current.currentTime >= captions[i].start
-            )
+            if (videoRef.current && videoRef.current.currentTime >= captions[i].start)
               idx = i;
           }
         }
@@ -185,10 +177,7 @@ export const PlayerPage = () => {
         let idx = activeCaption;
         if (idx === null) {
           for (let i = 0; i < captions.length; i++) {
-            if (
-              videoRef.current &&
-              videoRef.current.currentTime >= captions[i].start
-            )
+            if (videoRef.current && videoRef.current.currentTime >= captions[i].start)
               idx = i;
           }
         }
@@ -223,15 +212,14 @@ export const PlayerPage = () => {
 
   return (
     <section
-      className="overflow-hidden grid h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]"
+      className="overflow-hidden grid h-screen bg-background text-foreground"
       style={{
         gridTemplateColumns: sidebarOpen ? "1fr minmax(280px, 430px)" : "1fr",
       }}
     >
-      <main className="relative flex min-h-0 flex-col border-r border-[var(--border-color)] bg-[var(--bg-secondary)]">
+      <main className="relative flex min-h-0 flex-col border-r border-border bg-card">
         <div className="flex min-h-0 flex-1 flex-col items-center px-6 pt-6 pb-0">
-          {/* Video Player */}
-          <div className="relative mx-auto w-full max-w-[960px] aspect-video overflow-hidden border border-zinc-800 rounded-2xl bg-black flex-shrink-0">
+          <div className="relative mx-auto w-full max-w-[960px] aspect-video overflow-hidden border border-border rounded-2xl bg-black flex-shrink-0">
             <VideoPlayer
               src={videoSrc}
               videoRef={videoRef}
@@ -239,16 +227,11 @@ export const PlayerPage = () => {
             />
           </div>
 
-          {/* Captions Display */}
-          <div
-            className={`group flex w-full max-w-[64rem] flex-col items-center justify-center py-5 text-center min-h-[9rem] ${
-              blurMode !== "off" ? "" : ""
-            }`}
-          >
+          <div className="group flex w-full max-w-[64rem] flex-col items-center justify-center py-5 text-center min-h-[9rem]">
             {captions.length > 0 && activeDisplay ? (
               <>
                 <p
-                  className={`text-2xl font-semibold leading-[1.4] text-[var(--text-primary)] max-w-[64rem] transition-[filter] duration-300 select-none ${
+                  className={`text-2xl font-semibold leading-[1.4] text-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
                     blurMode === "primary" || blurMode === "all"
                       ? "blur-[8px] group-hover:blur-0"
                       : ""
@@ -257,7 +240,7 @@ export const PlayerPage = () => {
                   {activeDisplay.primary}
                 </p>
                 <p
-                  className={`mt-5 text-2xl leading-[1.4] text-[var(--text-secondary)] max-w-[64rem] transition-[filter] duration-300 select-none ${
+                  className={`mt-5 text-2xl leading-[1.4] text-muted-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
                     blurMode === "secondary" || blurMode === "all"
                       ? "blur-[8px] group-hover:blur-0"
                       : ""
@@ -267,40 +250,31 @@ export const PlayerPage = () => {
                 </p>
               </>
             ) : (
-              <p className="text-lg text-[var(--text-muted)]">
-                {t("noSubtitles")}
+              <p className="text-lg text-muted-foreground">
+                {t("subtitle.noSubtitles")}
               </p>
             )}
           </div>
         </div>
 
-        {/* Controls Bar */}
-        <div className="mt-auto z-1 flex h-14 items-center justify-end gap-1 border-t border-[var(--border-color-light)] px-4 bg-[var(--bg-secondary)]">
+        <div className="mt-auto z-1 flex h-14 items-center justify-end gap-1 border-t border-border px-4 bg-card">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={handleOpenFile}
-                >
+                <Button variant="ghost" size="icon-sm" onClick={handleOpenFile}>
                   <FolderOpen size={18} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{t("openVideo")}</TooltipContent>
+              <TooltipContent>{t("video.openVideo")}</TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={handleLoadSubtitle}
-                >
+                <Button variant="ghost" size="icon-sm" onClick={handleLoadSubtitle}>
                   <FileText size={18} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{t("loadSubtitle")}</TooltipContent>
+              <TooltipContent>{t("subtitle.loadSubtitle")}</TooltipContent>
             </Tooltip>
 
             <SubtitleSettingsPopover />
@@ -310,120 +284,106 @@ export const PlayerPage = () => {
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  className={
-                    sidebarOpen
-                      ? "text-[#8b5cf6]"
-                      : "text-zinc-400"
-                  }
+                  className={sidebarOpen ? "text-[var(--player-accent)]" : ""}
                   onClick={toggleSidebar}
                 >
                   <Subtitles size={18} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{t("subtitlesSidebar")}</TooltipContent>
+              <TooltipContent>{t("subtitle.subtitlesSidebar")}</TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => setSettingsDialogOpen(true)}
-                >
+                <Button variant="ghost" size="icon-sm" onClick={() => setSettingsDialogOpen(true)}>
                   <Settings size={18} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{t("settings")}</TooltipContent>
+              <TooltipContent>{t("settings.title")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
       </main>
 
-      {/* Sidebar */}
       {sidebarOpen && (
-        <aside className="flex min-h-0 flex-col bg-[var(--bg-tertiary)]">
-          <div className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--border-color-light)] px-8">
-            <div className="flex items-center gap-2 text-[var(--text-secondary)]">
+        <aside className="flex min-h-0 flex-col bg-popover">
+          <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-8">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <Subtitles size={20} />
               <span className="text-xs font-semibold uppercase tracking-[0.16em]">
-                {t("subtitlesList")}
+                {t("subtitle.subtitlesList")}
               </span>
             </div>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={toggleSidebar}
-            >
+            <Button variant="ghost" size="icon-sm" onClick={toggleSidebar}>
               <X size={20} />
             </Button>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 scrollbar-thin [scrollbar-color:#4b4b4b_transparent]">
-            {captions.length > 0 ? (
-              <div className="space-y-2" ref={sidebarRef}>
-                {captions.map((caption, index) => {
-                  const isActive = index === activeCaption;
-                  const ref = isActive ? activeItemRef : null;
-                  const { primary, secondary } = getDisplayText(caption);
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="px-5 py-4">
+              {captions.length > 0 ? (
+                <div className="space-y-2" ref={sidebarRef}>
+                  {captions.map((caption, index) => {
+                    const isActive = index === activeCaption;
+                    const ref = isActive ? activeItemRef : null;
+                    const { primary, secondary } = getDisplayText(caption);
 
-                  return (
-                    <button
-                      ref={ref}
-                      className={`group/item grid w-full grid-cols-[62px_1fr] gap-1 rounded-md px-0 py-2 text-left transition ${
-                        isActive
-                          ? "text-[#8b5cf6]"
-                          : "text-[var(--text-muted)] hover:bg-[var(--subtitle-hover-bg)] hover:text-[var(--text-secondary)]"
-                      }`}
-                      key={`${caption.start}-${caption.text}`}
-                      onClick={() => handleSeekToCaption(caption)}
-                    >
-                      <span
-                        className={`text-sm font-bold text-center transition cursor-pointer hover:text-[#8b5cf6] ${
+                    return (
+                      <button
+                        ref={ref}
+                        className={`group/item grid w-full grid-cols-[62px_1fr] gap-1 rounded-md px-2 py-2 text-left transition ${
                           isActive
-                            ? "text-[#8b5cf6]"
-                            : "text-[var(--text-muted)]"
+                            ? "bg-accent text-[var(--player-accent)]"
+                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
                         }`}
+                        key={`${caption.start}-${caption.text}`}
+                        onClick={() => handleSeekToCaption(caption)}
                       >
-                        {formatCaptionTime(caption.start)}
-                      </span>
-                      <span>
                         <span
-                          className={`block text-sm font-bold leading-snug tracking-tight transition-[filter] duration-300 ${
-                            getSidebarBlurClasses(blurMode, "text") ||
-                            ""
-                          } group-hover/item:blur-none`}
-                        >
-                          {primary}
-                        </span>
-                        <span
-                          className={`mt-2 block text-sm leading-snug tracking-tight transition-[filter] duration-300 ${
+                          className={`text-sm font-bold text-center transition cursor-pointer hover:text-[var(--player-accent)] ${
                             isActive
-                              ? "text-[var(--subtitle-translation-active)]"
-                              : "text-[var(--text-muted)]"
-                          } ${
-                            getSidebarBlurClasses(blurMode, "translation") ||
-                            ""
-                          } group-hover/item:blur-none`}
+                              ? "text-[var(--player-accent)]"
+                              : "text-muted-foreground"
+                          }`}
                         >
-                          {secondary}
+                          {formatCaptionTime(caption.start)}
                         </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <p className="text-sm text-[var(--text-muted)]">
-                  {t("noSubtitles")}
-                </p>
-              </div>
-            )}
-          </div>
+                        <span>
+                          <span
+                            className={`block text-sm font-bold leading-snug tracking-tight transition-[filter] duration-300 ${
+                              getSidebarBlurClasses(blurMode, "text") || ""
+                            } group-hover/item:blur-none`}
+                          >
+                            {primary}
+                          </span>
+                          <span
+                            className={`mt-2 block text-sm leading-snug tracking-tight transition-[filter] duration-300 ${
+                              isActive
+                                ? "text-foreground"
+                                : "text-muted-foreground"
+                            } ${
+                              getSidebarBlurClasses(blurMode, "translation") || ""
+                            } group-hover/item:blur-none`}
+                          >
+                            {secondary}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <p className="text-sm text-muted-foreground">
+                    {t("subtitle.noSubtitles")}
+                  </p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
         </aside>
       )}
 
-      {/* Dialogs */}
       <SettingsDialog
         open={settingsDialogOpen}
         onOpenChange={setSettingsDialogOpen}

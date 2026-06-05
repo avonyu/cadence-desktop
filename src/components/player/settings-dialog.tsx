@@ -5,9 +5,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Settings, Moon, Sun, ChevronRight } from "lucide-react";
-import { usePlayerStore, type Locale, type Theme } from "@/stores/player-store";
-import { useT } from "@/lib/use-i18n";
+import { Settings, Moon, Sun, Monitor, ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "@/components/theme-provider";
 import { useState } from "react";
 
 const GITHUB_URL = "https://github.com/avonyu/cadence-desktop";
@@ -20,14 +20,16 @@ export function SettingsDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { locale, theme, setLocale, setTheme } = usePlayerStore();
-  const t = useT();
+  const { setTheme, theme } = useTheme();
+  const { t, i18n } = useTranslation();
   const [updateStatus, setUpdateStatus] = useState("");
 
+  const currentLng = i18n.language;
+
   const handleCheckUpdate = () => {
-    setUpdateStatus(t("checking"));
+    setUpdateStatus(t("settings.checking"));
     setTimeout(() => {
-      setUpdateStatus(t("upToDate"));
+      setUpdateStatus(t("settings.upToDate"));
       setTimeout(() => setUpdateStatus(""), 3000);
     }, 1500);
   };
@@ -35,105 +37,116 @@ export function SettingsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[420px] p-0 gap-0">
-        <DialogHeader className="flex flex-row items-center justify-between border-b border-white/8 px-6 py-5">
+        <DialogHeader className="flex flex-row items-center justify-between border-b border-border px-6 py-5">
           <div className="flex items-center gap-3">
             <Settings className="text-muted-foreground" size={20} />
-            <DialogTitle className="text-base">{t("settings")}</DialogTitle>
+            <DialogTitle className="text-base">{t("settings.title")}</DialogTitle>
           </div>
           <DialogDescription className="sr-only">
-            {t("settings")}
+            {t("settings.title")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-2">
           <div className="flex items-center justify-between px-6 py-3">
-            <span className="text-sm text-zinc-300">{t("language")}</span>
+            <span className="text-sm text-muted-foreground">{t("settings.language")}</span>
             <div className="flex gap-1">
               <button
                 className={`rounded-l-md px-3 py-1 text-xs font-semibold transition ${
-                  locale === "zh"
+                  currentLng === "zh"
                     ? "border border-[#8b5cf6] bg-[#8b5cf6]/12 text-[#8b5cf6]"
-                    : "border border-white/12 bg-transparent text-zinc-500 hover:text-zinc-300"
+                    : "border border-border bg-transparent text-muted-foreground hover:text-foreground"
                 }`}
-                onClick={() => setLocale("zh" as Locale)}
+                onClick={() => i18n.changeLanguage("zh")}
               >
-                {t("langZh")}
+                {t("settings.langZh")}
               </button>
               <button
                 className={`rounded-r-md px-3 py-1 text-xs font-semibold transition ${
-                  locale === "en"
+                  currentLng === "en"
                     ? "border border-[#8b5cf6] bg-[#8b5cf6]/12 text-[#8b5cf6]"
-                    : "border border-white/12 bg-transparent text-zinc-500 hover:text-zinc-300"
+                    : "border border-border bg-transparent text-muted-foreground hover:text-foreground"
                 }`}
-                onClick={() => setLocale("en" as Locale)}
+                onClick={() => i18n.changeLanguage("en")}
               >
-                {t("langEn")}
+                {t("settings.langEn")}
               </button>
             </div>
           </div>
 
           <div className="flex items-center justify-between px-6 py-3">
-            <span className="text-sm text-zinc-300">{t("theme")}</span>
+            <span className="text-sm text-muted-foreground">{t("settings.theme")}</span>
             <div className="flex gap-1">
               <button
                 className={`flex items-center gap-0.5 rounded-l-md px-3 py-1 text-xs font-semibold transition ${
+                  theme === "system"
+                    ? "border border-[#8b5cf6] bg-[#8b5cf6]/12 text-[#8b5cf6]"
+                    : "border border-border bg-transparent text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => setTheme("system")}
+              >
+                <Monitor size={14} />
+                {t("settings.themeSystem")}
+              </button>
+              <button
+                className={`flex items-center gap-0.5 px-3 py-1 text-xs font-semibold transition ${
                   theme === "dark"
                     ? "border border-[#8b5cf6] bg-[#8b5cf6]/12 text-[#8b5cf6]"
-                    : "border border-white/12 bg-transparent text-zinc-500 hover:text-zinc-300"
+                    : "border border-border bg-transparent text-muted-foreground hover:text-foreground"
                 }`}
-                onClick={() => setTheme("dark" as Theme)}
+                onClick={() => setTheme("dark")}
               >
                 <Moon size={14} />
-                {t("themeDark")}
+                {t("settings.themeDark")}
               </button>
               <button
                 className={`flex items-center gap-0.5 rounded-r-md px-3 py-1 text-xs font-semibold transition ${
                   theme === "light"
                     ? "border border-[#8b5cf6] bg-[#8b5cf6]/12 text-[#8b5cf6]"
-                    : "border border-white/12 bg-transparent text-zinc-500 hover:text-zinc-300"
+                    : "border border-border bg-transparent text-muted-foreground hover:text-foreground"
                 }`}
-                onClick={() => setTheme("light" as Theme)}
+                onClick={() => setTheme("light")}
               >
                 <Sun size={14} />
-                {t("themeLight")}
+                {t("settings.themeLight")}
               </button>
             </div>
           </div>
 
-          <div className="mx-6 border-t border-white/6 my-1" />
+          <div className="mx-6 border-t border-border my-1" />
 
           <button
-            className="flex w-full items-center justify-between px-6 py-3 text-sm text-zinc-300 transition hover:bg-accent"
+            className="flex w-full items-center justify-between px-6 py-3 text-sm text-muted-foreground transition hover:bg-accent"
             onClick={handleCheckUpdate}
           >
-            <span>{t("checkUpdate")}</span>
+            <span>{t("settings.checkUpdate")}</span>
             <span className="flex items-center gap-2">
               <span
                 className={`text-xs ${
-                  updateStatus === t("upToDate")
+                  updateStatus === t("settings.upToDate")
                     ? "text-green-500"
                     : updateStatus
                       ? "text-[#8b5cf6]"
-                      : "text-zinc-500"
+                      : "text-muted-foreground"
                 }`}
               >
                 {updateStatus}
               </span>
-              <ChevronRight size={16} className="text-zinc-500" />
+              <ChevronRight size={16} className="text-muted-foreground" />
             </span>
           </button>
 
-          <div className="mx-6 border-t border-white/6 my-1" />
+          <div className="mx-6 border-t border-border my-1" />
 
           <div className="flex items-center justify-between px-6 py-3">
-            <span className="text-xs text-zinc-500">
-              {t("version")} {APP_VERSION}
+            <span className="text-xs text-muted-foreground">
+              {t("settings.version")} {APP_VERSION}
             </span>
             <a
               href={GITHUB_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex size-8 items-center justify-center rounded-md text-zinc-400 transition hover:bg-white/8 hover:text-zinc-100"
+              className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

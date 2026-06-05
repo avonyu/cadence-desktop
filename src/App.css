@@ -129,33 +129,11 @@
     }
 }
 
-/* Player theme variables */
+/* Player-specific theme variables */
 :root {
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #0b0b0b;
-  --bg-tertiary: #101010;
-  --border-color: rgba(255, 255, 255, 0.1);
-  --border-color-light: rgba(255, 255, 255, 0.08);
-  --text-primary: #f5f5f5;
-  --text-secondary: #a1a1aa;
-  --text-muted: #525252;
-  --accent: #8b5cf6;
-  --accent-hover: #7c3aed;
-  --subtitle-translation-active: #d4d4d4;
-  --subtitle-hover-bg: rgba(255, 255, 255, 0.03);
-}
-
-:root.light {
-  --bg-primary: #fafafa;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #f4f4f5;
-  --border-color: rgba(0, 0, 0, 0.1);
-  --border-color-light: rgba(0, 0, 0, 0.06);
-  --text-primary: #18181b;
-  --text-secondary: #525252;
-  --text-muted: #a1a1aa;
-  --accent: #8b5cf6;
-  --accent-hover: #7c3aed;
-  --subtitle-translation-active: #3f3f46;
-  --subtitle-hover-bg: rgba(0, 0, 0, 0.04);
+    --player-accent: #8b5cf6;
+    --player-accent-hover: #7c3aed;
+    --player-bg-primary: var(--background);
+    --player-bg-secondary: var(--card);
+    --player-bg-tertiary: var(--muted);
 }

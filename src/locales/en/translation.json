@@ -1,0 +1,39 @@
+{
+  "video": {
+    "placeholder": "Select a video file to start playback",
+    "openVideo": "Open Video",
+    "openVideoTitle": "Open Video File",
+    "openVideoDesc": "Supported video formats: mp4, webm, mkv, avi, mov, flv, wmv",
+    "selectFile": "Select File"
+  },
+  "subtitle": {
+    "noSubtitles": "No subtitles loaded",
+    "loadSubtitle": "Load Subtitle",
+    "loadSubtitleTitle": "Load Subtitle File",
+    "loadSubtitleDesc": "Supported subtitle formats: SRT, ASS",
+    "subtitlesSidebar": "Subtitle Sidebar",
+    "subtitleSettings": "Subtitle Settings",
+    "subtitlesList": "Subtitles",
+    "swapPosition": "Swap Position",
+    "blur": "Blur",
+    "blurOff": "Off",
+    "blurPrimaryLine": "Line 1",
+    "blurSecondaryLine": "Line 2",
+    "blurAllLines": "All"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "theme": "Theme",
+    "themeDark": "Dark",
+    "themeLight": "Light",
+    "themeSystem": "Auto",
+    "checkUpdate": "Check for Updates",
+    "checking": "Checking...",
+    "upToDate": "Up to date",
+    "version": "Version",
+    "cancel": "Cancel",
+    "langZh": "中文",
+    "langEn": "English"
+  }
+}
