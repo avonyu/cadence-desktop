@@ -179,8 +179,8 @@ export function parseASS(content: string): Caption[] {
     const rawText = contentPart.slice(prevIdx).trim();
 
     // Process lines whose style contains "Default" (case-insensitive) or equals "歌词"
-    const style = fields[3];
-    if (!style.toLowerCase().includes("default") && style !== "歌词") continue;
+    // const style = fields[3];
+    // if (!style.toLowerCase().includes("default") && style !== "歌词") continue;
 
     // Skip lines with positioning/animation tags (credits, on-screen text, karaoke, effects)
     if (/\\pos\(|\\move\(|\\an8/.test(rawText)) continue;

@@ -34,7 +34,9 @@ Cadence — rhythm and flow. A desktop video player designed specifically for **
 
 ### Preview
 
-![Cadence Preview](docs/preview.png)
+| Light Mode | Dark Mode |
+|:---:|:---:|
+| ![Light Mode](docs/preview.png) | ![Dark Mode](docs/preview-dark.png) |
 
 ### Subtitle Websites
 
