@@ -3,11 +3,22 @@ import { flattenActions, type StoreSetter, type StoreGetter } from "./helpers";
 
 export type BlurMode = "off" | "primary" | "secondary" | "all";
 
+export type AiProcessingState =
+  | "idle"
+  | "loading"
+  | "processing"
+  | "done"
+  | "error";
+
 interface PlayerState {
   sidebarOpen: boolean;
   blurMode: BlurMode;
   swapSubtitles: boolean;
   activeCaption: number | null;
+  aiProcessing: AiProcessingState;
+  aiError: string | null;
+  deepseekApiKey: string;
+  deepseekModel: string;
 }
 
 type PlayerAction = Pick<PlayerActionImpl, keyof PlayerActionImpl>;
@@ -17,6 +28,11 @@ const initialState: PlayerState = {
   blurMode: "off",
   swapSubtitles: false,
   activeCaption: null,
+  aiProcessing: "idle",
+  aiError: null,
+  deepseekApiKey: localStorage.getItem("cadence:deepseek-api-key") || "",
+  deepseekModel:
+    localStorage.getItem("cadence:deepseek-model") || "deepseek-v4-flash",
 };
 
 const blurModes: BlurMode[] = ["off", "primary", "secondary", "all"];
@@ -55,6 +71,27 @@ export class PlayerActionImpl {
   setActiveCaption = (index: number | null) => {
     this.#set({ activeCaption: index });
   };
+
+  setAiProcessing = (state: AiProcessingState) => {
+    this.#set({
+      aiProcessing: state,
+      aiError: state === "idle" ? null : this.#get().aiError,
+    });
+  };
+
+  setAiError = (error: string | null) => {
+    this.#set({ aiError: error });
+  };
+
+  setDeepseekApiKey = (key: string) => {
+    localStorage.setItem("cadence:deepseek-api-key", key);
+    this.#set({ deepseekApiKey: key });
+  };
+
+  setDeepseekModel = (model: string) => {
+    localStorage.setItem("cadence:deepseek-model", model);
+    this.#set({ deepseekModel: model });
+  };
 }
 
 type PlayerStore = PlayerState & PlayerAction;
@@ -62,7 +99,11 @@ type PlayerStore = PlayerState & PlayerAction;
 const createPlayerSlice = (
   set: StoreSetter<PlayerStore>,
   get: StoreGetter<PlayerStore>,
-) => new PlayerActionImpl(set as StoreSetter<PlayerState>, get as StoreGetter<PlayerState>);
+) =>
+  new PlayerActionImpl(
+    set as StoreSetter<PlayerState>,
+    get as StoreGetter<PlayerState>,
+  );
 
 export const usePlayerStore = create<PlayerStore>()((set, get) => ({
   ...initialState,

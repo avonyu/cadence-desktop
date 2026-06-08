@@ -5,11 +5,13 @@ import {
   Subtitles,
   X,
   Settings,
+  Loader2,
 } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { useRef, useCallback, useEffect, useState } from "react";
-import { parseSubtitles, type Caption } from "@/lib/subtitles";
+import { type Caption } from "@/lib/subtitles";
+import { processSubtitle, getSubtitlesForVideo } from "@/lib/ai-subtitle";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -19,11 +21,14 @@ import {
 } from "@/components/ui/tooltip";
 import { usePlayerStore, type BlurMode } from "@/stores/player-store";
 import { useTranslation } from "react-i18next";
-import { SubtitleSettingsPopover } from "@/components/player/subtitle-settings-popover";
-import { SettingsDialog } from "@/components/player/settings-dialog";
+import { SubtitleSettingsPopover } from "@/components/subtitle-settings-popover";
+import { SettingsDialog } from "@/components/settings-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-function getSidebarBlurClasses(blurMode: BlurMode, target: "text" | "translation") {
+function getSidebarBlurClasses(
+  blurMode: BlurMode,
+  target: "text" | "translation",
+) {
   if (blurMode === "off") return "";
   if (blurMode === "primary" && target === "text") return "blur-[4px]";
   if (blurMode === "secondary" && target === "translation") return "blur-[4px]";
@@ -39,6 +44,7 @@ function formatCaptionTime(seconds: number): string {
 
 export const PlayerPage = () => {
   const [videoSrc, setVideoSrc] = useState<string | null>(null);
+  const [videoFileName, setVideoFileName] = useState<string | null>(null);
   const [captions, setCaptions] = useState<Caption[]>([]);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
@@ -48,6 +54,12 @@ export const PlayerPage = () => {
   const activeCaption = usePlayerStore((s) => s.activeCaption);
   const setActiveCaption = usePlayerStore((s) => s.setActiveCaption);
   const toggleSidebar = usePlayerStore((s) => s.toggleSidebar);
+  const aiProcessing = usePlayerStore((s) => s.aiProcessing);
+  const aiError = usePlayerStore((s) => s.aiError);
+  const setAiProcessing = usePlayerStore((s) => s.setAiProcessing);
+  const setAiError = usePlayerStore((s) => s.setAiError);
+  const deepseekApiKey = usePlayerStore((s) => s.deepseekApiKey);
+  const deepseekModel = usePlayerStore((s) => s.deepseekModel);
 
   const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -66,10 +78,31 @@ export const PlayerPage = () => {
     });
     if (selected) {
       setVideoSrc(convertFileSrc(selected));
+      // Extract file name from path
+      const fileName = selected.split(/[\\/]/).pop() || selected;
+      setVideoFileName(fileName);
+
+      // Clear previous subtitles
+      setCaptions([]);
+      setActiveCaption(null);
+
+      // Try to load cached subtitles for this video
+      const cached = getSubtitlesForVideo(fileName);
+      if (cached && cached.length > 0) {
+        setCaptions(cached);
+      }
     }
   };
 
   const handleLoadSubtitle = async () => {
+    // Check for API key
+    if (!deepseekApiKey) {
+      setAiError(t("ai.noApiKey"));
+      setAiProcessing("error");
+      setTimeout(() => setAiProcessing("idle"), 3000);
+      return;
+    }
+
     const selected = await open({
       multiple: false,
       filters: [
@@ -79,18 +112,49 @@ export const PlayerPage = () => {
         },
       ],
     });
-    if (selected) {
-      try {
-        const { readTextFile } = await import("@tauri-apps/plugin-fs");
-        const content = await readTextFile(selected);
-        const parsed = parseSubtitles(content);
-        if (parsed.length > 0) {
-          setCaptions(parsed);
-          setActiveCaption(null);
-        }
-      } catch (error) {
-        console.error("Failed to load subtitle file:", error);
+
+    if (!selected) return;
+
+    let content: string;
+    try {
+      const { readTextFile } = await import("@tauri-apps/plugin-fs");
+      content = await readTextFile(selected);
+    } catch (error) {
+      console.error("Failed to load subtitle file:", error);
+      setAiError(t("ai.loadFailed"));
+      setAiProcessing("error");
+      setTimeout(() => setAiProcessing("idle"), 3000);
+      return;
+    }
+
+    // Start AI processing
+    setAiProcessing("processing");
+    setAiError(null);
+
+    try {
+      const result = await processSubtitle(
+        content,
+        videoFileName,
+        deepseekApiKey,
+        deepseekModel,
+      );
+      if (result.length > 0) {
+        setCaptions(result);
+        setActiveCaption(null);
+        setAiProcessing("done");
+        setTimeout(() => setAiProcessing("idle"), 2000);
+      } else {
+        setAiError(t("ai.processFailed"));
+        setAiProcessing("error");
+        setTimeout(() => setAiProcessing("idle"), 3000);
       }
+    } catch (error) {
+      console.error("AI processing failed:", error);
+      setAiError(
+        error instanceof Error ? error.message : t("ai.processFailed"),
+      );
+      setAiProcessing("error");
+      setTimeout(() => setAiProcessing("idle"), 3000);
     }
   };
 
@@ -122,15 +186,12 @@ export const PlayerPage = () => {
     [captions, activeCaption, setActiveCaption],
   );
 
-  const handleSeekToCaption = useCallback(
-    (caption: Caption) => {
-      if (videoRef.current) {
-        videoRef.current.currentTime = caption.start;
-        videoRef.current.play?.();
-      }
-    },
-    [],
-  );
+  const handleSeekToCaption = useCallback((caption: Caption) => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = caption.start;
+      videoRef.current.play?.();
+    }
+  }, []);
 
   useEffect(() => {
     if (activeItemRef.current && sidebarRef.current) {
@@ -162,7 +223,10 @@ export const PlayerPage = () => {
         let idx = activeCaption;
         if (idx === null) {
           for (let i = 0; i < captions.length; i++) {
-            if (videoRef.current && videoRef.current.currentTime >= captions[i].start)
+            if (
+              videoRef.current &&
+              videoRef.current.currentTime >= captions[i].start
+            )
               idx = i;
           }
         }
@@ -175,7 +239,10 @@ export const PlayerPage = () => {
         let idx = activeCaption;
         if (idx === null) {
           for (let i = 0; i < captions.length; i++) {
-            if (videoRef.current && videoRef.current.currentTime >= captions[i].start)
+            if (
+              videoRef.current &&
+              videoRef.current.currentTime >= captions[i].start
+            )
               idx = i;
           }
         }
@@ -207,6 +274,10 @@ export const PlayerPage = () => {
   const activeDisplay = activeCaptionData
     ? getDisplayText(activeCaptionData)
     : null;
+
+  const isAiProcessing =
+    aiProcessing === "processing" || aiProcessing === "loading";
+  const isAiError = aiProcessing === "error";
 
   return (
     <section
@@ -268,11 +339,35 @@ export const PlayerPage = () => {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon-sm" onClick={handleLoadSubtitle}>
-                  <FileText size={18} />
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className={
+                    isAiProcessing
+                      ? "text-[var(--player-accent)]"
+                      : isAiError
+                        ? "text-red-500"
+                        : ""
+                  }
+                  disabled={isAiProcessing || !videoSrc}
+                  onClick={handleLoadSubtitle}
+                >
+                  {isAiProcessing ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <FileText size={18} />
+                  )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{t("subtitle.loadSubtitle")}</TooltipContent>
+              <TooltipContent>
+                {isAiProcessing
+                  ? t("ai.processing")
+                  : isAiError
+                    ? aiError
+                    : !videoSrc
+                      ? t("ai.noVideo")
+                      : t("subtitle.loadSubtitle")}
+              </TooltipContent>
             </Tooltip>
 
             <SubtitleSettingsPopover />
@@ -293,7 +388,11 @@ export const PlayerPage = () => {
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon-sm" onClick={() => setSettingsDialogOpen(true)}>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setSettingsDialogOpen(true)}
+                >
                   <Settings size={18} />
                 </Button>
               </TooltipTrigger>
@@ -304,7 +403,42 @@ export const PlayerPage = () => {
       </main>
 
       {sidebarOpen && (
-        <aside className="flex min-h-0 flex-col bg-popover">
+        <aside className="relative flex min-h-0 flex-col bg-popover">
+          {/* AI Processing overlay */}
+          {isAiProcessing && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--ai-overlay-bg,rgba(10,10,10,0.3))] backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="size-6 animate-spin text-[var(--player-accent)]" />
+                <span className="text-sm font-medium text-[var(--player-accent)]">
+                  {t("ai.processing")}
+                </span>
+              </div>
+            </div>
+          )}
+          {isAiError && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--ai-overlay-bg,rgba(10,10,10,0.3))] backdrop-blur-sm">
+              <span className="text-sm font-medium text-red-500">
+                {aiError || t("ai.processFailed")}
+              </span>
+            </div>
+          )}
+          {/* Gradient flowing border during AI processing */}
+          {isAiProcessing && (
+            <div
+              className="pointer-events-none absolute inset-0 z-20 p-[2px]"
+              style={{
+                background:
+                  "linear-gradient(90deg, #8b5cf6, #22c55e, #3b82f6, #ef4444, #8b5cf6)",
+                backgroundSize: "300% 100%",
+                animation: "gradient-flow 2s linear infinite",
+                WebkitMask:
+                  "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                WebkitMaskComposite: "xor",
+                maskComposite: "exclude",
+              }}
+            />
+          )}
+
           <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-8">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Subtitles size={20} />
@@ -360,7 +494,8 @@ export const PlayerPage = () => {
                                 ? "text-foreground"
                                 : "text-muted-foreground"
                             } ${
-                              getSidebarBlurClasses(blurMode, "translation") || ""
+                              getSidebarBlurClasses(blurMode, "translation") ||
+                              ""
                             } group-hover/item:blur-none`}
                           >
                             {secondary}

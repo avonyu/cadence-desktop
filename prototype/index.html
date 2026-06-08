@@ -187,6 +187,96 @@
         flex-direction: column;
         min-height: 0;
         background: var(--bg-tertiary);
+        transition: box-shadow 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* ========== AI Processing Animation ========== */
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes gradient-flow {
+        0% {
+          background-position: 0% 50%;
+        }
+        100% {
+          background-position: 300% 50%;
+        }
+      }
+
+      .control-btn.ai-processing {
+        color: var(--accent) !important;
+        opacity: 1 !important;
+      }
+
+      .control-btn.ai-processing .load-subtitle-icon {
+        display: none;
+      }
+
+      .control-btn.ai-processing .load-subtitle-loader {
+        display: block !important;
+        animation: spin 1s linear infinite;
+      }
+
+      /* Sidebar gradient flowing border */
+      .sidebar.ai-processing::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 10;
+        padding: 2px;
+        background: linear-gradient(
+          90deg,
+          #8b5cf6,
+          #22c55e,
+          #3b82f6,
+          #ef4444,
+          #8b5cf6
+        );
+        background-size: 300% 100%;
+        animation: gradient-flow 2s linear infinite;
+        -webkit-mask:
+          linear-gradient(#fff 0 0) content-box,
+          linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+      }
+
+      /* Sidebar blur overlay */
+      .sidebar-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        background: var(--ai-overlay-bg, rgba(10, 10, 10, 0.3));
+        backdrop-filter: blur(4px);
+        pointer-events: none;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .sidebar.ai-processing .sidebar-overlay {
+        display: flex;
+      }
+
+      .sidebar-overlay-text {
+        color: var(--accent);
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-align: center;
+        padding: 0.5rem;
+      }
+
+      .sidebar.ai-processing {
+        box-shadow: none;
       }
 
       .sidebar-header {
@@ -534,13 +624,7 @@
         <!-- Controls Toolbar -->
         <div class="controls-bar">
           <!-- Open Video Button -->
-          <button
-            class="control-btn"
-            data-i18n-title="openVideo"
-            onclick="
-              document.getElementById('openVideoModal').style.display = 'flex'
-            "
-          >
+          <button class="control-btn" data-i18n-title="openVideo">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="18"
@@ -560,14 +644,14 @@
 
           <!-- Load Subtitle Button -->
           <button
+            id="load-subtitle-btn"
             class="control-btn"
             data-i18n-title="loadSubtitle"
-            onclick="
-              document.getElementById('loadSubtitleModal').style.display =
-                'flex'
-            "
+            onclick="triggerAiProcessing()"
           >
+            <!-- Original icon -->
             <svg
+              class="load-subtitle-icon"
               xmlns="http://www.w3.org/2000/svg"
               width="18"
               height="18"
@@ -584,6 +668,22 @@
               <path d="M14 2v4a2 2 0 0 0 2 2h4" />
               <line x1="8" y1="13" x2="16" y2="13" />
               <line x1="8" y1="17" x2="13" y2="17" />
+            </svg>
+            <!-- Loader icon (hidden by default) -->
+            <svg
+              class="load-subtitle-loader"
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              style="display: none"
+            >
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
             </svg>
           </button>
 
@@ -734,6 +834,11 @@
 
       <!-- Sidebar (Subtitle List) -->
       <aside class="sidebar" id="sidebar">
+        <div class="sidebar-overlay">
+          <span class="sidebar-overlay-text" data-i18n="aiProcessing"
+            >AI 处理中...</span
+          >
+        </div>
         <div class="sidebar-header">
           <div class="sidebar-title">
             <svg
@@ -1157,9 +1262,21 @@
                 width: 100%;
               "
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
                 <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                />
               </svg>
               <span data-i18n="tabBasic">基础</span>
             </button>
@@ -1184,8 +1301,20 @@
                 width: 100%;
               "
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4Z" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4Z"
+                />
                 <circle cx="12" cy="15" r="2" />
               </svg>
               <span data-i18n="tabAi">AI</span>
@@ -1211,7 +1340,17 @@
                 width: 100%;
               "
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 16v-4" />
                 <path d="M12 8h.01" />
@@ -1223,7 +1362,11 @@
           <!-- Right Content -->
           <div style="flex: 1; overflow-y: auto">
             <!-- Tab: Basic -->
-            <div id="tab-basic" class="settings-tab-panel" style="display: block; padding: 0.5rem 0">
+            <div
+              id="tab-basic"
+              class="settings-tab-panel"
+              style="display: block; padding: 0.5rem 0"
+            >
               <!-- Language -->
               <div
                 style="
@@ -1285,10 +1428,45 @@
                   padding: 0.75rem 1.5rem;
                 "
               >
-                <span style="color: #d4d4d4; font-size: 0.875rem" data-i18n="theme"
+                <span
+                  style="color: #d4d4d4; font-size: 0.875rem"
+                  data-i18n="theme"
                   >主题</span
                 >
                 <div style="display: flex; gap: 0.25rem">
+                  <button
+                    id="theme-auto"
+                    onclick="switchTheme('auto')"
+                    style="
+                      padding: 0.25rem 0.75rem;
+                      border: 1px solid rgba(255, 255, 255, 0.12);
+                      background: transparent;
+                      color: #71717a;
+                      border-radius: 0.375rem 0 0 0.375rem;
+                      font-size: 0.75rem;
+                      font-weight: 600;
+                      cursor: pointer;
+                      transition: all 150ms ease;
+                    "
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      style="vertical-align: -2px; margin-right: 2px"
+                    >
+                      <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                      <line x1="8" y1="21" x2="16" y2="21" />
+                      <line x1="12" y1="17" x2="12" y2="21" />
+                    </svg>
+                    自动
+                  </button>
                   <button
                     id="theme-dark"
                     onclick="switchTheme('dark')"
@@ -1297,7 +1475,6 @@
                       border: 1px solid #8b5cf6;
                       background: rgba(139, 92, 246, 0.12);
                       color: #8b5cf6;
-                      border-radius: 0.375rem 0 0 0.375rem;
                       font-size: 0.75rem;
                       font-weight: 600;
                       cursor: pointer;
@@ -1364,21 +1541,54 @@
             </div>
 
             <!-- Tab: AI -->
-            <div id="tab-ai" class="settings-tab-panel" style="display: none; padding: 0.5rem 0">
+            <div
+              id="tab-ai"
+              class="settings-tab-panel"
+              style="display: none; padding: 0.5rem 0"
+            >
               <!-- DeepSeek Section Header -->
               <div style="padding: 0.75rem 1.5rem 0.5rem">
                 <div style="display: flex; align-items: center; gap: 0.5rem">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4Z" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#8b5cf6"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4Z"
+                    />
                     <circle cx="12" cy="15" r="2" />
                   </svg>
-                  <span style="color: #d4d4d4; font-size: 0.875rem; font-weight: 500" data-i18n="deepseekConfig">DeepSeek 配置</span>
+                  <span
+                    style="
+                      color: #d4d4d4;
+                      font-size: 0.875rem;
+                      font-weight: 500;
+                    "
+                    data-i18n="deepseekConfig"
+                    >DeepSeek 配置</span
+                  >
                 </div>
               </div>
 
               <!-- API Key -->
               <div style="padding: 0.5rem 1.5rem">
-                <label style="display: block; color: #a1a1aa; font-size: 0.75rem; margin-bottom: 0.375rem" data-i18n="apiKey">API Key</label>
+                <label
+                  style="
+                    display: block;
+                    color: #a1a1aa;
+                    font-size: 0.75rem;
+                    margin-bottom: 0.375rem;
+                  "
+                  data-i18n="apiKey"
+                  >API Key</label
+                >
                 <input
                   id="deepseek-api-key"
                   type="password"
@@ -1402,7 +1612,16 @@
 
               <!-- Model -->
               <div style="padding: 0.5rem 1.5rem">
-                <label style="display: block; color: #a1a1aa; font-size: 0.75rem; margin-bottom: 0.375rem" data-i18n="model">模型</label>
+                <label
+                  style="
+                    display: block;
+                    color: #a1a1aa;
+                    font-size: 0.75rem;
+                    margin-bottom: 0.375rem;
+                  "
+                  data-i18n="model"
+                  >模型</label
+                >
                 <select
                   id="deepseek-model"
                   style="
@@ -1421,33 +1640,19 @@
                   onfocus="this.style.borderColor = '#8b5cf6'"
                   onblur="this.style.borderColor = 'rgba(255, 255, 255, 0.12)'"
                 >
-                  <option value="deepseek-v4-flash">deepseek-v4-flash</option>
-                  <option value="deepseek-v4-pro">deepseek-v4-pro</option>
+                  <option
+                    value="deepseek-v4-flash"
+                    style="background: #1a1a1a; color: #d4d4d4"
+                  >
+                    deepseek-v4-flash
+                  </option>
+                  <option
+                    value="deepseek-v4-pro"
+                    style="background: #1a1a1a; color: #d4d4d4"
+                  >
+                    deepseek-v4-pro
+                  </option>
                 </select>
-              </div>
-
-              <!-- Base URL -->
-              <div style="padding: 0.5rem 1.5rem">
-                <label style="display: block; color: #a1a1aa; font-size: 0.75rem; margin-bottom: 0.375rem" data-i18n="baseUrl">Base URL</label>
-                <input
-                  id="deepseek-base-url"
-                  type="text"
-                  value="https://api.deepseek.com"
-                  style="
-                    width: 100%;
-                    padding: 0.5rem 0.75rem;
-                    border: 1px solid rgba(255, 255, 255, 0.12);
-                    background: rgba(255, 255, 255, 0.04);
-                    color: #d4d4d4;
-                    border-radius: 0.375rem;
-                    font-size: 0.8125rem;
-                    outline: none;
-                    transition: border-color 150ms ease;
-                    box-sizing: border-box;
-                  "
-                  onfocus="this.style.borderColor = '#8b5cf6'"
-                  onblur="this.style.borderColor = 'rgba(255, 255, 255, 0.12)'"
-                />
               </div>
 
               <!-- Save Button -->
@@ -1476,7 +1681,11 @@
             </div>
 
             <!-- Tab: About -->
-            <div id="tab-about" class="settings-tab-panel" style="display: none; padding: 0.5rem 0">
+            <div
+              id="tab-about"
+              class="settings-tab-panel"
+              style="display: none; padding: 0.5rem 0"
+            >
               <!-- Check Updates -->
               <button
                 id="checkUpdateBtn"
@@ -1587,7 +1796,8 @@
         document.querySelectorAll(".settings-tab-panel").forEach((p) => {
           p.style.display = "none";
         });
-        const isDark = document.documentElement.getAttribute("data-theme") !== "light";
+        const isDark =
+          document.documentElement.getAttribute("data-theme") !== "light";
         document.querySelectorAll(".settings-tab").forEach((btn) => {
           const isActive = btn.getAttribute("data-tab") === tab;
           if (isActive) {
@@ -1701,6 +1911,27 @@
         }
       }
 
+      // Trigger AI processing animation on button and sidebar
+      let aiProcessingTimer = null;
+      function triggerAiProcessing() {
+        const btn = document.getElementById("load-subtitle-btn");
+        const sidebar = document.getElementById("sidebar");
+        if (!btn || !sidebar) return;
+
+        // Prevent re-triggering while already processing
+        if (btn.classList.contains("ai-processing")) return;
+
+        btn.classList.add("ai-processing", "disabled");
+        sidebar.classList.add("ai-processing");
+
+        // Auto-remove after 4 seconds
+        aiProcessingTimer = setTimeout(() => {
+          btn.classList.remove("ai-processing", "disabled");
+          sidebar.classList.remove("ai-processing");
+          aiProcessingTimer = null;
+        }, 4000);
+      }
+
       // Simulate seeking to subtitle
       function seekToSubtitle(index) {
         const items = document.querySelectorAll(".subtitle-item");
@@ -1803,15 +2034,16 @@
           langZh: "中文",
           langEn: "English",
           themeDark: "暗色",
+          themeAuto: "自动",
           themeLight: "亮色",
           tabBasic: "基础",
           tabAi: "AI",
           tabAbout: "关于",
           aiComingSoon: "AI 功能即将推出",
+          aiProcessing: "AI 处理中...",
           deepseekConfig: "DeepSeek 配置",
           apiKey: "API Key",
           model: "模型",
-          baseUrl: "Base URL",
           save: "保存",
         },
         en: {
@@ -1847,15 +2079,16 @@
           langZh: "中文",
           langEn: "English",
           themeDark: "Dark",
+          themeAuto: "Auto",
           themeLight: "Light",
           tabBasic: "Basic",
           tabAi: "AI",
           tabAbout: "About",
           aiComingSoon: "AI features coming soon",
+          aiProcessing: "AI Processing...",
           deepseekConfig: "DeepSeek Configuration",
           apiKey: "API Key",
           model: "Model",
-          baseUrl: "Base URL",
           save: "Save",
         },
       };
@@ -1886,10 +2119,15 @@
 
         // Update theme button texts
         const darkBtn = document.getElementById("theme-dark");
+        const autoBtn = document.getElementById("theme-auto");
         const lightBtn = document.getElementById("theme-light");
         if (darkBtn) {
           darkBtn.childNodes[darkBtn.childNodes.length - 1].textContent =
             " " + t.themeDark;
+        }
+        if (autoBtn) {
+          autoBtn.childNodes[autoBtn.childNodes.length - 1].textContent =
+            " " + t.themeAuto;
         }
         if (lightBtn) {
           lightBtn.childNodes[lightBtn.childNodes.length - 1].textContent =
@@ -1933,17 +2171,13 @@
         applyLanguage(lang);
       }
 
-      // Switch theme
-      function switchTheme(theme) {
-        const darkBtn = document.getElementById("theme-dark");
-        const lightBtn = document.getElementById("theme-light");
-        const root = document.documentElement;
+      // Current theme mode: "dark", "light", or "auto"
+      let currentTheme = "dark";
 
-        if (theme === "dark") {
-          darkBtn.style.cssText =
-            "padding: 0.25rem 0.75rem; border: 1px solid #8b5cf6; background: rgba(139, 92, 246, 0.12); color: #8b5cf6; border-radius: 0.375rem 0 0 0.375rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 150ms ease;";
-          lightBtn.style.cssText =
-            "padding: 0.25rem 0.75rem; border: 1px solid rgba(255, 255, 255, 0.12); background: transparent; color: #71717a; border-radius: 0 0.375rem 0.375rem 0; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 150ms ease;";
+      // Apply CSS variables for a given effective mode ("dark" or "light")
+      function applyThemeVars(mode) {
+        const root = document.documentElement;
+        if (mode === "dark") {
           root.style.setProperty("--bg-primary", "#0a0a0a");
           root.style.setProperty("--bg-secondary", "#0b0b0b");
           root.style.setProperty("--bg-tertiary", "#101010");
@@ -1960,14 +2194,9 @@
             "--subtitle-hover-bg",
             "rgba(255, 255, 255, 0.03)",
           );
-          // Update settings modal
-          updateSettingsModalTheme("dark");
-          updateSubtitlePopoverTheme("dark");
+          root.style.setProperty("--ai-overlay-bg", "rgba(10, 10, 10, 0.3)");
+          root.setAttribute("data-theme", "dark");
         } else {
-          lightBtn.style.cssText =
-            "padding: 0.25rem 0.75rem; border: 1px solid #8b5cf6; background: rgba(139, 92, 246, 0.12); color: #8b5cf6; border-radius: 0 0.375rem 0.375rem 0; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 150ms ease;";
-          darkBtn.style.cssText =
-            "padding: 0.25rem 0.75rem; border: 1px solid rgba(255, 255, 255, 0.12); background: transparent; color: #71717a; border-radius: 0.375rem 0 0 0.375rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 150ms ease;";
           root.style.setProperty("--bg-primary", "#fafafa");
           root.style.setProperty("--bg-secondary", "#ffffff");
           root.style.setProperty("--bg-tertiary", "#f4f4f5");
@@ -1978,11 +2207,70 @@
           root.style.setProperty("--text-muted", "#a1a1aa");
           root.style.setProperty("--subtitle-translation-active", "#3f3f46");
           root.style.setProperty("--subtitle-hover-bg", "rgba(0, 0, 0, 0.04)");
-          // Update settings modal
-          updateSettingsModalTheme("light");
-          updateSubtitlePopoverTheme("light");
+          root.style.setProperty("--ai-overlay-bg", "rgba(255, 255, 255, 0.5)");
+          root.setAttribute("data-theme", "light");
+        }
+        updateSettingsModalTheme(mode);
+        updateSubtitlePopoverTheme(mode);
+      }
+
+      // Resolve effective theme for auto mode
+      function resolveEffectiveTheme() {
+        return window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+      }
+
+      // Switch theme
+      function switchTheme(theme) {
+        currentTheme = theme;
+        const autoBtn = document.getElementById("theme-auto");
+        const darkBtn = document.getElementById("theme-dark");
+        const lightBtn = document.getElementById("theme-light");
+
+        // Shared inactive button style
+        const baseInactive =
+          "padding: 0.25rem 0.75rem; border: 1px solid rgba(255, 255, 255, 0.12); background: transparent; color: #71717a; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 150ms ease;";
+        const inactiveLeft =
+          baseInactive + " border-radius: 0.375rem 0 0 0.375rem;";
+        const inactiveRight =
+          baseInactive + " border-radius: 0 0.375rem 0.375rem 0;";
+
+        // Active button styles (by position)
+        const activeLeft =
+          "padding: 0.25rem 0.75rem; border: 1px solid #8b5cf6; background: rgba(139, 92, 246, 0.12); color: #8b5cf6; border-radius: 0.375rem 0 0 0.375rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 150ms ease;";
+        const activeMiddle =
+          "padding: 0.25rem 0.75rem; border: 1px solid #8b5cf6; background: rgba(139, 92, 246, 0.12); color: #8b5cf6; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 150ms ease;";
+        const activeRight =
+          "padding: 0.25rem 0.75rem; border: 1px solid #8b5cf6; background: rgba(139, 92, 246, 0.12); color: #8b5cf6; border-radius: 0 0.375rem 0.375rem 0; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 150ms ease;";
+
+        if (theme === "auto") {
+          autoBtn.style.cssText = activeLeft;
+          darkBtn.style.cssText = baseInactive;
+          lightBtn.style.cssText = inactiveRight;
+          applyThemeVars(resolveEffectiveTheme());
+        } else if (theme === "dark") {
+          autoBtn.style.cssText = inactiveLeft;
+          darkBtn.style.cssText = activeMiddle;
+          lightBtn.style.cssText = inactiveRight;
+          applyThemeVars("dark");
+        } else if (theme === "light") {
+          autoBtn.style.cssText = inactiveLeft;
+          darkBtn.style.cssText = baseInactive;
+          lightBtn.style.cssText = activeRight;
+          applyThemeVars("light");
         }
       }
+
+      // Listen for system theme changes when in auto mode
+      const systemThemeMedia = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+      );
+      systemThemeMedia.addEventListener("change", () => {
+        if (currentTheme === "auto") {
+          applyThemeVars(resolveEffectiveTheme());
+        }
+      });
 
       function updateSettingsModalTheme(mode) {
         const inner = document.getElementById("settingsModalInner");
@@ -2040,7 +2328,13 @@
         });
 
         // Inactive toggle buttons
-        ["lang-zh", "lang-en", "theme-dark", "theme-light"].forEach((id) => {
+        [
+          "lang-zh",
+          "lang-en",
+          "theme-dark",
+          "theme-auto",
+          "theme-light",
+        ].forEach((id) => {
           const btn = document.getElementById(id);
           if (!btn) return;
           const s = btn.style;
@@ -2078,7 +2372,9 @@
         }
 
         // DeepSeek config section header
-        const deepseekHeader = inner.querySelector('[data-i18n="deepseekConfig"]');
+        const deepseekHeader = inner.querySelector(
+          '[data-i18n="deepseekConfig"]',
+        );
         if (deepseekHeader) {
           deepseekHeader.style.color = isDark ? "#d4d4d4" : "#18181b";
         }
@@ -2097,6 +2393,14 @@
             ? "rgba(255, 255, 255, 0.04)"
             : "rgba(0, 0, 0, 0.02)";
           input.style.color = isDark ? "#d4d4d4" : "#18181b";
+
+          // Also update option element backgrounds for select dropdowns
+          if (input.tagName === "SELECT") {
+            input.querySelectorAll("option").forEach((opt) => {
+              opt.style.background = isDark ? "#1a1a1a" : "#ffffff";
+              opt.style.color = isDark ? "#d4d4d4" : "#18181b";
+            });
+          }
         });
       }
 
@@ -2151,11 +2455,10 @@
       function saveDeepSeekConfig() {
         const apiKey = document.getElementById("deepseek-api-key").value;
         const model = document.getElementById("deepseek-model").value;
-        const baseUrl = document.getElementById("deepseek-base-url").value;
-        
+
         // In a real app, this would save to localStorage or a config file
-        console.log("DeepSeek Config:", { apiKey, model, baseUrl });
-        
+        console.log("DeepSeek Config:", { apiKey, model });
+
         // Show a brief confirmation (could be replaced with a toast notification)
         const btn = event.target;
         const originalText = btn.textContent;

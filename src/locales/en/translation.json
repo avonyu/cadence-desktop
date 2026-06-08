@@ -34,6 +34,21 @@
     "version": "Version",
     "cancel": "Cancel",
     "langZh": "中文",
-    "langEn": "English"
+    "langEn": "English",
+    "tabBasic": "Basic",
+    "tabAi": "AI",
+    "tabAbout": "About",
+    "deepseekConfig": "DeepSeek Configuration",
+    "apiKey": "API Key",
+    "model": "Model",
+    "save": "Save"
+  },
+  "ai": {
+    "processing": "AI Processing...",
+    "noVideo": "Please load a video first",
+    "noApiKey": "Please configure API Key in Settings",
+    "loadFailed": "Failed to load subtitle",
+    "processFailed": "AI processing failed",
+    "processComplete": "AI processing complete"
   }
 }

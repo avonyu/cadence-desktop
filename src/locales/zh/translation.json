@@ -34,6 +34,21 @@
     "version": "版本",
     "cancel": "取消",
     "langZh": "中文",
-    "langEn": "English"
+    "langEn": "English",
+    "tabBasic": "基础",
+    "tabAi": "AI",
+    "tabAbout": "关于",
+    "deepseekConfig": "DeepSeek 配置",
+    "apiKey": "API Key",
+    "model": "模型",
+    "save": "保存"
+  },
+  "ai": {
+    "processing": "AI 处理中...",
+    "noVideo": "请先加载视频",
+    "noApiKey": "请先在设置中配置 API Key",
+    "loadFailed": "字幕加载失败",
+    "processFailed": "AI 处理失败",
+    "processComplete": "AI 处理完成"
   }
 }
