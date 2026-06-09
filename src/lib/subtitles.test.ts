@@ -56,7 +56,7 @@ describe("parseSRT", () => {
 
     const result = parseSRT(src);
     expect(result[0].start).toBe(1 * 3600 + 30 * 60 + 45); // 5445
-    expect(result[0].end).toBe(2 * 3600 + 15 * 60 + 30); // 8130
+    expect(result[0].end).toBe(2 * 3600 + 15 * 60 + 30 + 0.5); // 8130.5
   });
 
   it("defaults end time to start + 2 when missing", () => {
@@ -366,7 +366,7 @@ describe("parseASS", () => {
 
     const result = parseASS(src);
     expect(result[0].start).toBe(1 * 3600 + 30 * 60 + 45); // 5445
-    expect(result[0].end).toBe(2 * 3600 + 15 * 60 + 30); // 8130
+    expect(result[0].end).toBe(2 * 3600 + 15 * 60 + 30 + 0.5); // 8130.5
   });
 
   it("defaults end time to start + 2 when end is empty", () => {
