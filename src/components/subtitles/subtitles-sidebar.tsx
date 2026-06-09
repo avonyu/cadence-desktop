@@ -48,9 +48,19 @@ export function SubtitlesSidebar({
 
   useEffect(() => {
     if (activeItemRef.current && sidebarRef.current) {
-      activeItemRef.current.scrollIntoView({
+      const viewport = sidebarRef.current.closest(
+        "[data-radix-scroll-area-viewport]",
+      ) as HTMLElement | null;
+      if (!viewport) return;
+
+      const containerRect = viewport.getBoundingClientRect();
+      const itemRect = activeItemRef.current.getBoundingClientRect();
+      const offset =
+        itemRect.top - containerRect.top - containerRect.height * 0.25;
+
+      viewport.scrollTo({
+        top: viewport.scrollTop + offset,
         behavior: "smooth",
-        block: "nearest",
       });
     }
   }, [activeCaption]);
