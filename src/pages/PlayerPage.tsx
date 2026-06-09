@@ -3,7 +3,6 @@ import {
   FolderOpen,
   FileText,
   Subtitles,
-  X,
   Settings,
   Loader2,
 } from "lucide-react";
@@ -19,29 +18,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { usePlayerStore, type BlurMode } from "@/stores/player-store";
+import { usePlayerStore } from "@/stores/player-store";
 import { useTranslation } from "react-i18next";
 import { SubtitleSettingsPopover } from "@/components/subtitle-settings-popover";
 import { SettingsDialog } from "@/components/settings-dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { SubtitlesSidebar } from "@/components/subtitles/subtitles-sidebar";
+import ShinyText from "@/components/ShinyText";
 import { toast } from "sonner";
-
-function getSidebarBlurClasses(
-  blurMode: BlurMode,
-  target: "text" | "translation",
-) {
-  if (blurMode === "off") return "";
-  if (blurMode === "primary" && target === "text") return "blur-sm";
-  if (blurMode === "secondary" && target === "translation") return "blur-sm";
-  if (blurMode === "all") return "blur-sm";
-  return "";
-}
-
-function formatCaptionTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-}
+import { cn } from "@/lib/utils";
 
 export const PlayerPage = () => {
   const [videoSrc, setVideoSrc] = useState<string | null>(null);
@@ -62,8 +46,6 @@ export const PlayerPage = () => {
 
   const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const sidebarRef = useRef<HTMLDivElement | null>(null);
-  const activeItemRef = useRef<HTMLButtonElement | null>(null);
 
   const handleOpenFile = async () => {
     const selected = await open({
@@ -86,7 +68,7 @@ export const PlayerPage = () => {
       setActiveCaption(null);
 
       // Try to load cached subtitles for this video
-      const cached = getSubtitlesForVideo(fileName);
+      const cached = await getSubtitlesForVideo(fileName);
       if (cached && cached.length > 0) {
         setCaptions(cached);
       }
@@ -177,15 +159,6 @@ export const PlayerPage = () => {
   }, []);
 
   useEffect(() => {
-    if (activeItemRef.current && sidebarRef.current) {
-      activeItemRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
-  }, [activeCaption]);
-
-  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === " ") {
         e.preventDefault();
@@ -268,9 +241,16 @@ export const PlayerPage = () => {
         gridTemplateColumns: sidebarOpen ? "1fr minmax(280px, 430px)" : "1fr",
       }}
     >
-      <main className="relative flex min-h-0 flex-col border-r border-border bg-card">
-        <div className="flex min-h-0 flex-1 flex-col items-center px-6 pt-6 pb-0">
-          <div className="relative mx-auto w-full max-w-[960px] aspect-video overflow-hidden border border-border rounded-2xl bg-black flex-shrink-0">
+      <main className="relative flex flex-col min-h-0 border-r border-border bg-card">
+        {/* Main Content */}
+        <div
+          className={cn(
+            "flex-1 px-6 pt-6 pb-0",
+            "flex flex-col min-h-0 items-center h-full",
+          )}
+        >
+          {/* Video Player */}
+          <div className="relative w-full max-w-[1920px] aspect-video overflow-hidden">
             <VideoPlayer
               src={videoSrc}
               videoRef={videoRef}
@@ -278,7 +258,8 @@ export const PlayerPage = () => {
             />
           </div>
 
-          <div className="group flex w-full max-w-[64rem] flex-col items-center justify-center py-5 text-center min-h-[9rem]">
+          {/* Captions */}
+          <div className="group flex w-full flex-col items-center justify-center py-5 text-center min-h-36">
             {captions.length > 0 ? (
               activeDisplay && (
                 <>
@@ -302,6 +283,16 @@ export const PlayerPage = () => {
                   </p>
                 </>
               )
+            ) : isAiProcessing ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="size-5 animate-spin text-(--player-accent)" />
+                <ShinyText
+                  text={t("ai.processing")}
+                  speed={2}
+                  shineColor="var(--player-accent)"
+                  className="text-lg"
+                />
+              </div>
             ) : (
               <p className="text-lg text-muted-foreground">
                 {t("subtitle.noSubtitles")}
@@ -310,7 +301,8 @@ export const PlayerPage = () => {
           </div>
         </div>
 
-        <div className="mt-auto z-1 flex h-14 items-center justify-end gap-1 border-t border-border px-4 bg-card">
+        {/* Tools bar */}
+        <div className="mt-auto flex z-1 h-14 items-center justify-end gap-1 border-t border-border px-4 bg-card">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -381,111 +373,11 @@ export const PlayerPage = () => {
       </main>
 
       {sidebarOpen && (
-        <aside className="relative flex min-h-0 flex-col bg-popover">
-          {/* AI Processing overlay */}
-          {isAiProcessing && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--ai-overlay-bg,rgba(10,10,10,0.3))] backdrop-blur-sm">
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="size-6 animate-spin text-[var(--player-accent)]" />
-                <span className="text-sm font-medium text-[var(--player-accent)]">
-                  {t("ai.processing")}
-                </span>
-              </div>
-            </div>
-          )}
-          {/* Gradient flowing border during AI processing */}
-          {isAiProcessing && (
-            <div
-              className="pointer-events-none absolute inset-0 z-20 p-[2px]"
-              style={{
-                background:
-                  "linear-gradient(90deg, #8b5cf6, #22c55e, #3b82f6, #ef4444, #8b5cf6)",
-                backgroundSize: "300% 100%",
-                animation: "gradient-flow 2s linear infinite",
-                WebkitMask:
-                  "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                WebkitMaskComposite: "xor",
-                maskComposite: "exclude",
-              }}
-            />
-          )}
-
-          <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-8">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Subtitles size={20} />
-              <span className="text-xs font-semibold uppercase tracking-[0.16em]">
-                {t("subtitle.subtitlesList")}
-              </span>
-            </div>
-            <Button variant="ghost" size="icon-sm" onClick={toggleSidebar}>
-              <X size={20} />
-            </Button>
-          </div>
-
-          <ScrollArea className="min-h-0 flex-1">
-            <div className="px-5 py-4">
-              {captions.length > 0 ? (
-                <div className="space-y-2" ref={sidebarRef}>
-                  {captions.map((caption, index) => {
-                    const isActive = index === activeCaption;
-                    const ref = isActive ? activeItemRef : null;
-                    const { primary, secondary } = getDisplayText(caption);
-
-                    return (
-                      <button
-                        ref={ref}
-                        className={`group/item grid w-full grid-cols-[62px_1fr] gap-1 rounded-md px-2 py-2 text-left transition ${
-                          isActive
-                            ? "bg-accent text-[var(--player-accent)]"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                        }`}
-                        key={`${caption.start}-${caption.text}`}
-                        onClick={() => handleSeekToCaption(caption)}
-                      >
-                        <span
-                          className={`text-sm font-bold text-center transition cursor-pointer hover:text-[var(--player-accent)] ${
-                            isActive
-                              ? "text-[var(--player-accent)]"
-                              : "text-muted-foreground"
-                          }`}
-                        >
-                          {formatCaptionTime(caption.start)}
-                        </span>
-                        <span>
-                          <span
-                            className={`block text-sm font-bold leading-snug tracking-tight transition-[filter] duration-300 ${
-                              getSidebarBlurClasses(blurMode, "text") || ""
-                            } group-hover/item:blur-none`}
-                          >
-                            {primary}
-                          </span>
-                          <span
-                            className={`mt-2 block text-sm leading-snug tracking-tight transition-[filter] duration-300 ${
-                              isActive
-                                ? "text-foreground"
-                                : "text-muted-foreground"
-                            } ${
-                              getSidebarBlurClasses(blurMode, "translation") ||
-                              ""
-                            } group-hover/item:blur-none`}
-                          >
-                            {secondary}
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="flex h-full items-center justify-center">
-                  <p className="text-sm text-muted-foreground">
-                    {t("subtitle.noSubtitles")}
-                  </p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </aside>
+        <SubtitlesSidebar
+          captions={captions}
+          onSeekToCaption={handleSeekToCaption}
+          onClose={toggleSidebar}
+        />
       )}
 
       <SettingsDialog

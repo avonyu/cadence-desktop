@@ -1,13 +1,30 @@
 import { type Caption, parseSubtitles } from "./subtitles";
 import { invoke } from "@tauri-apps/api/core";
 
-const CACHE_PREFIX = "cadence:subtitle:";
+const DB_NAME = "cadence-subtitles";
+const STORE_NAME = "cache";
+const DB_VERSION = 1;
 
 interface CacheEntry {
   hash: string;
   videoFileName: string | null;
   captions: Caption[];
   processedAt: string;
+}
+
+function openDB(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        const store = db.createObjectStore(STORE_NAME, { keyPath: "hash" });
+        store.createIndex("videoFileName", "videoFileName", { unique: false });
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
 }
 
 export async function hashContent(content: string): Promise<string> {
@@ -18,45 +35,77 @@ export async function hashContent(content: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export function getCachedSubtitle(hash: string): Caption[] | null {
-  const raw = localStorage.getItem(CACHE_PREFIX + hash);
-  if (!raw) return null;
+export async function getCachedSubtitle(
+  hash: string,
+): Promise<Caption[] | null> {
   try {
-    const entry: CacheEntry = JSON.parse(raw);
-    return entry.captions;
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.get(hash);
+      request.onsuccess = () => {
+        const entry: CacheEntry | undefined = request.result;
+        resolve(entry?.captions ?? null);
+      };
+      request.onerror = () => reject(request.error);
+    });
   } catch {
     return null;
   }
 }
 
-export function setCachedSubtitle(
+export async function setCachedSubtitle(
   hash: string,
   videoFileName: string | null,
   captions: Caption[],
-): void {
-  const entry: CacheEntry = {
-    hash,
-    videoFileName,
-    captions,
-    processedAt: new Date().toISOString(),
-  };
-  localStorage.setItem(CACHE_PREFIX + hash, JSON.stringify(entry));
+): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const entry: CacheEntry = {
+      hash,
+      videoFileName,
+      captions,
+      processedAt: new Date().toISOString(),
+    };
+    const request = store.put(entry);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
 }
 
-export function getSubtitlesForVideo(videoFileName: string): Caption[] | null {
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!key || !key.startsWith(CACHE_PREFIX)) continue;
-    try {
-      const entry: CacheEntry = JSON.parse(localStorage.getItem(key)!);
-      if (entry.videoFileName === videoFileName) {
-        return entry.captions;
-      }
-    } catch {
-      continue;
-    }
+export async function getSubtitlesForVideo(
+  videoFileName: string,
+): Promise<Caption[] | null> {
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const store = tx.objectStore(STORE_NAME);
+      const index = store.index("videoFileName");
+      const request = index.get(videoFileName);
+      request.onsuccess = () => {
+        const entry: CacheEntry | undefined = request.result;
+        resolve(entry?.captions ?? null);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  } catch {
+    return null;
   }
-  return null;
+}
+
+export async function clearAllCachedSubtitles(): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const request = store.clear();
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
 }
 
 export async function processSubtitleWithAI(
@@ -85,7 +134,7 @@ export async function processSubtitle(
 
   const hash = await hashContent(content);
 
-  const cached = getCachedSubtitle(hash);
+  const cached = await getCachedSubtitle(hash);
   if (cached) {
     return cached;
   }
@@ -99,7 +148,7 @@ export async function processSubtitle(
     );
   }
 
-  setCachedSubtitle(hash, videoFileName, captions);
+  await setCachedSubtitle(hash, videoFileName, captions);
 
   return captions;
 }
