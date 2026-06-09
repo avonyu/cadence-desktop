@@ -30,9 +30,9 @@ function getSidebarBlurClasses(
   target: "text" | "translation",
 ) {
   if (blurMode === "off") return "";
-  if (blurMode === "primary" && target === "text") return "blur-[4px]";
-  if (blurMode === "secondary" && target === "translation") return "blur-[4px]";
-  if (blurMode === "all") return "blur-[4px]";
+  if (blurMode === "primary" && target === "text") return "blur-sm";
+  if (blurMode === "secondary" && target === "translation") return "blur-sm";
+  if (blurMode === "all") return "blur-sm";
   return "";
 }
 
@@ -302,7 +302,7 @@ export const PlayerPage = () => {
                 <p
                   className={`text-2xl font-semibold leading-[1.4] text-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
                     blurMode === "primary" || blurMode === "all"
-                      ? "blur-[8px] group-hover:blur-0"
+                      ? "blur group-hover:blur-none"
                       : ""
                   }`}
                 >
@@ -311,7 +311,7 @@ export const PlayerPage = () => {
                 <p
                   className={`mt-5 text-2xl leading-[1.4] text-muted-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
                     blurMode === "secondary" || blurMode === "all"
-                      ? "blur-[8px] group-hover:blur-0"
+                      ? "blur group-hover:blur-none"
                       : ""
                   }`}
                 >
