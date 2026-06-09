@@ -19,18 +19,26 @@ export interface Caption {
  * Handles formats like "00:00:02,000" (SRT) or "0:00:02.00" (ASS).
  */
 function timestampToSeconds(timestamp: string): number {
-  const match = timestamp.trim().match(/(\d+):(\d{2}):(\d{2})[,.]\d+/);
+  let match = timestamp.trim().match(/(\d+):(\d{2}):(\d{2})([,.](\d+))?/);
   if (match) {
     const hours = parseInt(match[1], 10);
     const mins = parseInt(match[2], 10);
     const secs = parseInt(match[3], 10);
-    return hours * 3600 + mins * 60 + secs;
+    let frac = 0;
+    if (match[5]) {
+      frac = parseInt(match[5].padEnd(3, "0").slice(0, 3), 10);
+    }
+    return hours * 3600 + mins * 60 + secs + frac / 1000;
   }
-  const simpleMatch = timestamp.trim().match(/(\d+):(\d{2})[,.]?\d*/);
-  if (simpleMatch) {
-    const mins = parseInt(simpleMatch[1], 10);
-    const secs = parseInt(simpleMatch[2], 10);
-    return mins * 60 + secs;
+  match = timestamp.trim().match(/(\d+):(\d{2})([,.](\d+))?/);
+  if (match) {
+    const mins = parseInt(match[1], 10);
+    const secs = parseInt(match[2], 10);
+    let frac = 0;
+    if (match[4]) {
+      frac = parseInt(match[4].padEnd(3, "0").slice(0, 3), 10);
+    }
+    return mins * 60 + secs + frac / 1000;
   }
   return 0;
 }
