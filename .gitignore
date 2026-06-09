@@ -24,5 +24,6 @@ dist-ssr
 *.sw?
 
 .agents
+.claude
 .remember
 .playwright-mcp
