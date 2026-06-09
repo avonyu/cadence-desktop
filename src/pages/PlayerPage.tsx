@@ -170,16 +170,7 @@ export const PlayerPage = () => {
         }
       }
 
-      if (newIndex === null) {
-        for (let i = captions.length - 1; i >= 0; i--) {
-          if (currentTime >= captions[i].start) {
-            newIndex = i;
-            break;
-          }
-        }
-      }
-
-      if (newIndex !== null && newIndex !== activeCaption) {
+      if (newIndex !== activeCaption) {
         setActiveCaption(newIndex);
       }
     },
@@ -297,27 +288,29 @@ export const PlayerPage = () => {
           </div>
 
           <div className="group flex w-full max-w-[64rem] flex-col items-center justify-center py-5 text-center min-h-[9rem]">
-            {captions.length > 0 && activeDisplay ? (
-              <>
-                <p
-                  className={`text-2xl font-semibold leading-[1.4] text-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
-                    blurMode === "primary" || blurMode === "all"
-                      ? "blur group-hover:blur-none"
-                      : ""
-                  }`}
-                >
-                  {activeDisplay.primary}
-                </p>
-                <p
-                  className={`mt-5 text-2xl leading-[1.4] text-muted-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
-                    blurMode === "secondary" || blurMode === "all"
-                      ? "blur group-hover:blur-none"
-                      : ""
-                  }`}
-                >
-                  {activeDisplay.secondary}
-                </p>
-              </>
+            {captions.length > 0 ? (
+              activeDisplay && (
+                <>
+                  <p
+                    className={`text-2xl font-semibold leading-[1.4] text-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
+                      blurMode === "primary" || blurMode === "all"
+                        ? "blur group-hover:blur-none"
+                        : ""
+                    }`}
+                  >
+                    {activeDisplay.primary}
+                  </p>
+                  <p
+                    className={`mt-5 text-2xl leading-[1.4] text-muted-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
+                      blurMode === "secondary" || blurMode === "all"
+                        ? "blur group-hover:blur-none"
+                        : ""
+                    }`}
+                  >
+                    {activeDisplay.secondary}
+                  </p>
+                </>
+              )
             ) : (
               <p className="text-lg text-muted-foreground">
                 {t("subtitle.noSubtitles")}
