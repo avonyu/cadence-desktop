@@ -11,7 +11,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://typescriptlang.org)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[中文文档](docs/README-zh-CN.md)
+English | [简体中文](docs/README-zh-CN.md)
 
 </div>
 
@@ -23,14 +23,44 @@ Cadence — rhythm and flow. A desktop video player designed specifically for **
 
 ### Features
 
-- 🎬 **Subtitle Parsing** — Supports `.srt` / `.ass` formats, auto-detects bilingual subtitles (original + translation)
-- 🔄 **Video-Subtitle Sync** — Highlights current caption during playback; click any caption timestamp to seek to that position
-- ⌨️ **Global Shortcuts**
-  - `Space` Pause / Play
-  - `←` Previous caption
-  - `→` Next caption
-- 📂 **Open Files** — Load local video and subtitle files freely
+- 🎬 **Subtitle Parsing** — Supports `.srt` / `.ass` formats with auto-format detection; parses bilingual subtitles (original + translation)
+- 🔄 **Video-Subtitle Sync** — Highlights current caption during playback; click any caption timestamp in the sidebar to seek to that position
+- 💾 **Subtitle Cache** — AI translation results are auto-cached via SHA-256 hash; reopening a file skips redundant processing
+- 🤖 **AI-Powered Translation** — Integrated DeepSeek API automatically translates subtitles (Chinese ↔ English)
+- 🔀 **Dual Subtitle Merge** — Merge two separate subtitle files (e.g., one per language) by timestamp alignment
+- 📝 **Large Caption Display** — Dual-line bilingual display below the video player
+- 🎭 **Blur Mode** — 4 levels: Off, Blur Top Line, Blur Bottom Line, Blur All; hover to temporarily reveal — perfect for self-testing
+- 🔄 **Line Swap** — Toggle the order of source and translation lines
+- 📋 **Subtitle Sidebar** — Scrollable full list with timestamp navigation; auto-scrolls to the current caption
+- ⌨️ **Keyboard Shortcuts** — Play/pause, skip between captions
+- 📂 **Open Files** — Load local video and subtitle files via native file dialog
 - 🎨 **Dark UI** — Immersive dark theme for focused learning
+- 🌐 **i18n** — UI available in English and Chinese
+
+### Usage
+
+1. **Open a Video** — Click the folder button on the toolbar, select a video file (`.mp4`, `.webm`, `.mkv`, `.avi`, `.mov`, `.flv`, `.wmv`)
+2. **Load Subtitles** — Click the subtitle button, select `.srt` or `.ass` file
+3. **AI Translation** — If the subtitle is monolingual, the app will prompt you to configure a DeepSeek API key for automatic translation
+4. **Control Playback** — Use toolbar buttons or keyboard shortcuts
+5. **Adjust Display** — Use the subtitle settings popover to toggle blur mode or swap line order
+
+### Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `Space` | Play / Pause |
+| `←` | Jump to previous caption |
+| `→` | Jump to next caption |
+
+### Settings
+
+| Setting | Options |
+|---------|---------|
+| Theme | System / Light / Dark |
+| Language | English / 中文 |
+| DeepSeek Model | `deepseek-v4-flash` / `deepseek-v4-pro` |
+| API Key | DeepSeek API key (stored locally) |
 
 ### Preview
 
@@ -38,20 +68,9 @@ Cadence — rhythm and flow. A desktop video player designed specifically for **
 |:---:|:---:|
 | ![Light Mode](docs/preview.png) | ![Dark Mode](docs/preview-dark.png) |
 
-### Subtitle Websites
+### Subtitle Resources
 
 - [SubHD](https://subhd.tv/)
 - [字幕库](https://srtku.com/)
 - [射手网](https://2.assrt.net/)
-
-### Tech Stack
-
-| Category | Tech |
-|----------|------|
-| Build | Vite + Bun |
-| Desktop | Tauri v2 |
-| UI | React 19 + React Router |
-| Styling | Tailwind CSS v4 + Shadcn |
-| Video | Video.js |
-| State | Zustand |
-| Icons | Lucide |
+- [OpenSubtitles](https://opensubtitles.org/)
