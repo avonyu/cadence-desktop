@@ -1,5 +1,5 @@
 import { type Caption, parseSubtitles } from "./subtitles";
-import OpenAI from "openai";
+import { invoke } from "@tauri-apps/api/core";
 
 const CACHE_PREFIX = "cadence:subtitle:";
 
@@ -59,56 +59,18 @@ export function getSubtitlesForVideo(videoFileName: string): Caption[] | null {
   return null;
 }
 
-const SYSTEM_PROMPT = `You are a subtitle processor. Your task is to clean and enhance subtitle files.
-
-Rules:
-1. Keep ALL original timestamps and numbering exactly as-is. Do not modify, shift, or remove any timing information.
-2. Only keep dialogue-related lines (including song lyrics). Remove credits, scene descriptions, translator names, and any non-dialogue text.
-3. Remove all style and control information enclosed in curly braces {}.
-4. For bilingual subtitles (containing both Chinese and English), preserve the \\N line breaks that separate the two languages.
-5. For single-language subtitles:
-   - If the subtitle is only in Chinese, translate each line to English and append it after the original text separated by \\N.
-   - If the subtitle is only in English, translate each line to Chinese and prepend it before the original text separated by \\N.
-6. Output the result in the SAME format as the input (SRT stays SRT, ASS stays ASS). Do not change formats.
-7. Return ONLY the processed subtitle content. Do NOT wrap the output in markdown code fences, do NOT add any explanation, do NOT add any commentary — just the raw subtitle text.`;
-
 export async function processSubtitleWithAI(
   content: string,
   apiKey: string,
   model: string,
 ): Promise<string> {
-  const openai = new OpenAI({
-    baseURL: "https://api.deepseek.com",
+  const response = await invoke<string>("call_deepseek_api", {
+    content,
     apiKey,
-    dangerouslyAllowBrowser: true,
-  });
-
-  const completion = await openai.chat.completions.create({
     model,
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content },
-    ],
-    temperature: 0.1,
-    // DeepSeek-specific: enable reasoning with thinking
-    ...({ thinking: { type: "enabled" }, reasoning_effort: "high" } as Record<
-      string,
-      unknown
-    >),
   });
 
-  const text = completion.choices[0]?.message?.content;
-  if (!text) {
-    throw new Error("DeepSeek API returned an empty response");
-  }
-
-  // Strip markdown code fences if the model wraps the output
-  const stripped = text
-    .replace(/^```(?:srt|ass|ssa)?\n?/im, "")
-    .replace(/\n?```$/m, "")
-    .trim();
-
-  return stripped;
+  return response;
 }
 
 export async function processSubtitle(

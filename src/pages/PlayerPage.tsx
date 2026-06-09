@@ -24,6 +24,7 @@ import { useTranslation } from "react-i18next";
 import { SubtitleSettingsPopover } from "@/components/subtitle-settings-popover";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
 
 function getSidebarBlurClasses(
   blurMode: BlurMode,
@@ -55,11 +56,9 @@ export const PlayerPage = () => {
   const setActiveCaption = usePlayerStore((s) => s.setActiveCaption);
   const toggleSidebar = usePlayerStore((s) => s.toggleSidebar);
   const aiProcessing = usePlayerStore((s) => s.aiProcessing);
-  const aiError = usePlayerStore((s) => s.aiError);
-  const setAiProcessing = usePlayerStore((s) => s.setAiProcessing);
-  const setAiError = usePlayerStore((s) => s.setAiError);
   const deepseekApiKey = usePlayerStore((s) => s.deepseekApiKey);
   const deepseekModel = usePlayerStore((s) => s.deepseekModel);
+  const setAiProcessing = usePlayerStore((s) => s.setAiProcessing);
 
   const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -97,9 +96,7 @@ export const PlayerPage = () => {
   const handleLoadSubtitle = async () => {
     // Check for API key
     if (!deepseekApiKey) {
-      setAiError(t("ai.noApiKey"));
-      setAiProcessing("error");
-      setTimeout(() => setAiProcessing("idle"), 3000);
+      toast.error(t("ai.noApiKey"));
       return;
     }
 
@@ -121,15 +118,12 @@ export const PlayerPage = () => {
       content = await readTextFile(selected);
     } catch (error) {
       console.error("Failed to load subtitle file:", error);
-      setAiError(t("ai.loadFailed"));
-      setAiProcessing("error");
-      setTimeout(() => setAiProcessing("idle"), 3000);
+      toast.error(t("ai.loadFailed"));
       return;
     }
 
     // Start AI processing
     setAiProcessing("processing");
-    setAiError(null);
 
     try {
       const result = await processSubtitle(
@@ -144,17 +138,15 @@ export const PlayerPage = () => {
         setAiProcessing("done");
         setTimeout(() => setAiProcessing("idle"), 2000);
       } else {
-        setAiError(t("ai.processFailed"));
-        setAiProcessing("error");
-        setTimeout(() => setAiProcessing("idle"), 3000);
+        toast.error(t("ai.processFailed"));
+        setAiProcessing("idle");
       }
     } catch (error) {
       console.error("AI processing failed:", error);
-      setAiError(
+      toast.error(
         error instanceof Error ? error.message : t("ai.processFailed"),
       );
-      setAiProcessing("error");
-      setTimeout(() => setAiProcessing("idle"), 3000);
+      setAiProcessing("idle");
     }
   };
 
@@ -268,7 +260,6 @@ export const PlayerPage = () => {
 
   const isAiProcessing =
     aiProcessing === "processing" || aiProcessing === "loading";
-  const isAiError = aiProcessing === "error";
 
   return (
     <section
@@ -336,11 +327,7 @@ export const PlayerPage = () => {
                   variant="ghost"
                   size="icon-sm"
                   className={
-                    isAiProcessing
-                      ? "text-[var(--player-accent)]"
-                      : isAiError
-                        ? "text-red-500"
-                        : ""
+                    isAiProcessing ? "text-[var(--player-accent)]" : ""
                   }
                   disabled={isAiProcessing || !videoSrc}
                   onClick={handleLoadSubtitle}
@@ -355,11 +342,9 @@ export const PlayerPage = () => {
               <TooltipContent>
                 {isAiProcessing
                   ? t("ai.processing")
-                  : isAiError
-                    ? aiError
-                    : !videoSrc
-                      ? t("ai.noVideo")
-                      : t("subtitle.loadSubtitle")}
+                  : !videoSrc
+                    ? t("ai.noVideo")
+                    : t("subtitle.loadSubtitle")}
               </TooltipContent>
             </Tooltip>
 
@@ -406,13 +391,6 @@ export const PlayerPage = () => {
                   {t("ai.processing")}
                 </span>
               </div>
-            </div>
-          )}
-          {isAiError && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--ai-overlay-bg,rgba(10,10,10,0.3))] backdrop-blur-sm">
-              <span className="text-sm font-medium text-red-500">
-                {aiError || t("ai.processFailed")}
-              </span>
             </div>
           )}
           {/* Gradient flowing border during AI processing */}
