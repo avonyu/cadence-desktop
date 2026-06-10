@@ -2,11 +2,6 @@
 use tauri_plugin_http::reqwest;
 
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
-#[tauri::command]
 async fn call_deepseek_api(
     content: String,
     api_key: String,
@@ -80,7 +75,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![greet, call_deepseek_api])
+        .invoke_handler(tauri::generate_handler![call_deepseek_api])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
