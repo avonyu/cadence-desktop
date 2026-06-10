@@ -12,6 +12,10 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { useRef, useCallback, useEffect, useState } from "react";
 import { type Caption } from "@/lib/subtitles";
 import { processSubtitle, getSubtitlesForVideo } from "@/lib/ai-subtitle";
+import {
+  getNextCaptionIndex,
+  getPreviousCaptionIndex,
+} from "@/lib/caption-navigation";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -203,34 +207,22 @@ export const PlayerPage = () => {
 
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        let idx = activeCaption;
-        if (idx === null) {
-          for (let i = 0; i < captions.length; i++) {
-            if (
-              videoRef.current &&
-              videoRef.current.currentTime >= captions[i].start
-            )
-              idx = i;
-          }
-        }
-        if (idx == null) idx = 0;
-        const prev = Math.max(0, idx - 1);
+        const prev = getPreviousCaptionIndex(
+          captions,
+          videoRef.current?.currentTime ?? 0,
+          activeCaption,
+        );
+        if (prev === null) return;
         setActiveCaption(prev);
         handleSeekToCaption(captions[prev]);
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        let idx = activeCaption;
-        if (idx === null) {
-          for (let i = 0; i < captions.length; i++) {
-            if (
-              videoRef.current &&
-              videoRef.current.currentTime >= captions[i].start
-            )
-              idx = i;
-          }
-        }
-        if (idx == null) idx = 0;
-        const next = Math.min(captions.length - 1, idx + 1);
+        const next = getNextCaptionIndex(
+          captions,
+          videoRef.current?.currentTime ?? 0,
+          activeCaption,
+        );
+        if (next === null) return;
         setActiveCaption(next);
         handleSeekToCaption(captions[next]);
       }
