@@ -19,7 +19,10 @@
     "blurOff": "关闭",
     "blurPrimaryLine": "第一行",
     "blurSecondaryLine": "第二行",
-    "blurAllLines": "所有行"
+    "blurAllLines": "所有行",
+    "subtitleMask": "字幕遮罩",
+    "subtitleMaskOff": "关闭",
+    "subtitleMaskOn": "开启"
   },
   "settings": {
     "title": "设置",

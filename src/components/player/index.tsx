@@ -4,6 +4,8 @@ import { Video as VideoIcon } from "lucide-react";
 import { createPlayer, videoFeatures } from "@videojs/react";
 import { VideoSkin, Video } from "@videojs/react/video";
 
+export { SubtitleMask } from "./subtitle-mask";
+
 const Player = createPlayer({ features: videoFeatures });
 
 interface VideoPlayerProps {

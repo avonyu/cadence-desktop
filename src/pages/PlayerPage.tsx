@@ -1,10 +1,11 @@
-import { VideoPlayer } from "@/components/player";
+import { VideoPlayer, SubtitleMask } from "@/components/player";
 import {
   FolderOpen,
   FileText,
   Subtitles,
   Settings,
   Loader2,
+  RectangleHorizontal,
 } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc } from "@tauri-apps/api/core";
@@ -47,6 +48,8 @@ export const PlayerPage = () => {
   const deepseekApiKey = usePlayerStore((s) => s.deepseekApiKey);
   const deepseekModel = usePlayerStore((s) => s.deepseekModel);
   const setAiProcessing = usePlayerStore((s) => s.setAiProcessing);
+  const subtitleMaskVisible = usePlayerStore((s) => s.subtitleMaskVisible);
+  const toggleSubtitleMask = usePlayerStore((s) => s.toggleSubtitleMask);
 
   const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -248,6 +251,7 @@ export const PlayerPage = () => {
               videoRef={videoRef}
               onTimeUpdate={handleTimeUpdate}
             />
+            {subtitleMaskVisible && <SubtitleMask />}
           </div>
 
           {/* Captions */}
@@ -346,6 +350,26 @@ export const PlayerPage = () => {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t("subtitle.subtitlesSidebar")}</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className={
+                    subtitleMaskVisible ? "text-[var(--player-accent)]" : ""
+                  }
+                  onClick={toggleSubtitleMask}
+                >
+                  <RectangleHorizontal size={18} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {subtitleMaskVisible
+                  ? t("subtitle.subtitleMaskOn")
+                  : t("subtitle.subtitleMaskOff")}
+              </TooltipContent>
             </Tooltip>
 
             <Tooltip>

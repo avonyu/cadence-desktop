@@ -19,7 +19,10 @@
     "blurOff": "Off",
     "blurPrimaryLine": "Line 1",
     "blurSecondaryLine": "Line 2",
-    "blurAllLines": "All"
+    "blurAllLines": "All",
+    "subtitleMask": "Subtitle Mask",
+    "subtitleMaskOff": "Off",
+    "subtitleMaskOn": "On"
   },
   "settings": {
     "title": "Settings",

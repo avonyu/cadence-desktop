@@ -10,6 +10,13 @@ export type AiProcessingState =
   | "done"
   | "error";
 
+export interface MaskRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 interface PlayerState {
   sidebarOpen: boolean;
   blurMode: BlurMode;
@@ -19,9 +26,18 @@ interface PlayerState {
   aiError: string | null;
   deepseekApiKey: string;
   deepseekModel: string;
+  subtitleMaskVisible: boolean;
+  subtitleMaskRect: MaskRect;
 }
 
 type PlayerAction = Pick<PlayerActionImpl, keyof PlayerActionImpl>;
+
+const defaultMaskRect: MaskRect = {
+  x: 0,
+  y: 0,
+  width: 80,
+  height: 12,
+};
 
 const initialState: PlayerState = {
   sidebarOpen: true,
@@ -33,6 +49,8 @@ const initialState: PlayerState = {
   deepseekApiKey: localStorage.getItem("cadence:deepseek-api-key") || "",
   deepseekModel:
     localStorage.getItem("cadence:deepseek-model") || "deepseek-v4-flash",
+  subtitleMaskVisible: false,
+  subtitleMaskRect: defaultMaskRect,
 };
 
 const blurModes: BlurMode[] = ["off", "primary", "secondary", "all"];
@@ -91,6 +109,14 @@ export class PlayerActionImpl {
   setDeepseekModel = (model: string) => {
     localStorage.setItem("cadence:deepseek-model", model);
     this.#set({ deepseekModel: model });
+  };
+
+  toggleSubtitleMask = () => {
+    this.#set((s) => ({ subtitleMaskVisible: !s.subtitleMaskVisible }));
+  };
+
+  setSubtitleMaskRect = (rect: MaskRect) => {
+    this.#set({ subtitleMaskRect: rect });
   };
 }
 
