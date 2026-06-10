@@ -237,25 +237,3 @@ export function parseSubtitles(content: string): Caption[] {
   const format = detectFormat(content);
   return format === "ass" ? parseASS(content) : parseSRT(content);
 }
-
-/**
- * Merge two sets of captions by matching timestamps.
- * Useful when you have separate subtitle files for different languages.
- * The primary captions provide the base structure, and secondary captions
- * provide the translation.
- */
-export function mergeCaptions(
-  primary: Caption[],
-  secondary: Caption[],
-): Caption[] {
-  return primary.map((cap) => {
-    const match = secondary.find((s) => s.time === cap.time);
-    return {
-      time: cap.time,
-      start: cap.start,
-      end: cap.end,
-      text: cap.text || secondary[0]?.text || "",
-      translation: match?.text || cap.translation || "",
-    };
-  });
-}
