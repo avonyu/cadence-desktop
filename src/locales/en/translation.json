@@ -41,7 +41,8 @@
     "deepseekConfig": "DeepSeek Configuration",
     "apiKey": "API Key",
     "model": "Model",
-    "save": "Save"
+    "save": "Save",
+    "saved": "Configuration saved"
   },
   "ai": {
     "processing": "AI Processing...",

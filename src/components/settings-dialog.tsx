@@ -29,6 +29,7 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/components/theme-provider";
 import { usePlayerStore } from "@/stores/player-store";
 import { useState } from "react";
+import { toast } from "sonner";
 
 const GITHUB_URL = "https://github.com/avonyu/cadence-desktop";
 const APP_VERSION = "v0.1.1-alpha";
@@ -64,6 +65,7 @@ export function SettingsDialog({
   const handleSaveConfig = () => {
     setDeepseekApiKey(localApiKey);
     setDeepseekModel(localModel);
+    toast.success(t("settings.saved"), { position: "top-center" });
   };
 
   const tabs: { id: SettingsTab; icon: React.ReactNode; label: string }[] = [

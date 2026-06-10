@@ -41,7 +41,8 @@
     "deepseekConfig": "DeepSeek 配置",
     "apiKey": "API Key",
     "model": "模型",
-    "save": "保存"
+    "save": "保存",
+    "saved": "配置已保存"
   },
   "ai": {
     "processing": "AI 处理中...",
