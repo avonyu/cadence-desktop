@@ -1,6 +1,36 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri_plugin_http::reqwest;
 
+/// Remove markdown code fences from AI output.
+/// Handles any language identifier (```srt, ```ass, ```plaintext, etc.)
+/// and leading/trailing commentary lines outside the fence.
+fn strip_markdown_fences(input: &str) -> String {
+    let input = input.replace("\r\n", "\n").replace('\r', "\n");
+
+    // Find the first line that starts with ``` (opening fence)
+    let lines: Vec<&str> = input.lines().collect();
+    let fence_start = lines.iter().position(|l| l.trim_start().starts_with("```"));
+
+    if let Some(start_idx) = fence_start {
+        // Find matching closing fence (line that is just ``` or starts with ```)
+        let closing_idx = lines[start_idx + 1..]
+            .iter()
+            .position(|l| l.trim() == "```");
+
+        let content_lines = if let Some(end_offset) = closing_idx {
+            &lines[start_idx + 1..start_idx + 1 + end_offset]
+        } else {
+            // No closing fence; take everything after opening
+            &lines[start_idx + 1..]
+        };
+
+        return content_lines.join("\n");
+    }
+
+    // No fences found; return as-is.
+    input.to_string()
+}
+
 #[tauri::command]
 async fn call_deepseek_api(
     content: String,
@@ -55,14 +85,10 @@ Rules:
         .ok_or("Invalid API response format")?
         .to_string();
 
-    // Strip markdown code fences and literal \r characters
-    let stripped = text
-        .replace("```srt\n", "")
-        .replace("```ass\n", "")
-        .replace("```ssa\n", "")
-        .replace("```\n", "")
-        .replace("```", "")
-        .replace("\\r", "")  // Remove literal \r (AI may output this as text)
+    // Strip markdown code fences and literal \r characters.
+    // The AI may still wrap output in fences despite the prompt asking not to.
+    let stripped = strip_markdown_fences(&text)
+        .replace("\\r", "") // Remove literal \r (AI may output this as text)
         .trim()
         .to_string();
 

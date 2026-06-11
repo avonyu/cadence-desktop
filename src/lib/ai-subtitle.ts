@@ -118,7 +118,8 @@ export async function processSubtitleWithAI(
     apiKey,
     model,
   });
-
+  // Debug Output
+  console.log("AI-processed subtitle:", response);
   return response;
 }
 
@@ -143,8 +144,12 @@ export async function processSubtitle(
 
   const captions = parseSubtitles(processedText);
   if (captions.length === 0) {
+    const preview =
+      processedText.length > 200
+        ? processedText.slice(0, 200) + "..."
+        : processedText;
     throw new Error(
-      "AI-processed subtitles could not be parsed into any caption entries",
+      `AI-processed subtitles could not be parsed. Response preview: "${preview}"`,
     );
   }
 
