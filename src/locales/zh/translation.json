@@ -42,6 +42,7 @@
     "apiKey": "API Key",
     "model": "模型",
     "save": "保存",
+    "apiKeyRequired": "请提供 API Key",
     "saved": "配置已保存"
   },
   "ai": {

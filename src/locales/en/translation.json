@@ -42,6 +42,7 @@
     "apiKey": "API Key",
     "model": "Model",
     "save": "Save",
+    "apiKeyRequired": "Please provide an API Key",
     "saved": "Configuration saved"
   },
   "ai": {
