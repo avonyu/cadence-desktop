@@ -55,13 +55,14 @@ Rules:
         .ok_or("Invalid API response format")?
         .to_string();
 
-    // Strip markdown code fences
+    // Strip markdown code fences and literal \r characters
     let stripped = text
         .replace("```srt\n", "")
         .replace("```ass\n", "")
         .replace("```ssa\n", "")
         .replace("```\n", "")
         .replace("```", "")
+        .replace("\\r", "")  // Remove literal \r (AI may output this as text)
         .trim()
         .to_string();
 
