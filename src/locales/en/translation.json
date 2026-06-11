@@ -12,7 +12,9 @@
     "transcodeTooltip": "Transcode audio to AAC",
     "transcodeSuccess": "Audio transcoding complete",
     "transcodeFailed": "Audio transcoding failed",
-    "transcodeDoNotClose": "Transcoding in progress, do not close the app"
+    "transcodeDoNotClose": "Transcoding in progress, do not close the app",
+    "ffmpegMissing": "ffmpeg not found, audio transcode unavailable, please install it",
+    "ffprobeMissing": "ffprobe not found, codec detection unavailable, please install it"
   },
   "subtitle": {
     "noSubtitles": "No subtitles loaded",

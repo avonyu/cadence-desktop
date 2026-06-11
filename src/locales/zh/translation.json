@@ -12,7 +12,9 @@
     "transcodeTooltip": "将音频转码为 AAC",
     "transcodeSuccess": "音频转码完成",
     "transcodeFailed": "音频转码失败",
-    "transcodeDoNotClose": "转码中，请勿关闭应用"
+    "transcodeDoNotClose": "转码中，请勿关闭应用",
+    "ffmpegMissing": "未检测到 ffmpeg，音频转码功能不可用，请安装",
+    "ffprobeMissing": "未检测到 ffprobe，无法检测视频编码信息，请安装"
   },
   "subtitle": {
     "noSubtitles": "未加载字幕",

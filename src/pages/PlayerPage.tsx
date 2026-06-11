@@ -128,6 +128,19 @@ export const PlayerPage = () => {
         setCodecInfo(null);
       }
 
+      // Check ffmpeg tools availability
+      const tools = await invoke<{
+        ffmpeg: boolean;
+        ffprobe: boolean;
+        ffplay: boolean;
+      }>("check_ffmpeg_tools");
+      if (!tools.ffmpeg) {
+        toast.warning(t("video.ffmpegMissing"), { duration: 6000 });
+      }
+      if (!tools.ffprobe) {
+        toast.warning(t("video.ffprobeMissing"), { duration: 6000 });
+      }
+
       // Try to load cached subtitles for this video
       const cached = await getSubtitlesForVideo(fileName);
       if (cached && cached.length > 0) {
