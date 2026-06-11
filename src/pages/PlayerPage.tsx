@@ -6,6 +6,7 @@ import {
   Settings,
   Loader2,
   AudioLines,
+  Minus,
 } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
@@ -70,6 +71,7 @@ export const PlayerPage = () => {
     "idle" | "converting" | "done" | "error"
   >("idle");
   const [transcodeProgress, setTranscodeProgress] = useState(0);
+  const [transcodeDismissed, setTranscodeDismissed] = useState(false);
 
   const videoFilePathRef = useRef<string | null>(null);
 
@@ -108,6 +110,7 @@ export const PlayerPage = () => {
       setCaptions([]);
       setActiveCaption(null);
       setTranscodeState("idle");
+      setTranscodeDismissed(false);
 
       // Detect codec info via ffprobe
       try {
@@ -196,6 +199,7 @@ export const PlayerPage = () => {
 
     setTranscodeState("converting");
     setTranscodeProgress(0);
+    toast.warning(t("video.transcodeDoNotClose"));
 
     const unlisten = await listen<number>("transcode-progress", (event) => {
       setTranscodeProgress(event.payload);
@@ -425,34 +429,44 @@ export const PlayerPage = () => {
             </span>
           )}
           {codecInfo?.audio &&
-            isAudioCodecUnsupported(codecInfo.audio.codec_name) && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-6 px-2 text-xs gap-1"
-                      disabled={transcodeState === "converting"}
-                      onClick={handleTranscodeAudio}
-                    >
-                      {transcodeState === "converting" ? (
-                        <Loader2 size={12} className="animate-spin" />
-                      ) : (
-                        <AudioLines size={12} />
-                      )}
-                      {transcodeState === "converting"
-                        ? `${t("video.transcoding")} ${transcodeProgress}%`
-                        : transcodeState === "done"
-                          ? t("video.transcodeDone")
-                          : t("video.transcode")}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {t("video.transcodeTooltip")}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+            isAudioCodecUnsupported(codecInfo.audio.codec_name) &&
+            !transcodeDismissed && (
+              <span className="relative inline-flex items-center">
+                {transcodeState !== "converting" && (
+                  <button
+                    type="button"
+                    className="absolute -top-1.5 -right-1.5 z-10 flex size-3.5 items-center justify-center rounded-full bg-red-400 text-white hover:bg-red-500"
+                    onClick={() => setTranscodeDismissed(true)}
+                  >
+                    <Minus size={10} strokeWidth={3} />
+                  </button>
+                )}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 px-2 text-xs gap-1"
+                        disabled={transcodeState === "converting"}
+                        onClick={handleTranscodeAudio}
+                      >
+                        {transcodeState !== "converting" && (
+                          <AudioLines size={12} />
+                        )}
+                        {transcodeState === "converting"
+                          ? `${t("video.transcoding")} ${transcodeProgress}%`
+                          : transcodeState === "done"
+                            ? t("video.transcodeDone")
+                            : t("video.transcode")}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {t("video.transcodeTooltip")}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </span>
             )}
         </div>
 

@@ -244,7 +244,8 @@ async fn transcode_audio(
                 "-i", &input,
                 "-c:v", "copy",
                 "-c:a", "aac",
-                "-b:a", "128k",
+                "-b:a", "192k",
+                "-ac", "2",
                 "-progress", "pipe:1",
                 "-nostats",
                 "-y",
@@ -277,6 +278,7 @@ async fn transcode_audio(
             .map_err(|e| format!("Failed to wait for ffmpeg: {}", e))?;
 
         if !status.success() {
+            let _ = std::fs::remove_file(&output);
             return Err("ffmpeg transcode failed".into());
         }
 

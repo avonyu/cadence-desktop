@@ -5,13 +5,14 @@
     "openVideoTitle": "打开视频文件",
     "openVideoDesc": "支持的视频格式：mp4, webm, mkv, avi, mov, flv, wmv",
     "selectFile": "选择文件",
-    "codecWarning": "音频编码 {{codec}} 可能不被浏览器原生支持，视频可能无声音",
+    "codecWarning": "音频编码 {{codec}} 可能不被 WebView 原生支持，视频可能无声音，建议转码",
     "transcode": "转码",
     "transcoding": "转码中...",
     "transcodeDone": "已完成",
-    "transcodeTooltip": "将音频转码为 AAC 128K",
+    "transcodeTooltip": "将音频转码为 AAC",
     "transcodeSuccess": "音频转码完成",
-    "transcodeFailed": "音频转码失败"
+    "transcodeFailed": "音频转码失败",
+    "transcodeDoNotClose": "转码中，请勿关闭应用"
   },
   "subtitle": {
     "noSubtitles": "未加载字幕",
