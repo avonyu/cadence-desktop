@@ -7,7 +7,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { useRef, useCallback, useEffect, useState } from "react";
 import { type Caption } from "@/lib/subtitles";
 import { processSubtitle, getSubtitlesForVideo } from "@/lib/ai-subtitle";
@@ -31,11 +31,39 @@ import ShinyText from "@/components/ShinyText";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+interface CodecInfo {
+  codec_name: string;
+  codec_long_name: string;
+}
+
+interface VideoCodecResult {
+  video: CodecInfo | null;
+  audio: CodecInfo | null;
+}
+
+// Audio codecs that browsers/webviews cannot decode natively
+const UNSUPPORTED_AUDIO_CODECS = new Set([
+  "dts",
+  "ac3",
+  "eac3",
+  "truehd",
+  "mlp",
+  "wmapro",
+  "wmalossless",
+  "wmavoice",
+  "dtshd",
+]);
+
+function isAudioCodecUnsupported(codecName: string): boolean {
+  return UNSUPPORTED_AUDIO_CODECS.has(codecName);
+}
+
 export const PlayerPage = () => {
   const [videoSrc, setVideoSrc] = useState<string | null>(null);
   const [videoFileName, setVideoFileName] = useState<string | null>(null);
   const [captions, setCaptions] = useState<Caption[]>([]);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const [codecInfo, setCodecInfo] = useState<VideoCodecResult | null>(null);
 
   const sidebarOpen = usePlayerStore((s) => s.sidebarOpen);
   const blurMode = usePlayerStore((s) => s.blurMode);
@@ -70,6 +98,22 @@ export const PlayerPage = () => {
       // Clear previous subtitles
       setCaptions([]);
       setActiveCaption(null);
+
+      // Detect codec info via ffprobe
+      try {
+        const result = await invoke<VideoCodecResult>("detect_video_codecs", {
+          filePath: selected,
+        });
+        setCodecInfo(result);
+        if (result.audio && isAudioCodecUnsupported(result.audio.codec_name)) {
+          const label = result.audio.codec_name.toUpperCase();
+          toast.warning(t("video.codecWarning", { codec: label }), {
+            duration: 8000,
+          });
+        }
+      } catch {
+        setCodecInfo(null);
+      }
 
       // Try to load cached subtitles for this video
       const cached = await getSubtitlesForVideo(fileName);
@@ -291,6 +335,49 @@ export const PlayerPage = () => {
               </p>
             )}
           </div>
+        </div>
+
+        {/* Codec info */}
+        <div className="flex justify-end px-4 py-1">
+          {codecInfo && (
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-secondary px-2 py-1 font-mono text-xs text-muted-foreground">
+              {codecInfo.video && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>{codecInfo.video.codec_name.toUpperCase()}</span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {codecInfo.video.codec_long_name}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {codecInfo.video && codecInfo.audio && (
+                <span className="text-border">/</span>
+              )}
+              {codecInfo.audio && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        className={
+                          isAudioCodecUnsupported(codecInfo.audio.codec_name)
+                            ? "text-destructive"
+                            : ""
+                        }
+                      >
+                        {codecInfo.audio.codec_name.toUpperCase()}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {codecInfo.audio.codec_long_name}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </span>
+          )}
         </div>
 
         {/* Tools bar */}

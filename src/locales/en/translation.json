@@ -4,7 +4,8 @@
     "openVideo": "Open Video",
     "openVideoTitle": "Open Video File",
     "openVideoDesc": "Supported video formats: mp4, webm, mkv, avi, mov, flv, wmv",
-    "selectFile": "Select File"
+    "selectFile": "Select File",
+    "codecWarning": "Audio codec {{codec}} may not be supported by the browser, audio may be missing"
   },
   "subtitle": {
     "noSubtitles": "No subtitles loaded",

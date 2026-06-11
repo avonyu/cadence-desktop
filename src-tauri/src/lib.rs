@@ -1,4 +1,5 @@
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+use std::process::Command;
+use serde::Serialize;
 use tauri_plugin_http::reqwest;
 
 /// Remove markdown code fences from AI output.
@@ -95,6 +96,92 @@ Rules:
     Ok(stripped)
 }
 
+#[derive(Debug, Serialize)]
+struct FfmpegTools {
+    ffmpeg: bool,
+    ffprobe: bool,
+    ffplay: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct CodecInfo {
+    codec_name: String,
+    codec_long_name: String,
+}
+
+#[derive(Debug, Serialize)]
+struct VideoCodecResult {
+    video: Option<CodecInfo>,
+    audio: Option<CodecInfo>,
+}
+
+fn is_command_available(name: &str) -> bool {
+    Command::new(if cfg!(target_os = "windows") { "where" } else { "which" })
+        .arg(name)
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+
+#[tauri::command]
+fn check_ffmpeg_tools() -> FfmpegTools {
+    FfmpegTools {
+        ffmpeg: is_command_available("ffmpeg"),
+        ffprobe: is_command_available("ffprobe"),
+        ffplay: is_command_available("ffplay"),
+    }
+}
+
+#[tauri::command]
+fn detect_video_codecs(file_path: String) -> Result<VideoCodecResult, String> {
+    if !is_command_available("ffprobe") {
+        return Err("ffprobe is not installed or not found in PATH".into());
+    }
+
+    let output = Command::new("ffprobe")
+        .args([
+            "-v", "error",
+            "-show_entries", "stream=codec_name,codec_long_name,codec_type",
+            "-of", "json",
+            &file_path,
+        ])
+        .output()
+        .map_err(|e| format!("Failed to run ffprobe: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("ffprobe error: {}", stderr));
+    }
+
+    let json: serde_json::Value = serde_json::from_slice(&output.stdout)
+        .map_err(|e| format!("Failed to parse ffprobe output: {}", e))?;
+
+    let streams = json["streams"]
+        .as_array()
+        .ok_or("Missing streams in ffprobe output")?;
+
+    let mut video: Option<CodecInfo> = None;
+    let mut audio: Option<CodecInfo> = None;
+
+    for stream in streams {
+        let codec_type = stream["codec_type"].as_str().unwrap_or("");
+        let codec_name = stream["codec_name"].as_str().unwrap_or("unknown").to_string();
+        let codec_long_name = stream["codec_long_name"].as_str().unwrap_or("Unknown").to_string();
+
+        match codec_type {
+            "video" if video.is_none() => {
+                video = Some(CodecInfo { codec_name, codec_long_name });
+            }
+            "audio" if audio.is_none() => {
+                audio = Some(CodecInfo { codec_name, codec_long_name });
+            }
+            _ => {}
+        }
+    }
+
+    Ok(VideoCodecResult { video, audio })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -102,7 +189,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![call_deepseek_api])
+        .invoke_handler(tauri::generate_handler![call_deepseek_api, check_ffmpeg_tools, detect_video_codecs])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

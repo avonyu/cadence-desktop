@@ -4,7 +4,8 @@
     "openVideo": "打开视频",
     "openVideoTitle": "打开视频文件",
     "openVideoDesc": "支持的视频格式：mp4, webm, mkv, avi, mov, flv, wmv",
-    "selectFile": "选择文件"
+    "selectFile": "选择文件",
+    "codecWarning": "音频编码 {{codec}} 可能不被浏览器原生支持，视频可能无声音"
   },
   "subtitle": {
     "noSubtitles": "未加载字幕",
