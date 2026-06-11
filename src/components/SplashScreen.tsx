@@ -16,14 +16,14 @@ export function SplashScreen({ visible }: SplashScreenProps) {
           transition={{ duration: 0.5 }}
           className="fixed inset-0 z-50 flex items-center justify-center gap-3 bg-background"
         >
-          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+          <Loader2 className="size-6 animate-spin text-[var(--player-accent)]" />
           <motion.h1
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.5 }}
             className="text-2xl font-medium tracking-wide text-foreground"
           >
-            Cadence
+            Cadence Desktop
           </motion.h1>
         </motion.div>
       )}

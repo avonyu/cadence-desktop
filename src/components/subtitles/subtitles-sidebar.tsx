@@ -1,10 +1,10 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Subtitles, X, Loader2 } from "lucide-react";
+import { Subtitles, X, Loader2, RotateCw } from "lucide-react";
 import { type Caption } from "@/lib/subtitles";
 import { usePlayerStore, type BlurMode } from "@/stores/player-store";
 import { useTranslation } from "react-i18next";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import ShinyText from "@/components/ShinyText";
 
 interface SubtitlesSidebarProps {
@@ -45,25 +45,62 @@ export function SubtitlesSidebar({
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeItemRef = useRef<HTMLButtonElement>(null);
+  const [scrollTracking, setScrollTracking] = useState(true);
+  const isProgrammaticScroll = useRef(false);
+
+  const getViewport = useCallback(() => {
+    return sidebarRef.current?.closest(
+      "[data-radix-scroll-area-viewport]",
+    ) as HTMLElement | null;
+  }, []);
 
   useEffect(() => {
-    if (activeItemRef.current && sidebarRef.current) {
-      const viewport = sidebarRef.current.closest(
-        "[data-radix-scroll-area-viewport]",
-      ) as HTMLElement | null;
-      if (!viewport) return;
+    const viewport = getViewport();
+    if (!viewport) return;
 
-      const containerRect = viewport.getBoundingClientRect();
-      const itemRect = activeItemRef.current.getBoundingClientRect();
-      const offset =
-        itemRect.top - containerRect.top - containerRect.height * 0.25;
+    const handleScroll = () => {
+      if (isProgrammaticScroll.current) return;
+      setScrollTracking(false);
+    };
 
-      viewport.scrollTo({
-        top: viewport.scrollTop + offset,
-        behavior: "smooth",
-      });
-    }
-  }, [activeCaption]);
+    viewport.addEventListener("scroll", handleScroll);
+    return () => viewport.removeEventListener("scroll", handleScroll);
+  }, [getViewport]);
+
+  useEffect(() => {
+    if (!scrollTracking) return;
+    const viewport = getViewport();
+    if (!activeItemRef.current || !viewport) return;
+
+    isProgrammaticScroll.current = true;
+
+    const containerRect = viewport.getBoundingClientRect();
+    const itemRect = activeItemRef.current.getBoundingClientRect();
+    const offset =
+      itemRect.top - containerRect.top - containerRect.height * 0.25;
+
+    viewport.scrollTo({
+      top: viewport.scrollTop + offset,
+      behavior: "smooth",
+    });
+
+    const timer = setTimeout(() => {
+      isProgrammaticScroll.current = false;
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      isProgrammaticScroll.current = false;
+    };
+  }, [activeCaption, scrollTracking, getViewport]);
+
+  const handleCaptionClick = useCallback(
+    (caption: Caption) => {
+      setScrollTracking(true);
+      onSeekToCaption(caption);
+    },
+    [onSeekToCaption],
+  );
 
   const getDisplayText = (caption: Caption) => {
     if (swapSubtitles) {
@@ -119,7 +156,7 @@ export function SubtitlesSidebar({
                         : "text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                     key={`${caption.start}-${caption.text}`}
-                    onClick={() => onSeekToCaption(caption)}
+                    onClick={() => handleCaptionClick(caption)}
                   >
                     <span
                       className={`text-sm font-bold text-center transition cursor-pointer hover:text-[var(--player-accent)] ${
@@ -161,6 +198,18 @@ export function SubtitlesSidebar({
           )}
         </div>
       </ScrollArea>
+
+      {!scrollTracking && captions.length > 0 && activeCaption !== null && (
+        <div className="absolute bottom-4 right-4 z-10">
+          <Button
+            size="icon"
+            className="size-10 rounded-full shadow-lg !bg-[var(--player-accent)] !text-white hover:!bg-[var(--player-accent-hover)]"
+            onClick={() => setScrollTracking(true)}
+          >
+            <RotateCw size={18} />
+          </Button>
+        </div>
+      )}
     </aside>
   );
 }

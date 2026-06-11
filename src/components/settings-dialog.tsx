@@ -78,14 +78,14 @@ export function SettingsDialog({
     });
 
     if (!result.success) {
-      toast.error(t("settings.apiKeyRequired"), { position: "top-center" });
+      toast.error(t("settings.apiKeyRequired"));
       return;
     }
 
     setLocalApiKey(result.data.apiKey);
     setDeepseekApiKey(result.data.apiKey);
     setDeepseekModel(result.data.model);
-    toast.success(t("settings.saved"), { position: "top-center" });
+    toast.success(t("settings.saved"));
   };
 
   const tabs: { id: SettingsTab; icon: React.ReactNode; label: string }[] = [

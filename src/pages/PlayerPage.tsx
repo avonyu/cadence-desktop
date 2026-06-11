@@ -72,6 +72,7 @@ export const PlayerPage = () => {
   >("idle");
   const [transcodeProgress, setTranscodeProgress] = useState(0);
   const [transcodeDismissed, setTranscodeDismissed] = useState(false);
+  const [currentVideoTime, setCurrentVideoTime] = useState(0);
 
   const videoFilePathRef = useRef<string | null>(null);
 
@@ -245,6 +246,8 @@ export const PlayerPage = () => {
 
   const handleTimeUpdate = useCallback(
     (currentTime: number) => {
+      setCurrentVideoTime(currentTime);
+
       if (captions.length === 0) return;
 
       let newIndex: number | null = null;
@@ -255,7 +258,7 @@ export const PlayerPage = () => {
         }
       }
 
-      if (newIndex !== activeCaption) {
+      if (newIndex !== null && newIndex !== activeCaption) {
         setActiveCaption(newIndex);
       }
     },
@@ -359,7 +362,20 @@ export const PlayerPage = () => {
 
           {/* Captions */}
           <div className="group flex w-full flex-col items-center justify-center py-5 text-center min-h-36">
-            {captions.length > 0 ? (
+            {isAiProcessing ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="size-5 animate-spin text-(--player-accent)" />
+                <ShinyText
+                  text={t("ai.processing")}
+                  speed={2}
+                  shineColor="var(--player-accent)"
+                  className="text-lg"
+                />
+              </div>
+            ) : captions.length > 0 ? (
+              activeCaptionData &&
+              currentVideoTime >= activeCaptionData.start &&
+              currentVideoTime < activeCaptionData.end &&
               activeDisplay && (
                 <>
                   <p
@@ -382,16 +398,6 @@ export const PlayerPage = () => {
                   </p>
                 </>
               )
-            ) : isAiProcessing ? (
-              <div className="flex items-center gap-2">
-                <Loader2 className="size-5 animate-spin text-(--player-accent)" />
-                <ShinyText
-                  text={t("ai.processing")}
-                  speed={2}
-                  shineColor="var(--player-accent)"
-                  className="text-lg"
-                />
-              </div>
             ) : (
               <p className="text-lg text-muted-foreground">
                 {t("subtitle.noSubtitles")}
@@ -405,39 +411,21 @@ export const PlayerPage = () => {
           {codecInfo && (
             <span className="inline-flex items-center gap-1.5 rounded-md bg-secondary px-2 py-1 font-mono text-xs text-muted-foreground">
               {codecInfo.video && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>{codecInfo.video.codec_name.toUpperCase()}</span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {codecInfo.video.codec_long_name}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <span>{codecInfo.video.codec_name.toUpperCase()}</span>
               )}
               {codecInfo.video && codecInfo.audio && (
                 <span className="text-border">/</span>
               )}
               {codecInfo.audio && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span
-                        className={
-                          isAudioCodecUnsupported(codecInfo.audio.codec_name)
-                            ? "text-destructive"
-                            : ""
-                        }
-                      >
-                        {codecInfo.audio.codec_name.toUpperCase()}
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {codecInfo.audio.codec_long_name}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <span
+                  className={
+                    isAudioCodecUnsupported(codecInfo.audio.codec_name)
+                      ? "text-destructive"
+                      : ""
+                  }
+                >
+                  {codecInfo.audio.codec_name.toUpperCase()}
+                </span>
               )}
             </span>
           )}
