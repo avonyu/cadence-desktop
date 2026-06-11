@@ -5,6 +5,9 @@ use serde::Serialize;
 use tauri::Emitter;
 use tauri_plugin_http::reqwest;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 /// Remove markdown code fences from AI output.
 /// Handles any language identifier (```srt, ```ass, ```plaintext, etc.)
 /// and leading/trailing commentary lines outside the fence.
@@ -119,8 +122,10 @@ struct VideoCodecResult {
 }
 
 fn is_command_available(name: &str) -> bool {
-    Command::new(if cfg!(target_os = "windows") { "where" } else { "which" })
-        .arg(name)
+    let mut cmd = Command::new(if cfg!(target_os = "windows") { "where" } else { "which" });
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000);
+    cmd.arg(name)
         .output()
         .map(|o| o.status.success())
         .unwrap_or(false)
@@ -141,7 +146,10 @@ fn detect_video_codecs(file_path: String) -> Result<VideoCodecResult, String> {
         return Err("ffprobe is not installed or not found in PATH".into());
     }
 
-    let output = Command::new("ffprobe")
+    let mut cmd = Command::new("ffprobe");
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000);
+    let output = cmd
         .args([
             "-v", "error",
             "-show_entries", "stream=codec_name,codec_long_name,codec_type",
@@ -197,7 +205,10 @@ fn build_output_path(input: &str) -> String {
 }
 
 fn get_video_duration(file_path: &str) -> Result<f64, String> {
-    let output = Command::new("ffprobe")
+    let mut cmd = Command::new("ffprobe");
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(0x08000000);
+    let output = cmd
         .args([
             "-v", "error",
             "-show_entries", "format=duration",
@@ -239,7 +250,10 @@ async fn transcode_audio(
     let output = output_path.clone();
 
     tauri::async_runtime::spawn_blocking(move || {
-        let mut child = Command::new("ffmpeg")
+        let mut child = Command::new("ffmpeg");
+        #[cfg(target_os = "windows")]
+        child.creation_flags(0x08000000);
+        let mut child = child
             .args([
                 "-i", &input,
                 "-c:v", "copy",

@@ -37,6 +37,53 @@ Cadence — rhythm and flow. A desktop video player designed specifically for **
 - 🎨 **Dark UI** — Immersive dark theme for focused learning
 - 🌐 **i18n** — UI available in English and Chinese
 
+### Prerequisites
+
+**ffmpeg** (includes ffprobe) is required for audio transcoding and codec detection. Install it via your system package manager:
+
+<details>
+<summary><b>Windows</b></summary>
+
+```powershell
+# Option 1: winget (recommended)
+winget install Gyan.FFmpeg
+
+# Option 2: scoop
+scoop install ffmpeg
+
+# Option 3: choco
+choco install ffmpeg
+```
+
+After installation, restart your terminal or add `ffmpeg` to your `PATH`.
+
+</details>
+
+<details>
+<summary><b>macOS</b></summary>
+
+```bash
+brew install ffmpeg
+```
+
+</details>
+
+<details>
+<summary><b>Linux</b></summary>
+
+```bash
+# Debian / Ubuntu
+sudo apt install ffmpeg
+
+# Fedora
+sudo dnf install ffmpeg
+
+# Arch
+sudo pacman -S ffmpeg
+```
+
+</details>
+
 ### Usage
 
 1. **Open a Video** — Click the folder button on the toolbar, select a video file (`.mp4`, `.webm`, `.mkv`, `.avi`, `.mov`, `.flv`, `.wmv`)
@@ -47,30 +94,23 @@ Cadence — rhythm and flow. A desktop video player designed specifically for **
 
 ### Keyboard Shortcuts
 
-| Key | Action |
-|-----|--------|
-| `Space` | Play / Pause |
-| `←` | Jump to previous caption |
-| `→` | Jump to next caption |
+| Key     | Action                   |
+| ------- | ------------------------ |
+| `Space` | Play / Pause             |
+| `←`     | Jump to previous caption |
+| `→`     | Jump to next caption     |
 
 ### Settings
 
-| Setting | Options |
-|---------|---------|
-| Theme | System / Light / Dark |
-| Language | English / 中文 |
+| Setting        | Options                                 |
+| -------------- | --------------------------------------- |
+| Theme          | System / Light / Dark                   |
+| Language       | English / 中文                          |
 | DeepSeek Model | `deepseek-v4-flash` / `deepseek-v4-pro` |
-| API Key | DeepSeek API key (stored locally) |
+| API Key        | DeepSeek API key (stored locally)       |
 
 ### Preview
 
-| Light Mode | Dark Mode |
-|:---:|:---:|
+|           Light Mode            |              Dark Mode              |
+| :-----------------------------: | :---------------------------------: |
 | ![Light Mode](docs/preview.png) | ![Dark Mode](docs/preview-dark.png) |
-
-### Subtitle Resources
-
-- [SubHD](https://subhd.tv/)
-- [字幕库](https://srtku.com/)
-- [射手网](https://2.assrt.net/)
-- [OpenSubtitles](https://opensubtitles.org/)
