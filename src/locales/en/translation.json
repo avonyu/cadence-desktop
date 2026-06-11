@@ -5,7 +5,13 @@
     "openVideoTitle": "Open Video File",
     "openVideoDesc": "Supported video formats: mp4, webm, mkv, avi, mov, flv, wmv",
     "selectFile": "Select File",
-    "codecWarning": "Audio codec {{codec}} may not be supported by the browser, audio may be missing"
+    "codecWarning": "Audio codec {{codec}} may not be supported by the browser, audio may be missing",
+    "transcode": "Convert",
+    "transcoding": "Converting...",
+    "transcodeDone": "Done",
+    "transcodeTooltip": "Transcode audio to AAC 128K",
+    "transcodeSuccess": "Audio transcoding complete",
+    "transcodeFailed": "Audio transcoding failed"
   },
   "subtitle": {
     "noSubtitles": "No subtitles loaded",

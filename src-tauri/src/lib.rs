@@ -1,5 +1,8 @@
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::io::{BufRead, BufReader};
+use std::path::Path;
 use serde::Serialize;
+use tauri::Emitter;
 use tauri_plugin_http::reqwest;
 
 /// Remove markdown code fences from AI output.
@@ -182,6 +185,108 @@ fn detect_video_codecs(file_path: String) -> Result<VideoCodecResult, String> {
     Ok(VideoCodecResult { video, audio })
 }
 
+fn build_output_path(input: &str) -> String {
+    let path = Path::new(input);
+    let stem = path.file_stem().unwrap_or_default();
+    let output_name = format!("{}.AAC.mp4", stem.to_string_lossy());
+    if let Some(parent) = path.parent() {
+        parent.join(&output_name).to_string_lossy().to_string()
+    } else {
+        output_name
+    }
+}
+
+fn get_video_duration(file_path: &str) -> Result<f64, String> {
+    let output = Command::new("ffprobe")
+        .args([
+            "-v", "error",
+            "-show_entries", "format=duration",
+            "-of", "csv=p=0",
+            file_path,
+        ])
+        .output()
+        .map_err(|e| format!("Failed to run ffprobe: {}", e))?;
+
+    if !output.status.success() {
+        return Err("Failed to get video duration".into());
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    stdout
+        .trim()
+        .parse::<f64>()
+        .map_err(|_| "Failed to parse duration".into())
+}
+
+#[tauri::command]
+async fn transcode_audio(
+    app: tauri::AppHandle,
+    input_path: String,
+) -> Result<String, String> {
+    if !is_command_available("ffmpeg") {
+        return Err("ffmpeg is not installed or not found in PATH".into());
+    }
+
+    let output_path = build_output_path(&input_path);
+
+    if Path::new(&output_path).exists() {
+        return Ok(output_path);
+    }
+
+    let duration = get_video_duration(&input_path).unwrap_or(0.0);
+
+    let input = input_path.clone();
+    let output = output_path.clone();
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut child = Command::new("ffmpeg")
+            .args([
+                "-i", &input,
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-b:a", "128k",
+                "-progress", "pipe:1",
+                "-nostats",
+                "-y",
+                &output,
+            ])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| format!("Failed to spawn ffmpeg: {}", e))?;
+
+        let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
+        let reader = BufReader::new(stdout);
+
+        for line in reader.lines() {
+            let line = line.map_err(|e| format!("Read error: {}", e))?;
+            if let Some(rest) = line.strip_prefix("out_time_ms=") {
+                let ms: u64 = rest.parse().unwrap_or(0);
+                let pct = if duration > 0.0 {
+                    ((ms as f64 / (duration * 1_000_000.0)) * 100.0)
+                        .min(99.0) as u32
+                } else {
+                    0
+                };
+                let _ = app.emit("transcode-progress", pct);
+            }
+        }
+
+        let status = child
+            .wait()
+            .map_err(|e| format!("Failed to wait for ffmpeg: {}", e))?;
+
+        if !status.success() {
+            return Err("ffmpeg transcode failed".into());
+        }
+
+        let _ = app.emit("transcode-progress", 100u32);
+        Ok(output)
+    })
+    .await
+    .map_err(|e| format!("Transcode task failed: {}", e))?
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -189,7 +294,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![call_deepseek_api, check_ffmpeg_tools, detect_video_codecs])
+        .invoke_handler(tauri::generate_handler![call_deepseek_api, check_ffmpeg_tools, detect_video_codecs, transcode_audio])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

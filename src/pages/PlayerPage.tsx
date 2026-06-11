@@ -5,9 +5,11 @@ import {
   Subtitles,
   Settings,
   Loader2,
+  AudioLines,
 } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { useRef, useCallback, useEffect, useState } from "react";
 import { type Caption } from "@/lib/subtitles";
 import { processSubtitle, getSubtitlesForVideo } from "@/lib/ai-subtitle";
@@ -64,6 +66,12 @@ export const PlayerPage = () => {
   const [captions, setCaptions] = useState<Caption[]>([]);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [codecInfo, setCodecInfo] = useState<VideoCodecResult | null>(null);
+  const [transcodeState, setTranscodeState] = useState<
+    "idle" | "converting" | "done" | "error"
+  >("idle");
+  const [transcodeProgress, setTranscodeProgress] = useState(0);
+
+  const videoFilePathRef = useRef<string | null>(null);
 
   const sidebarOpen = usePlayerStore((s) => s.sidebarOpen);
   const blurMode = usePlayerStore((s) => s.blurMode);
@@ -91,6 +99,7 @@ export const PlayerPage = () => {
     });
     if (selected) {
       setVideoSrc(convertFileSrc(selected));
+      videoFilePathRef.current = selected;
       // Extract file name from path
       const fileName = selected.split(/[\\/]/).pop() || selected;
       setVideoFileName(fileName);
@@ -98,6 +107,7 @@ export const PlayerPage = () => {
       // Clear previous subtitles
       setCaptions([]);
       setActiveCaption(null);
+      setTranscodeState("idle");
 
       // Detect codec info via ffprobe
       try {
@@ -177,6 +187,42 @@ export const PlayerPage = () => {
         error instanceof Error ? error.message : t("ai.processFailed"),
       );
       setAiProcessing("idle");
+    }
+  };
+
+  const handleTranscodeAudio = async () => {
+    const inputPath = videoFilePathRef.current;
+    if (!inputPath) return;
+
+    setTranscodeState("converting");
+    setTranscodeProgress(0);
+
+    const unlisten = await listen<number>("transcode-progress", (event) => {
+      setTranscodeProgress(event.payload);
+    });
+
+    try {
+      const outputPath = await invoke<string>("transcode_audio", {
+        inputPath,
+      });
+      setVideoSrc(convertFileSrc(outputPath));
+      videoFilePathRef.current = outputPath;
+      setTranscodeState("done");
+      setTranscodeProgress(100);
+      // Re-detect codec info after transcode
+      const result = await invoke<VideoCodecResult>("detect_video_codecs", {
+        filePath: outputPath,
+      });
+      setCodecInfo(result);
+      toast.success(t("video.transcodeSuccess"));
+    } catch (error) {
+      console.error("Transcode failed:", error);
+      toast.error(
+        error instanceof Error ? error.message : t("video.transcodeFailed"),
+      );
+      setTranscodeState("error");
+    } finally {
+      unlisten();
     }
   };
 
@@ -338,7 +384,7 @@ export const PlayerPage = () => {
         </div>
 
         {/* Codec info */}
-        <div className="flex justify-end px-4 py-1">
+        <div className="flex justify-end items-center gap-2 px-4 py-1">
           {codecInfo && (
             <span className="inline-flex items-center gap-1.5 rounded-md bg-secondary px-2 py-1 font-mono text-xs text-muted-foreground">
               {codecInfo.video && (
@@ -378,6 +424,36 @@ export const PlayerPage = () => {
               )}
             </span>
           )}
+          {codecInfo?.audio &&
+            isAudioCodecUnsupported(codecInfo.audio.codec_name) && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-6 px-2 text-xs gap-1"
+                      disabled={transcodeState === "converting"}
+                      onClick={handleTranscodeAudio}
+                    >
+                      {transcodeState === "converting" ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <AudioLines size={12} />
+                      )}
+                      {transcodeState === "converting"
+                        ? `${t("video.transcoding")} ${transcodeProgress}%`
+                        : transcodeState === "done"
+                          ? t("video.transcodeDone")
+                          : t("video.transcode")}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t("video.transcodeTooltip")}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
         </div>
 
         {/* Tools bar */}
