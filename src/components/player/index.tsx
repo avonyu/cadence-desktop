@@ -1,6 +1,6 @@
 import "@videojs/react/video/skin.css";
 // import "@/styles/player.css";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import { Video as VideoIcon } from "lucide-react";
 import { createPlayer, videoFeatures } from "@videojs/react";
 import { VideoSkin, Video } from "@videojs/react/video";
@@ -63,23 +63,34 @@ export const VideoPlayer = ({
         )
     : null;
 
+  const handleVideoClick = useCallback(() => {
+    const video = videoRef?.current;
+    if (!video || !src) return;
+    if (video.paused) {
+      video.play();
+    } else {
+      video.pause();
+    }
+  }, [videoRef, src]);
+
   return (
     <div
       ref={containerRef}
       className="flex h-full w-full items-center justify-center"
     >
       <Player.Provider>
-        <VideoSkin
-          className="video-player-surface overflow-hidden"
-          style={
-            playerSize
-              ? {
-                  width: playerSize.width,
-                  height: playerSize.height,
-                }
-              : undefined
-          }
-        >
+        <div onClick={handleVideoClick} className="contents">
+          <VideoSkin
+            className="video-player-surface overflow-hidden"
+            style={
+              playerSize
+                ? {
+                    width: playerSize.width,
+                    height: playerSize.height,
+                  }
+                : undefined
+            }
+          >
           <Video
             ref={videoRef}
             className="h-full w-full object-contain"
@@ -104,6 +115,7 @@ export const VideoPlayer = ({
             </div>
           )}
         </VideoSkin>
+        </div>
       </Player.Provider>
     </div>
   );

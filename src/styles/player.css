@@ -2,13 +2,20 @@
     border-radius: 0px;
 }
 
-/* Hide Video.js default control bar - using custom toolbar controls */
+/* Hide Video.js UI overlays - video area is playback-only, controls are in toolbar */
 .video-player-surface .vjs-control-bar,
-.video-player-surface .vjs-big-play-button {
+.video-player-surface .vjs-big-play-button,
+.video-player-surface .vjs-poster,
+.video-player-surface .vjs-dock-shelf,
+.video-player-surface .vjs-dock-text {
     display: none !important;
 }
 
-/* Video.js user-inactive class removes cursor - restore it for our custom controls */
+/* Clickable video area for play/pause toggle */
+.video-player-surface {
+    cursor: pointer;
+}
+
 .video-player-surface.vjs-user-inactive {
-    cursor: default;
+    cursor: pointer;
 }
