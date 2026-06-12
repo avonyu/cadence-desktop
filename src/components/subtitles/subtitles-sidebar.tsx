@@ -48,7 +48,7 @@ export function SubtitlesSidebar({
     aiProcessing === "processing" || aiProcessing === "loading";
 
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeItemRef = useRef<HTMLButtonElement>(null);
+  const activeItemRef = useRef<HTMLDivElement>(null);
   const isProgrammaticScroll = useRef(false);
 
   const getViewport = useCallback(() => {
@@ -164,17 +164,17 @@ export function SubtitlesSidebar({
                 const { primary, secondary } = getDisplayText(caption);
 
                 return (
-                  <button
+                  <div
                     ref={ref}
-                    className={`group/item grid w-full grid-cols-[62px_1fr] gap-1 rounded-md px-2 py-2 text-left transition ${
+                    className={`group/item grid w-full grid-cols-[62px_1fr] items-start gap-1 rounded-md px-2 py-2 text-left transition ${
                       isActive
                         ? "bg-accent text-[var(--player-accent)]"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                     key={`${caption.start}-${caption.text}`}
-                    onClick={() => handleCaptionClick(caption, index)}
                   >
-                    <span
+                    <button
+                      onClick={() => handleCaptionClick(caption, index)}
                       className={`text-sm font-bold text-center transition cursor-pointer hover:text-[var(--player-accent)] ${
                         isActive
                           ? "text-[var(--player-accent)]"
@@ -182,7 +182,7 @@ export function SubtitlesSidebar({
                       }`}
                     >
                       {formatCaptionTime(caption.start)}
-                    </span>
+                    </button>
                     <span>
                       <span
                         className={`block text-sm font-bold leading-snug tracking-tight transition-[filter] duration-300 ${
@@ -201,7 +201,7 @@ export function SubtitlesSidebar({
                         {secondary}
                       </span>
                     </span>
-                  </button>
+                  </div>
                 );
               })}
             </div>
