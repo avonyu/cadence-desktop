@@ -32,3 +32,4 @@ dist-ssr
 .claude
 .remember
 .playwright-mcp
+.tauri
