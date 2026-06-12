@@ -9,10 +9,10 @@ describe("getContainedVideoSize", () => {
     });
   });
 
-  it("does not enlarge a video beyond its original dimensions", () => {
+  it("enlarges a video to fill the container while maintaining aspect ratio", () => {
     expect(getContainedVideoSize(640, 480, 1200, 900)).toEqual({
-      width: 640,
-      height: 480,
+      width: 1200,
+      height: 900,
     });
   });
 });

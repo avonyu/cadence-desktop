@@ -45,7 +45,6 @@ export const getContainedVideoSize = (
   }
 
   const scale = Math.min(
-    1,
     containerWidth / videoWidth,
     containerHeight / videoHeight,
   );
