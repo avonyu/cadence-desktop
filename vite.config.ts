@@ -36,12 +36,19 @@ export default defineConfig({
     },
   },
   build: {
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks: {
           "vendor-react": ["react", "react-dom", "react-router"],
           "vendor-video": ["@videojs/react"],
-          "vendor-ui": ["radix-ui", "lucide-react", "class-variance-authority", "clsx", "tailwind-merge"],
+          "vendor-ui": [
+            "radix-ui",
+            "lucide-react",
+            "class-variance-authority",
+            "clsx",
+            "tailwind-merge",
+          ],
         },
       },
     },

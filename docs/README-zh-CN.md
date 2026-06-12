@@ -37,6 +37,53 @@ Cadence，意为韵律与节奏。这是一款专为 **听力 + 字幕学习** �
 - 🎨 **暗色界面** — 沉浸式深色主题，专注学习不刺眼
 - 🌐 **国际化** — 支持中文和 English 界面
 
+### 环境依赖
+
+需要安装 **ffmpeg**（包含 ffprobe）以支持音频转码和编码检测：
+
+<details>
+<summary><b>Windows</b></summary>
+
+```powershell
+# 方式一：winget（推荐）
+winget install Gyan.FFmpeg
+
+# 方式二：scoop
+scoop install ffmpeg
+
+# 方式三：choco
+choco install ffmpeg
+```
+
+安装后重启终端，或将 `ffmpeg` 添加到系统 `PATH` 环境变量。
+
+</details>
+
+<details>
+<summary><b>macOS</b></summary>
+
+```bash
+brew install ffmpeg
+```
+
+</details>
+
+<details>
+<summary><b>Linux</b></summary>
+
+```bash
+# Debian / Ubuntu
+sudo apt install ffmpeg
+
+# Fedora
+sudo dnf install ffmpeg
+
+# Arch
+sudo pacman -S ffmpeg
+```
+
+</details>
+
 ### 使用说明
 
 1. **打开视频** — 点击工具栏的文件夹按钮，选择视频文件（`.mp4` / `.webm` / `.mkv` / `.avi` / `.mov` / `.flv` / `.wmv`）
@@ -47,30 +94,23 @@ Cadence，意为韵律与节奏。这是一款专为 **听力 + 字幕学习** �
 
 ### 键盘快捷键
 
-| 按键 | 功能 |
-|------|------|
-| `空格` | 播放 / 暂停 |
-| `←` | 跳转到上一条字幕 |
-| `→` | 跳转到下一条字幕 |
+| 按键   | 功能             |
+| ------ | ---------------- |
+| `空格` | 播放 / 暂停      |
+| `←`    | 跳转到上一条字幕 |
+| `→`    | 跳转到下一条字幕 |
 
 ### 设置项
 
-| 设置 | 选项 |
-|------|------|
-| 主题 | 跟随系统 / 浅色 / 深色 |
-| 界面语言 | 中文 / English |
+| 设置          | 选项                                    |
+| ------------- | --------------------------------------- |
+| 主题          | 跟随系统 / 浅色 / 深色                  |
+| 界面语言      | 中文 / English                          |
 | DeepSeek 模型 | `deepseek-v4-flash` / `deepseek-v4-pro` |
-| API 密钥 | DeepSeek API 密钥（本地存储） |
+| API 密钥      | DeepSeek API 密钥（本地存储）           |
 
 ### 预览
 
-| 亮色模式 | 暗色模式 |
-|:---:|:---:|
+|         亮色模式         |           暗色模式            |
+| :----------------------: | :---------------------------: |
 | ![亮色模式](preview.png) | ![暗色模式](preview-dark.png) |
-
-### 字幕资源
-
-- [SubHD](https://subhd.tv/)
-- [字幕库](https://srtku.com/)
-- [射手网](https://2.assrt.net/)
-- [OpenSubtitles](https://opensubtitles.org/)

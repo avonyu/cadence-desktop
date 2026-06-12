@@ -4,7 +4,26 @@
     "openVideo": "Open Video",
     "openVideoTitle": "Open Video File",
     "openVideoDesc": "Supported video formats: mp4, webm, mkv, avi, mov, flv, wmv",
-    "selectFile": "Select File"
+    "selectFile": "Select File",
+    "codecWarning": "Audio codec {{codec}} may not be natively supported by WebView, audio may be missing, consider transcoding",
+    "transcode": "Convert",
+    "transcoding": "Converting...",
+    "transcodeDone": "Done",
+    "transcodeTooltip": "Transcode audio to AAC",
+    "transcodeSuccess": "Audio transcoding complete",
+    "transcodeFailed": "Audio transcoding failed",
+    "transcodeDoNotClose": "Transcoding in progress, do not close the app",
+    "ffmpegMissing": "ffmpeg not found, audio transcode unavailable, please install it",
+    "ffprobeMissing": "ffprobe not found, codec detection unavailable, please install it"
+  },
+  "player": {
+    "play": "Play",
+    "pause": "Pause",
+    "previousSubtitle": "Previous Subtitle",
+    "nextSubtitle": "Next Subtitle",
+    "playbackSpeed": "Playback Speed",
+    "enterFullscreen": "Enter Fullscreen",
+    "exitFullscreen": "Exit Fullscreen"
   },
   "subtitle": {
     "noSubtitles": "No subtitles loaded",
@@ -19,7 +38,10 @@
     "blurOff": "Off",
     "blurPrimaryLine": "Line 1",
     "blurSecondaryLine": "Line 2",
-    "blurAllLines": "All"
+    "blurAllLines": "All",
+    "subtitleMask": "Subtitle Mask",
+    "subtitleMaskOff": "Off",
+    "subtitleMaskOn": "On"
   },
   "settings": {
     "title": "Settings",
@@ -42,6 +64,7 @@
     "apiKey": "API Key",
     "model": "Model",
     "save": "Save",
+    "apiKeyRequired": "Please provide an API Key",
     "saved": "Configuration saved"
   },
   "ai": {

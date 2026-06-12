@@ -35,3 +35,17 @@
 - 不要为了这个问题放宽 CSP 使用 `style-src 'unsafe-inline'`
 - 项目内应将隐藏规则写入打包 CSS，例如在 `src/App.css` 中维护 `[data-radix-scroll-area-viewport]` 和 `::-webkit-scrollbar` 规则
 - Shadcn `ScrollArea.Root` 应保持 `relative overflow-hidden`，确保 viewport 和自定义 scrollbar 按预期被裁剪
+
+### 开发与生产样式一致性
+
+- 第三方组件的基础样式必须显式静态导入，使 Vite 将其写入生产 CSS；不要依赖组件在运行时插入内联 `<style>`
+- Sonner 必须导入 `sonner/dist/styles.css`，否则生产 CSP 会阻止其运行时样式，导致 Toast 进入普通文档流
+- 发现第三方组件依赖运行时注入样式时，应优先导入其静态 CSS，或将必要规则维护在 `src/App.css`，不要通过 `style-src 'unsafe-inline'` 放宽 CSP
+- Tailwind 类名必须以完整字符串出现在源码中；不要使用 ``bg-${color}-500`` 等动态拼接，应通过映射表返回完整类名，避免生产构建遗漏样式
+- `bun run preview` 只能检查 Vite 生产资源、CSS 打包和 Tailwind 类名扫描，不能完整复现 Tauri 协议与 CSP
+- 涉及布局、弹窗、Toast、滚动区域或第三方 UI 组件的修改，完成前应按以下层级验证：
+  1. `bun tauri dev`：快速交互和 HMR 验证
+  2. `bun run build` 和 `bun run preview`：验证 Vite 生产构建
+  3. `bun tauri build --debug --no-bundle`：使用真实 Tauri WebView、`frontendDist` 和生产 CSP 验证
+- 在 Tauri debug build 中检查 WebView 控制台，不得忽略 `Refused to apply inline style`、`Refused to load` 或 CSP directive violation 等错误
+- 发布前至少执行 `bun test`、`bun run build` 和 `bun tauri build --debug --no-bundle`；如果存在与当前修改无关的测试失败，需要明确记录
