@@ -130,9 +130,6 @@
     button {
         @apply cursor-pointer;
     }
-    :focus-visible {
-        outline: none;
-    }
 }
 
 [data-radix-scroll-area-viewport] {

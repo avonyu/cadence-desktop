@@ -13,6 +13,22 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Prevent non-input elements from holding focus (desktop app behavior)
+  useEffect(() => {
+    const handleFocus = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      const inputTags = ["INPUT", "TEXTAREA", "SELECT"];
+      if (
+        !inputTags.includes(target.tagName) &&
+        !target.isContentEditable
+      ) {
+        target.blur();
+      }
+    };
+    document.addEventListener("focus", handleFocus, true);
+    return () => document.removeEventListener("focus", handleFocus, true);
+  }, []);
+
   return (
     <ThemeProvider defaultTheme="system" storageKey="cadence:theme">
       <SplashScreen visible={splashVisible} />
