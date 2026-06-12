@@ -28,15 +28,15 @@ import {
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/components/theme-provider";
 import deepseekIcon from "@/assets/deepseek-color.svg";
-import githubIconBlack from "@/assets/GitHub_Invertocat_Black.svg";
-import githubIconWhite from "@/assets/GitHub_Invertocat_White.svg";
+// import githubIconBlack from "@/assets/GitHub_Invertocat_Black.svg";
+// import githubIconWhite from "@/assets/GitHub_Invertocat_White.svg";
 import { aiSettingsSchema } from "@/lib/ai-settings";
 import { usePlayerStore } from "@/stores/player-store";
 import { useState } from "react";
 import { toast } from "sonner";
 import { check } from "@tauri-apps/plugin-updater";
 
-const GITHUB_URL = import.meta.env.VITE_GITHUB_URL;
+// const GITHUB_URL = import.meta.env.VITE_GITHUB_URL;
 const APP_VERSION = import.meta.env.VITE_APP_VERSION;
 
 type SettingsTab = "basic" | "ai" | "about";
@@ -59,10 +59,10 @@ export function SettingsDialog({
 
   const currentLng = i18n.language;
 
-  const isDark =
-    theme === "dark" ||
-    (theme === "system" &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches);
+  // const isDark =
+  //   theme === "dark" ||
+  //   (theme === "system" &&
+  //     window.matchMedia("(prefers-color-scheme: dark)").matches);
 
   const handleCheckUpdate = async () => {
     setUpdateStatus(t("settings.checking"));
@@ -292,7 +292,7 @@ export function SettingsDialog({
                 <span className="text-xs text-muted-foreground">
                   {t("settings.version")} {APP_VERSION}
                 </span>
-                <a
+                {/* <a
                   href={GITHUB_URL}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -303,7 +303,7 @@ export function SettingsDialog({
                     alt="GitHub"
                     className="size-4.5"
                   />
-                </a>
+                </a> */}
               </div>
             </div>
           </TabsContent>
