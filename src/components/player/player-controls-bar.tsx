@@ -1,3 +1,4 @@
+import { memo } from "react";
 import {
   FolderOpen,
   PanelRight,
@@ -47,7 +48,7 @@ interface PlayerControlsBarProps {
   onOpenSettings: () => void;
 }
 
-export function PlayerControlsBar({
+export const PlayerControlsBar = memo(function PlayerControlsBar({
   videoSrc,
   captions,
   isPlaying,
@@ -283,4 +284,4 @@ export function PlayerControlsBar({
       </div>
     </div>
   );
-}
+});

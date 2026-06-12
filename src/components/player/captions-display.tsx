@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Loader2 } from "lucide-react";
 import { type Caption } from "@/lib/subtitles";
 import { type BlurMode } from "@/stores/player-store";
@@ -13,7 +14,7 @@ interface CaptionsDisplayProps {
   blurMode: BlurMode;
 }
 
-export function CaptionsDisplay({
+export const CaptionsDisplay = memo(function CaptionsDisplay({
   activeCaptionData,
   activeDisplay,
   currentVideoTime,
@@ -68,4 +69,4 @@ export function CaptionsDisplay({
       )}
     </div>
   );
-}
+});
