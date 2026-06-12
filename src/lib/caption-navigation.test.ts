@@ -41,4 +41,8 @@ describe("caption navigation", () => {
   it("moves to the next caption when playback is between two captions", () => {
     expect(getNextCaptionIndex(captions, 8, null)).toBe(2);
   });
+
+  it("moves to previous caption from gap with stale activeCaption (regression)", () => {
+    expect(getPreviousCaptionIndex(captions, 8, 2)).toBe(1);
+  });
 });
