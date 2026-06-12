@@ -1,5 +1,5 @@
 import "@videojs/react/video/skin.css";
-// import "@/styles/player.css";
+import "@/styles/player.css";
 import { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import { Video as VideoIcon } from "lucide-react";
 import { createPlayer, videoFeatures } from "@videojs/react";
