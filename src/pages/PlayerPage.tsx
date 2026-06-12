@@ -311,7 +311,7 @@ export const PlayerPage = () => {
 
       let newIndex: number | null = null;
       for (let i = 0; i < captions.length; i++) {
-        if (currentTime >= captions[i].start && currentTime < captions[i].end) {
+        if (currentTime >= captions[i].start && currentTime < captions[i].end + 0.001) {
           newIndex = i;
           break;
         }
@@ -505,7 +505,7 @@ export const PlayerPage = () => {
               ) : captions.length > 0 ? (
                 activeCaptionData &&
                 currentVideoTime >= activeCaptionData.start &&
-                currentVideoTime < activeCaptionData.end &&
+                currentVideoTime < activeCaptionData.end + 0.001 &&
                 activeDisplay && (
                   <>
                     <p
