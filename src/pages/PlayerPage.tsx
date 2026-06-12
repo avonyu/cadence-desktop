@@ -485,9 +485,10 @@ export const PlayerPage = () => {
                 src={videoSrc}
                 videoRef={videoRef}
                 onTimeUpdate={handleTimeUpdate}
-              />
-              {subtitleMaskVisible && <SubtitleMask />}
-          </div>
+              >
+                {subtitleMaskVisible && <SubtitleMask />}
+              </VideoPlayer>
+            </div>
 
             {/* Captions */}
             <div className="group flex w-full flex-col items-center justify-center py-5 text-center min-h-36">
@@ -792,9 +793,7 @@ export const PlayerPage = () => {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {subtitleMaskVisible
-                  ? t("subtitle.subtitleMaskOn")
-                  : t("subtitle.subtitleMaskOff")}
+                {t("subtitle.subtitleMask")}
               </TooltipContent>
             </ShadcnTooltip>
 

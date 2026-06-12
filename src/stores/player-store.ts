@@ -35,11 +35,21 @@ interface PlayerState {
 type PlayerAction = Pick<PlayerActionImpl, keyof PlayerActionImpl>;
 
 const defaultMaskRect: MaskRect = {
-  x: 0,
-  y: 0,
+  x: 10,
+  y: 80,
   width: 80,
   height: 12,
 };
+
+const STORAGE_KEY_MASK = "cadence:subtitle-mask-rect";
+
+function loadMaskRect(): MaskRect {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_MASK);
+    if (raw) return JSON.parse(raw) as MaskRect;
+  } catch { /* ignore */ }
+  return defaultMaskRect;
+}
 
 const initialState: PlayerState = {
   sidebarOpen: true,
@@ -54,7 +64,7 @@ const initialState: PlayerState = {
   deepseekModel:
     localStorage.getItem("cadence:deepseek-model") || "deepseek-v4-flash",
   subtitleMaskVisible: false,
-  subtitleMaskRect: defaultMaskRect,
+  subtitleMaskRect: loadMaskRect(),
 };
 
 const blurModes: BlurMode[] = ["off", "primary", "secondary", "all"];
@@ -128,6 +138,7 @@ export class PlayerActionImpl {
   };
 
   setSubtitleMaskRect = (rect: MaskRect) => {
+    localStorage.setItem(STORAGE_KEY_MASK, JSON.stringify(rect));
     this.#set({ subtitleMaskRect: rect });
   };
 }

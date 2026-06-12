@@ -1,5 +1,5 @@
 import "@/styles/player.css";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Video as VideoIcon } from "lucide-react";
 import { createPlayer, videoFeatures } from "@videojs/react";
 import { VideoSkin, Video } from "@videojs/react/video";
@@ -17,12 +17,14 @@ interface VideoPlayerProps {
   src: string | null;
   onTimeUpdate?: (currentTime: number) => void;
   videoRef?: React.RefObject<HTMLVideoElement | null>;
+  children?: ReactNode;
 }
 
 export const VideoPlayer = ({
   src,
   onTimeUpdate,
   videoRef,
+  children,
 }: VideoPlayerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState<VideoSize | null>(null);
@@ -103,6 +105,7 @@ export const VideoPlayer = ({
             <p className="text-sm font-medium text-zinc-600">No video loaded</p>
           </div>
         )}
+        {children}
       </VideoSkin>
     </div>
   );
