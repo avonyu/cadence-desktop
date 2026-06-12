@@ -126,7 +126,7 @@ export function SubtitlesSidebar({
   };
 
   return (
-    <aside className="relative flex min-h-0 flex-col bg-popover">
+    <aside className="relative flex min-h-0 h-full flex-col bg-popover">
       {/* AI Processing overlay */}
       {isAiProcessing && (
         <div className="absolute inset-0 z-10 flex items-center justify-center backdrop-blur-sm">

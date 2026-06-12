@@ -28,6 +28,7 @@ import {
 import { usePlayerStore } from "@/stores/player-store";
 import { useTranslation } from "react-i18next";
 import { SubtitleSettingsPopover } from "@/components/subtitle-settings-popover";
+import { Resizable } from "re-resizable";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { SubtitlesSidebar } from "@/components/subtitles/subtitles-sidebar";
 import ShinyText from "@/components/ShinyText";
@@ -348,13 +349,8 @@ export const PlayerPage = () => {
     aiProcessing === "processing" || aiProcessing === "loading";
 
   return (
-    <section
-      className="overflow-hidden grid h-screen bg-background text-foreground"
-      style={{
-        gridTemplateColumns: sidebarOpen ? "1fr minmax(280px, 430px)" : "1fr",
-      }}
-    >
-      <main className="relative flex flex-col min-h-0 border-r border-border bg-card">
+    <section className="flex overflow-hidden h-screen bg-background text-foreground">
+      <main className="relative flex flex-col min-h-0 flex-1 min-w-0 border-r border-border bg-card">
         {/* Main Content */}
         <div
           className={cn(
@@ -554,11 +550,28 @@ export const PlayerPage = () => {
       </main>
 
       {sidebarOpen && (
-        <SubtitlesSidebar
-          captions={captions}
-          onSeekToCaption={handleSeekToCaption}
-          onClose={toggleSidebar}
-        />
+        <Resizable
+          defaultSize={{ width: 360, height: "100%" }}
+          minWidth={280}
+          maxWidth={600}
+          enable={{ left: true }}
+          className="min-h-0"
+          handleStyles={{
+            left: {
+              width: "4px",
+              cursor: "col-resize",
+            },
+          }}
+          handleClasses={{
+            left: "hover:bg-(--player-accent)/50 transition-colors",
+          }}
+        >
+          <SubtitlesSidebar
+            captions={captions}
+            onSeekToCaption={handleSeekToCaption}
+            onClose={toggleSidebar}
+          />
+        </Resizable>
       )}
 
       <SettingsDialog
