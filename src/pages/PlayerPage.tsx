@@ -145,6 +145,10 @@ export const PlayerPage = () => {
     handleLoadSubtitle(videoFileName);
   }, [handleLoadSubtitle, videoFileName]);
 
+  const handleOpenSettings = useCallback(() => {
+    setSettingsDialogOpen(true);
+  }, []);
+
   // ---- Render ----
   return (
     <Player.Provider>
@@ -201,7 +205,7 @@ export const PlayerPage = () => {
             onLoadSubtitle={handleLoadSubtitleFile}
             onPrevCaption={goToPrevCaption}
             onNextCaption={goToNextCaption}
-            onOpenSettings={() => setSettingsDialogOpen(true)}
+            onOpenSettings={handleOpenSettings}
           />
         </main>
 

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { type Caption } from "@/lib/subtitles";
 import { usePlayerStore } from "@/stores/player-store";
 
@@ -16,22 +16,43 @@ export function useCaptionSync(
   const setLastActiveCaption = usePlayerStore((s) => s.setLastActiveCaption);
   const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
 
+  const lastFoundIndexRef = useRef(0);
+  const lastActiveCaptionRef = useRef<number | null>(null);
+
   const handleTimeUpdate = useCallback(
     (currentTime: number) => {
       if (captions.length === 0) return;
 
       let newIndex: number | null = null;
-      for (let i = 0; i < captions.length; i++) {
+      let startFrom = lastFoundIndexRef.current;
+
+      if (
+        startFrom >= captions.length ||
+        (startFrom > 0 && currentTime < captions[startFrom].start)
+      ) {
+        startFrom = 0;
+      }
+
+      for (let i = startFrom; i < captions.length; i++) {
+        if (currentTime < captions[i].start) break;
         if (currentTime >= captions[i].start && currentTime < captions[i].end + 0.001) {
           newIndex = i;
           break;
         }
       }
 
+      if (newIndex !== null) {
+        lastFoundIndexRef.current = newIndex;
+      }
+
       if (newIndex !== activeCaption) {
         setActiveCaption(newIndex);
       }
-      if (newIndex !== null) {
+      if (
+        newIndex !== null &&
+        newIndex !== lastActiveCaptionRef.current
+      ) {
+        lastActiveCaptionRef.current = newIndex;
         setLastActiveCaption(newIndex);
       }
     },

@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Minus, AudioLines } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +19,7 @@ interface CodecInfoBarProps {
   onTranscodeAudio: () => void;
 }
 
-export function CodecInfoBar({
+export const CodecInfoBar = memo(function CodecInfoBar({
   codecInfo,
   transcodeState,
   transcodeProgress,
@@ -93,4 +94,4 @@ export function CodecInfoBar({
         )}
     </div>
   );
-}
+});
