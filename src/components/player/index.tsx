@@ -1,5 +1,4 @@
-import "@videojs/react/video/skin.css";
-// import "@/styles/player.css";
+import "@/styles/player.css";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Video as VideoIcon } from "lucide-react";
 import { createPlayer, videoFeatures } from "@videojs/react";
@@ -10,7 +9,7 @@ import {
   type VideoSize,
 } from "@/lib/video-size";
 
-const Player = createPlayer({ features: videoFeatures });
+export const Player = createPlayer({ features: videoFeatures });
 
 interface VideoPlayerProps {
   src: string | null;
@@ -68,43 +67,41 @@ export const VideoPlayer = ({
       ref={containerRef}
       className="flex h-full w-full items-center justify-center"
     >
-      <Player.Provider>
-        <VideoSkin
-          className="video-player-surface overflow-hidden"
-          style={
-            playerSize
-              ? {
-                  width: playerSize.width,
-                  height: playerSize.height,
-                }
-              : undefined
-          }
-        >
-          <Video
-            ref={videoRef}
-            className="h-full w-full object-contain"
-            src={src ?? undefined}
-            playsInline
-            onLoadedMetadata={(e) => {
-              const target = e.target as HTMLVideoElement;
-              setVideoSize({
-                width: target.videoWidth,
-                height: target.videoHeight,
-              });
-            }}
-            onTimeUpdate={(e) => {
-              const target = e.target as HTMLVideoElement;
-              onTimeUpdate?.(target.currentTime);
-            }}
-          />
-          {!src && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black">
-              <VideoIcon className="size-10 text-zinc-600" strokeWidth={1} />
-              <p className="text-sm font-medium text-zinc-600">No video loaded</p>
-            </div>
-          )}
-        </VideoSkin>
-      </Player.Provider>
+      <VideoSkin
+        className="video-player-surface overflow-hidden"
+        style={
+          playerSize
+            ? {
+                width: playerSize.width,
+                height: playerSize.height,
+              }
+            : undefined
+        }
+      >
+        <Video
+          ref={videoRef}
+          className="h-full w-full object-contain"
+          src={src ?? undefined}
+          playsInline
+          onLoadedMetadata={(e) => {
+            const target = e.target as HTMLVideoElement;
+            setVideoSize({
+              width: target.videoWidth,
+              height: target.videoHeight,
+            });
+          }}
+          onTimeUpdate={(e) => {
+            const target = e.target as HTMLVideoElement;
+            onTimeUpdate?.(target.currentTime);
+          }}
+        />
+        {!src && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black">
+            <VideoIcon className="size-10 text-zinc-600" strokeWidth={1} />
+            <p className="text-sm font-medium text-zinc-600">No video loaded</p>
+          </div>
+        )}
+      </VideoSkin>
     </div>
   );
 };
