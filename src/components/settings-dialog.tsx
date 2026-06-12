@@ -35,8 +35,8 @@ import { usePlayerStore } from "@/stores/player-store";
 import { useState } from "react";
 import { toast } from "sonner";
 
-const GITHUB_URL = "https://github.com/avonyu/cadence-desktop";
-const APP_VERSION = "v0.1.1-alpha";
+const GITHUB_URL = import.meta.env.VITE_GITHUB_URL;
+const APP_VERSION = import.meta.env.VITE_APP_VERSION;
 
 type SettingsTab = "basic" | "ai" | "about";
 

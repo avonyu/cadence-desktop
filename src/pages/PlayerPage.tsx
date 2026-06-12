@@ -81,6 +81,7 @@ export const PlayerPage = () => {
   const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
   const activeCaption = usePlayerStore((s) => s.activeCaption);
   const setActiveCaption = usePlayerStore((s) => s.setActiveCaption);
+  const setLastActiveCaption = usePlayerStore((s) => s.setLastActiveCaption);
   const toggleSidebar = usePlayerStore((s) => s.toggleSidebar);
   const aiProcessing = usePlayerStore((s) => s.aiProcessing);
   const deepseekApiKey = usePlayerStore((s) => s.deepseekApiKey);
@@ -110,6 +111,7 @@ export const PlayerPage = () => {
       // Clear previous subtitles
       setCaptions([]);
       setActiveCaption(null);
+      setLastActiveCaption(null);
       setTranscodeState("idle");
       setTranscodeDismissed(false);
 
@@ -192,6 +194,7 @@ export const PlayerPage = () => {
       if (result.length > 0) {
         setCaptions(result);
         setActiveCaption(null);
+        setLastActiveCaption(null);
         setAiProcessing("done");
         setTimeout(() => setAiProcessing("idle"), 2000);
       } else {
@@ -258,11 +261,14 @@ export const PlayerPage = () => {
         }
       }
 
-      if (newIndex !== null && newIndex !== activeCaption) {
+      if (newIndex !== activeCaption) {
         setActiveCaption(newIndex);
       }
+      if (newIndex !== null) {
+        setLastActiveCaption(newIndex);
+      }
     },
-    [captions, activeCaption, setActiveCaption],
+    [captions, activeCaption, setActiveCaption, setLastActiveCaption],
   );
 
   const handleSeekToCaption = useCallback((caption: Caption) => {

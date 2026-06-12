@@ -37,7 +37,7 @@ export function SubtitlesSidebar({
 }: SubtitlesSidebarProps) {
   const { t } = useTranslation();
   const blurMode = usePlayerStore((s) => s.blurMode);
-  const activeCaption = usePlayerStore((s) => s.activeCaption);
+  const lastActiveCaption = usePlayerStore((s) => s.lastActiveCaption);
   const aiProcessing = usePlayerStore((s) => s.aiProcessing);
   const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
   const isAiProcessing =
@@ -92,7 +92,7 @@ export function SubtitlesSidebar({
       clearTimeout(timer);
       isProgrammaticScroll.current = false;
     };
-  }, [activeCaption, scrollTracking, getViewport]);
+  }, [lastActiveCaption, scrollTracking, getViewport]);
 
   const handleCaptionClick = useCallback(
     (caption: Caption) => {
@@ -143,7 +143,7 @@ export function SubtitlesSidebar({
           {captions.length > 0 ? (
             <div className="space-y-2">
               {captions.map((caption, index) => {
-                const isActive = index === activeCaption;
+                const isActive = index === lastActiveCaption;
                 const ref = isActive ? activeItemRef : null;
                 const { primary, secondary } = getDisplayText(caption);
 
@@ -199,7 +199,7 @@ export function SubtitlesSidebar({
         </div>
       </ScrollArea>
 
-      {!scrollTracking && captions.length > 0 && activeCaption !== null && (
+      {!scrollTracking && captions.length > 0 && lastActiveCaption !== null && (
         <div className="absolute bottom-4 right-4 z-10">
           <Button
             size="icon"
