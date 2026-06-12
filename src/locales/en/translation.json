@@ -53,6 +53,8 @@
     "checkUpdate": "Check for Updates",
     "checking": "Checking...",
     "upToDate": "Up to date",
+    "newVersionFound": "New version {{version}} available",
+    "checkFailed": "Check failed",
     "version": "Version",
     "cancel": "Cancel",
     "langZh": "中文",

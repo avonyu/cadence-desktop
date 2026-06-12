@@ -34,6 +34,7 @@ import { aiSettingsSchema } from "@/lib/ai-settings";
 import { usePlayerStore } from "@/stores/player-store";
 import { useState } from "react";
 import { toast } from "sonner";
+import { check } from "@tauri-apps/plugin-updater";
 
 const GITHUB_URL = import.meta.env.VITE_GITHUB_URL;
 const APP_VERSION = import.meta.env.VITE_APP_VERSION;
@@ -63,12 +64,22 @@ export function SettingsDialog({
     (theme === "system" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-  const handleCheckUpdate = () => {
+  const handleCheckUpdate = async () => {
     setUpdateStatus(t("settings.checking"));
-    setTimeout(() => {
-      setUpdateStatus(t("settings.upToDate"));
+    try {
+      const update = await check();
+      if (update) {
+        setUpdateStatus(
+          t("settings.newVersionFound", { version: update.version }),
+        );
+      } else {
+        setUpdateStatus(t("settings.upToDate"));
+        setTimeout(() => setUpdateStatus(""), 3000);
+      }
+    } catch {
+      setUpdateStatus(t("settings.checkFailed"));
       setTimeout(() => setUpdateStatus(""), 3000);
-    }, 1500);
+    }
   };
 
   const handleSaveConfig = () => {
