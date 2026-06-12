@@ -16,6 +16,7 @@ interface PlayerState {
   swapSubtitles: boolean;
   activeCaption: number | null;
   lastActiveCaption: number | null;
+  scrollTracking: boolean;
   aiProcessing: AiProcessingState;
   aiError: string | null;
   deepseekApiKey: string;
@@ -30,6 +31,7 @@ const initialState: PlayerState = {
   swapSubtitles: false,
   activeCaption: null,
   lastActiveCaption: null,
+  scrollTracking: true,
   aiProcessing: "idle",
   aiError: null,
   deepseekApiKey: localStorage.getItem("cadence:deepseek-api-key") || "",
@@ -76,6 +78,10 @@ export class PlayerActionImpl {
 
   setLastActiveCaption = (index: number | null) => {
     this.#set({ lastActiveCaption: index });
+  };
+
+  setScrollTracking = (tracking: boolean) => {
+    this.#set({ scrollTracking: tracking });
   };
 
   setAiProcessing = (state: AiProcessingState) => {

@@ -82,6 +82,7 @@ export const PlayerPage = () => {
   const activeCaption = usePlayerStore((s) => s.activeCaption);
   const setActiveCaption = usePlayerStore((s) => s.setActiveCaption);
   const setLastActiveCaption = usePlayerStore((s) => s.setLastActiveCaption);
+  const setScrollTracking = usePlayerStore((s) => s.setScrollTracking);
   const toggleSidebar = usePlayerStore((s) => s.toggleSidebar);
   const aiProcessing = usePlayerStore((s) => s.aiProcessing);
   const deepseekApiKey = usePlayerStore((s) => s.deepseekApiKey);
@@ -302,7 +303,9 @@ export const PlayerPage = () => {
           activeCaption,
         );
         if (prev === null) return;
+        setScrollTracking(true);
         setActiveCaption(prev);
+        setLastActiveCaption(prev);
         handleSeekToCaption(captions[prev]);
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
@@ -312,14 +315,16 @@ export const PlayerPage = () => {
           activeCaption,
         );
         if (next === null) return;
+        setScrollTracking(true);
         setActiveCaption(next);
+        setLastActiveCaption(next);
         handleSeekToCaption(captions[next]);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [captions, activeCaption, handleSeekToCaption, setActiveCaption]);
+  }, [captions, activeCaption, handleSeekToCaption, setActiveCaption, setScrollTracking, setLastActiveCaption]);
 
   const getDisplayText = (
     caption: Caption,
