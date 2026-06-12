@@ -146,6 +146,13 @@
 }
 
 /* Player-specific theme variables */
+
+.video-player-surface:fullscreen {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0;
+}
+
 :root {
     --player-accent: #8b5cf6;
     --player-accent-hover: #7c3aed;

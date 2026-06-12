@@ -1,7 +1,7 @@
 import { VideoPlayer } from "@/components/player";
 import {
   FolderOpen,
-  FileText,
+  PanelRight,
   Subtitles,
   Settings,
   Loader2,
@@ -363,7 +363,7 @@ export const PlayerPage = () => {
           )}
         >
           {/* Video Player */}
-          <div className="relative w-full max-w-[1920px] aspect-video overflow-hidden">
+          <div className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden">
             <VideoPlayer
               src={videoSrc}
               videoRef={videoRef}
@@ -508,7 +508,7 @@ export const PlayerPage = () => {
                   {isAiProcessing ? (
                     <Loader2 size={18} className="animate-spin" />
                   ) : (
-                    <FileText size={18} />
+                    <Subtitles size={18} />
                   )}
                 </Button>
               </TooltipTrigger>
@@ -531,7 +531,7 @@ export const PlayerPage = () => {
                   className={sidebarOpen ? "text-[var(--player-accent)]" : ""}
                   onClick={toggleSidebar}
                 >
-                  <Subtitles size={18} />
+                  <PanelRight size={18} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t("subtitle.subtitlesSidebar")}</TooltipContent>
