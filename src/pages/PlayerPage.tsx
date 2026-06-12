@@ -7,6 +7,12 @@ import {
   Loader2,
   AudioLines,
   Minus,
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Maximize,
+  Minimize,
 } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
@@ -28,6 +34,7 @@ import {
 import { usePlayerStore } from "@/stores/player-store";
 import { useTranslation } from "react-i18next";
 import { SubtitleSettingsPopover } from "@/components/subtitle-settings-popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Resizable } from "re-resizable";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { SubtitlesSidebar } from "@/components/subtitles/subtitles-sidebar";
@@ -74,8 +81,15 @@ export const PlayerPage = () => {
   const [transcodeProgress, setTranscodeProgress] = useState(0);
   const [transcodeDismissed, setTranscodeDismissed] = useState(false);
   const [currentVideoTime, setCurrentVideoTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSeeking, setIsSeeking] = useState(false);
 
   const videoFilePathRef = useRef<string | null>(null);
+  const progressBarRef = useRef<HTMLDivElement>(null);
+  const isSeekingRef = useRef(false);
 
   const sidebarOpen = usePlayerStore((s) => s.sidebarOpen);
   const blurMode = usePlayerStore((s) => s.blurMode);
@@ -92,6 +106,84 @@ export const PlayerPage = () => {
 
   const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+  function formatTime(seconds: number): string {
+    if (!isFinite(seconds) || seconds < 0) return "0:00";
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  }
+
+  const seekToPosition = useCallback(
+    (clientX: number) => {
+      const bar = progressBarRef.current;
+      const video = videoRef.current;
+      if (!bar || !video || !duration) return;
+      const rect = bar.getBoundingClientRect();
+      const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+      video.currentTime = (x / rect.width) * duration;
+    },
+    [duration],
+  );
+
+  // Video element event listeners
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    const onDurationChange = () => {
+      if (isFinite(video.duration)) setDuration(video.duration);
+    };
+    const onRateChange = () => setPlaybackRate(video.playbackRate);
+
+    video.addEventListener("play", onPlay);
+    video.addEventListener("pause", onPause);
+    video.addEventListener("durationchange", onDurationChange);
+    video.addEventListener("ratechange", onRateChange);
+
+    if (isFinite(video.duration)) setDuration(video.duration);
+    setIsPlaying(!video.paused);
+    setPlaybackRate(video.playbackRate);
+
+    return () => {
+      video.removeEventListener("play", onPlay);
+      video.removeEventListener("pause", onPause);
+      video.removeEventListener("durationchange", onDurationChange);
+      video.removeEventListener("ratechange", onRateChange);
+    };
+  }, [videoSrc]);
+
+  // Fullscreen change listener
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  // Progress bar drag handling
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isSeekingRef.current) return;
+      seekToPosition(e.clientX);
+    };
+    const handleMouseUp = () => {
+      isSeekingRef.current = false;
+      setIsSeeking(false);
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [seekToPosition]);
 
   const handleOpenFile = async () => {
     const selected = await open({
@@ -280,52 +372,105 @@ export const PlayerPage = () => {
     }
   }, []);
 
+  const goToPrevCaption = useCallback(() => {
+    if (captions.length === 0) return;
+    const prev = getPreviousCaptionIndex(
+      captions,
+      videoRef.current?.currentTime ?? 0,
+      activeCaption,
+    );
+    if (prev === null) return;
+    setScrollTracking(true);
+    setActiveCaption(prev);
+    setLastActiveCaption(prev);
+    handleSeekToCaption(captions[prev]);
+  }, [
+    captions,
+    activeCaption,
+    handleSeekToCaption,
+    setScrollTracking,
+    setActiveCaption,
+    setLastActiveCaption,
+  ]);
+
+  const goToNextCaption = useCallback(() => {
+    if (captions.length === 0) return;
+    const next = getNextCaptionIndex(
+      captions,
+      videoRef.current?.currentTime ?? 0,
+      activeCaption,
+    );
+    if (next === null) return;
+    setScrollTracking(true);
+    setActiveCaption(next);
+    setLastActiveCaption(next);
+    handleSeekToCaption(captions[next]);
+  }, [
+    captions,
+    activeCaption,
+    handleSeekToCaption,
+    setScrollTracking,
+    setActiveCaption,
+    setLastActiveCaption,
+  ]);
+
+  const handleTogglePlay = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play();
+    } else {
+      video.pause();
+    }
+  }, []);
+
+  const handleToggleFullscreen = useCallback(() => {
+    const el = document.querySelector(".video-player-surface");
+    if (!el) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      el.requestFullscreen();
+    }
+  }, []);
+
+  const handleSpeedChange = useCallback((speed: number) => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = speed;
+      setPlaybackRate(speed);
+    }
+  }, []);
+
+  const handleProgressMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      isSeekingRef.current = true;
+      setIsSeeking(true);
+      seekToPosition(e.clientX);
+    },
+    [seekToPosition],
+  );
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === " ") {
         e.preventDefault();
-        if (videoRef.current) {
-          if (videoRef.current.paused) {
-            videoRef.current.play();
-          } else {
-            videoRef.current.pause();
-          }
-        }
+        handleTogglePlay();
         return;
       }
 
-      if (captions.length === 0) return;
-
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        const prev = getPreviousCaptionIndex(
-          captions,
-          videoRef.current?.currentTime ?? 0,
-          activeCaption,
-        );
-        if (prev === null) return;
-        setScrollTracking(true);
-        setActiveCaption(prev);
-        setLastActiveCaption(prev);
-        handleSeekToCaption(captions[prev]);
+        goToPrevCaption();
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        const next = getNextCaptionIndex(
-          captions,
-          videoRef.current?.currentTime ?? 0,
-          activeCaption,
-        );
-        if (next === null) return;
-        setScrollTracking(true);
-        setActiveCaption(next);
-        setLastActiveCaption(next);
-        handleSeekToCaption(captions[next]);
+        goToNextCaption();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [captions, activeCaption, handleSeekToCaption, setActiveCaption, setScrollTracking, setLastActiveCaption]);
+  }, [goToPrevCaption, goToNextCaption, handleTogglePlay]);
 
   const getDisplayText = (
     caption: Caption,
@@ -478,74 +623,260 @@ export const PlayerPage = () => {
             )}
         </div>
 
-        {/* Tools bar */}
-        <div className="mt-auto flex z-1 h-14 items-center justify-end gap-1 border-t border-border px-4 bg-card">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon-sm" onClick={handleOpenFile}>
-                  <FolderOpen size={18} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("video.openVideo")}</TooltipContent>
-            </Tooltip>
+        {/* Controls bar with progress bar */}
+        <div className="mt-auto z-1 bg-card">
+          {/* Progress bar */}
+          <div
+            ref={progressBarRef}
+            className={cn(
+              "group relative h-1 cursor-pointer bg-muted transition-[height] duration-150",
+              isSeeking && "h-1.5",
+            )}
+            onMouseDown={handleProgressMouseDown}
+          >
+            {/* Buffered */}
+            {(() => {
+              let buf = 0;
+              const vid = videoRef.current;
+              if (vid && duration > 0) {
+                try {
+                  const b = vid.buffered;
+                  if (b.length > 0) buf = (b.end(b.length - 1) / duration) * 100;
+                } catch { /* ignore */ }
+              }
+              if (buf > 0) {
+                return (
+                  <div
+                    className="absolute inset-y-0 left-0 bg-muted-foreground/20"
+                    style={{ width: `${buf}%` }}
+                  />
+                );
+              }
+              return null;
+            })()}
+            {/* Played progress */}
+            <div
+              className="absolute inset-y-0 left-0 bg-(--player-accent)"
+              style={{
+                width: `${
+                  duration > 0 && isFinite(duration)
+                    ? (currentVideoTime / duration) * 100
+                    : 0
+                }%`,
+              }}
+            />
+            {/* Thumb */}
+            <div
+              className={cn(
+                "absolute top-1/2 -translate-y-1/2 size-3 rounded-full bg-(--player-accent) transition-transform",
+                isSeeking
+                  ? "scale-100"
+                  : "scale-0 group-hover:scale-100",
+              )}
+              style={{
+                left: `calc(${
+                  duration > 0 && isFinite(duration)
+                    ? (currentVideoTime / duration) * 100
+                    : 0
+                }% - 6px)`,
+              }}
+            />
+          </div>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className={
-                    isAiProcessing ? "text-[var(--player-accent)]" : ""
-                  }
-                  disabled={isAiProcessing || !videoSrc}
-                  onClick={handleLoadSubtitle}
-                >
-                  {isAiProcessing ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : (
-                    <Subtitles size={18} />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {isAiProcessing
-                  ? t("ai.processing")
-                  : !videoSrc
-                    ? t("ai.noVideo")
-                    : t("subtitle.loadSubtitle")}
-              </TooltipContent>
-            </Tooltip>
+          {/* Controls row */}
+          <div className="flex h-12 items-center gap-1 px-4">
+            <TooltipProvider>
+              {/* Play/Pause */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={!videoSrc}
+                    onClick={handleTogglePlay}
+                  >
+                    {isPlaying ? (
+                      <Pause size={18} />
+                    ) : (
+                      <Play size={18} />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isPlaying ? t("player.pause") : t("player.play")}
+                </TooltipContent>
+              </Tooltip>
 
-            <SubtitleSettingsPopover />
+              {/* Previous caption */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={captions.length === 0}
+                    onClick={goToPrevCaption}
+                  >
+                    <SkipBack size={18} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {t("player.previousSubtitle")} (←)
+                </TooltipContent>
+              </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className={sidebarOpen ? "text-[var(--player-accent)]" : ""}
-                  onClick={toggleSidebar}
-                >
-                  <PanelRight size={18} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("subtitle.subtitlesSidebar")}</TooltipContent>
-            </Tooltip>
+              {/* Next caption */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={captions.length === 0}
+                    onClick={goToNextCaption}
+                  >
+                    <SkipForward size={18} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {t("player.nextSubtitle")} (→)
+                </TooltipContent>
+              </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  onClick={() => setSettingsDialogOpen(true)}
-                >
-                  <Settings size={18} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("settings.title")}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              {/* Time display */}
+              <span className="text-xs text-muted-foreground font-mono tabular-nums select-none min-w-[80px] text-center">
+                {formatTime(currentVideoTime)} / {formatTime(duration)}
+              </span>
+
+              {/* Playback speed */}
+              <Popover>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="text-xs font-mono w-auto px-1.5"
+                      >
+                        {playbackRate}x
+                      </Button>
+                    </PopoverTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t("player.playbackSpeed")}
+                  </TooltipContent>
+                </Tooltip>
+                <PopoverContent className="w-24 p-1" align="center" sideOffset={8}>
+                  <div className="flex flex-col gap-0.5">
+                    {SPEEDS.map((speed) => (
+                      <button
+                        key={speed}
+                        type="button"
+                        className={cn(
+                          "w-full rounded px-2 py-1 text-xs text-left hover:bg-accent transition-colors",
+                          playbackRate === speed &&
+                            "text-(--player-accent) font-medium",
+                        )}
+                        onClick={() => handleSpeedChange(speed)}
+                      >
+                        {speed}x
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Fullscreen */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={handleToggleFullscreen}
+                  >
+                    {isFullscreen ? (
+                      <Minimize size={18} />
+                    ) : (
+                      <Maximize size={18} />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isFullscreen
+                    ? t("player.exitFullscreen")
+                    : t("player.enterFullscreen")}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Spacer */}
+            <div className="flex-1" />
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon-sm" onClick={handleOpenFile}>
+                    <FolderOpen size={18} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("video.openVideo")}</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className={
+                      isAiProcessing ? "text-[var(--player-accent)]" : ""
+                    }
+                    disabled={isAiProcessing || !videoSrc}
+                    onClick={handleLoadSubtitle}
+                  >
+                    {isAiProcessing ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <Subtitles size={18} />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isAiProcessing
+                    ? t("ai.processing")
+                    : !videoSrc
+                      ? t("ai.noVideo")
+                      : t("subtitle.loadSubtitle")}
+                </TooltipContent>
+              </Tooltip>
+
+              <SubtitleSettingsPopover />
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className={sidebarOpen ? "text-[var(--player-accent)]" : ""}
+                    onClick={toggleSidebar}
+                  >
+                    <PanelRight size={18} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("subtitle.subtitlesSidebar")}</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setSettingsDialogOpen(true)}
+                  >
+                    <Settings size={18} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("settings.title")}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
       </main>
 

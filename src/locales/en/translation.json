@@ -16,6 +16,15 @@
     "ffmpegMissing": "ffmpeg not found, audio transcode unavailable, please install it",
     "ffprobeMissing": "ffprobe not found, codec detection unavailable, please install it"
   },
+  "player": {
+    "play": "Play",
+    "pause": "Pause",
+    "previousSubtitle": "Previous Subtitle",
+    "nextSubtitle": "Next Subtitle",
+    "playbackSpeed": "Playback Speed",
+    "enterFullscreen": "Enter Fullscreen",
+    "exitFullscreen": "Exit Fullscreen"
+  },
   "subtitle": {
     "noSubtitles": "No subtitles loaded",
     "loadSubtitle": "Load Subtitle",

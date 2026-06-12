@@ -1,3 +1,14 @@
 .media-default-skin video {
     border-radius: 0px;
 }
+
+/* Hide Video.js default control bar - using custom toolbar controls */
+.video-player-surface .vjs-control-bar,
+.video-player-surface .vjs-big-play-button {
+    display: none !important;
+}
+
+/* Video.js user-inactive class removes cursor - restore it for our custom controls */
+.video-player-surface.vjs-user-inactive {
+    cursor: default;
+}

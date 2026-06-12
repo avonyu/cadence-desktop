@@ -16,6 +16,15 @@
     "ffmpegMissing": "未检测到 ffmpeg，音频转码功能不可用，请安装",
     "ffprobeMissing": "未检测到 ffprobe，无法检测视频编码信息，请安装"
   },
+  "player": {
+    "play": "播放",
+    "pause": "暂停",
+    "previousSubtitle": "上一句",
+    "nextSubtitle": "下一句",
+    "playbackSpeed": "播放速度",
+    "enterFullscreen": "进入全屏",
+    "exitFullscreen": "退出全屏"
+  },
   "subtitle": {
     "noSubtitles": "未加载字幕",
     "loadSubtitle": "加载字幕",
