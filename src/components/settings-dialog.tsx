@@ -76,7 +76,8 @@ export function SettingsDialog({
         setUpdateStatus(t("settings.upToDate"));
         setTimeout(() => setUpdateStatus(""), 3000);
       }
-    } catch {
+    } catch (err) {
+      // console.error("Update check failed:", err);
       setUpdateStatus(t("settings.checkFailed"));
       setTimeout(() => setUpdateStatus(""), 3000);
     }
@@ -272,13 +273,12 @@ export function SettingsDialog({
                 <span>{t("settings.checkUpdate")}</span>
                 <span className="flex items-center gap-2">
                   <span
-                    className={`text-xs ${
-                      updateStatus === t("settings.upToDate")
-                        ? "text-green-500"
-                        : updateStatus
-                          ? "text-primary"
-                          : "text-muted-foreground"
-                    }`}
+                    className={`text-xs ${updateStatus === t("settings.upToDate")
+                      ? "text-green-500"
+                      : updateStatus
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                      }`}
                   >
                     {updateStatus}
                   </span>
