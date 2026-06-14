@@ -60,7 +60,9 @@ const initialState: PlayerState = {
   scrollTracking: true,
   aiProcessing: "idle",
   aiError: null,
-  deepseekApiKey: localStorage.getItem("cadence:deepseek-api-key") || "",
+  deepseekApiKey: import.meta.env.VITE_BUILD_MODE === "commercial"
+    ? import.meta.env.VITE_DEEPSEEK_API_KEY || ""
+    : localStorage.getItem("cadence:deepseek-api-key") || "",
   deepseekModel:
     localStorage.getItem("cadence:deepseek-model") || "deepseek-v4-flash",
   subtitleMaskVisible: false,

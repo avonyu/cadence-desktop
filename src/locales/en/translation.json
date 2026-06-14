@@ -87,5 +87,21 @@
     "loadFailed": "Failed to load subtitle",
     "processFailed": "AI processing failed",
     "processComplete": "AI processing complete"
+  },
+  "activation": {
+    "title": "Activate Cadence",
+    "activated": "Activated",
+    "notActivated": "Not Activated",
+    "codePlaceholder": "Enter activation code to unlock all features",
+    "activateButton": "Activate",
+    "activating": "Verifying...",
+    "invalidCode": "Invalid activation code",
+    "activateSuccess": "Activation successful!",
+    "aiWeeklyLimit": "AI Subtitle Processing",
+    "transcodeWeeklyLimit": "Audio Transcoding",
+    "remaining": "{remaining}/{limit} left",
+    "aiWeeklyLimitReached": "Weekly AI processing limit reached. Please activate to continue.",
+    "transcodeWeeklyLimitReached": "Weekly transcoding limit reached. Please activate to continue.",
+    "activateToUnlock": "Activate to unlock"
   }
 }

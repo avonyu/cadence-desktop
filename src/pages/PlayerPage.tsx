@@ -3,10 +3,12 @@ import { CaptionsDisplay } from "@/components/player/captions-display";
 import { CodecInfoBar } from "@/components/player/codec-info-bar";
 import { PlayerControlsBar } from "@/components/player/player-controls-bar";
 import { SettingsDialog } from "@/components/settings-dialog";
+import { UsageLimitBanner } from "@/components/usage-limit-banner";
 import { SubtitlesSidebar } from "@/components/subtitles/subtitles-sidebar";
 import { Resizable } from "re-resizable";
 import { useCallback, useEffect, useState } from "react";
 import { usePlayerStore } from "@/stores/player-store";
+import { useActivationStore } from "@/stores/activation-store";
 import { useVideoFile } from "@/hooks/use-video-file";
 import { useTranscode } from "@/hooks/use-transcode";
 import { useSubtitleLoader } from "@/hooks/use-subtitle-loader";
@@ -65,6 +67,13 @@ export const PlayerPage = () => {
 
   // ---- Keyboard shortcuts ----
   useKeyboardShortcuts({ videoRef, goToPrevCaption, goToNextCaption });
+
+  // ---- Activation store hydration ----
+  const hydrateActivation = useActivationStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrateActivation();
+  }, [hydrateActivation]);
 
   // ---- Store ----
   const sidebarOpen = usePlayerStore((s) => s.sidebarOpen);
@@ -204,6 +213,9 @@ export const PlayerPage = () => {
               onNextCaption={goToNextCaption}
               onOpenSettings={handleOpenSettings}
             />
+            <div className="absolute bottom-full left-3 mb-2 z-10">
+              <UsageLimitBanner />
+            </div>
             <div className="absolute bottom-full right-0 pointer-events-none z-10">
               <CodecInfoBar
                 codecInfo={codecInfo}

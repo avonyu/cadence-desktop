@@ -775,6 +775,24 @@ describe("parseSubtitles", () => {
     expect(result).toEqual([]);
   });
 
+  it("detects ASS with [Events] header (AI response fragment)", () => {
+    const src = [
+      "[Events]",
+      "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
+      "Dialogue: 0,0:00:01.00,0:00:03.00,Default,,0,0,0,,Hello",
+    ].join("\n");
+    const result = parseSubtitles(src);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Hello");
+  });
+
+  it("detects ASS from Dialogue lines without header", () => {
+    const src = "Dialogue: 0,0:00:01.00,0:00:03.00,Default,,0,0,0,,Hello";
+    const result = parseSubtitles(src);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Hello");
+  });
+
   it("defaults to SRT for unknown format", () => {
     const src = "Just some random text";
     const result = parseSubtitles(src);
