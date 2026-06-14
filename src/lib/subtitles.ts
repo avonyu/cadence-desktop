@@ -66,13 +66,23 @@ function stripAssTags(text: string): string {
 function detectFormat(content: string): "srt" | "ass" {
   const trimmed = content.trim();
   const lower = trimmed.toLowerCase();
+
+  // Standard ASS headers
   if (
     lower.startsWith("[script info]") ||
     lower.startsWith("[v4+ styles]") ||
-    lower.startsWith("[v4 styles]")
+    lower.startsWith("[v4 styles]") ||
+    lower.startsWith("[events]")
   ) {
     return "ass";
   }
+
+  // If the content contains Dialogue: lines, it's ASS
+  // (AI may return only [Events] + Dialogue: without the full header)
+  if (/^Dialogue:/m.test(trimmed)) {
+    return "ass";
+  }
+
   return "srt";
 }
 

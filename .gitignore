@@ -33,3 +33,6 @@ dist-ssr
 .remember
 .playwright-mcp
 .tauri
+
+# Generated activation codes
+activation_codes.txt

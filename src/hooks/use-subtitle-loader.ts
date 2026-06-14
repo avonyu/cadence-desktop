@@ -3,6 +3,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { type Caption } from "@/lib/subtitles";
 import { processSubtitle } from "@/lib/ai-subtitle";
 import { usePlayerStore } from "@/stores/player-store";
+import { useActivationStore } from "@/stores/activation-store";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -22,9 +23,20 @@ export function useSubtitleLoader(
 
   const handleLoadSubtitle = useCallback(
     async (videoFileName: string | null) => {
-      if (!deepseekApiKey) {
+      if (import.meta.env.VITE_BUILD_MODE !== "commercial" && !deepseekApiKey) {
         toast.error(t("ai.noApiKey"));
         return;
+      }
+
+      if (import.meta.env.VITE_BUILD_MODE === "commercial") {
+        const { activated, checkAndRecord } = useActivationStore.getState();
+        if (!activated) {
+          const allowed = await checkAndRecord("aiProcessing");
+          if (!allowed) {
+            toast.error(t("activation.aiWeeklyLimitReached"));
+            return;
+          }
+        }
       }
 
       const selected = await open({

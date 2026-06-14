@@ -25,6 +25,7 @@ import {
   Sparkles,
   Info,
   Download,
+  Key,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/components/theme-provider";
@@ -33,10 +34,12 @@ import deepseekIcon from "@/assets/deepseek-color.svg";
 // import githubIconWhite from "@/assets/GitHub_Invertocat_White.svg";
 import { aiSettingsSchema } from "@/lib/ai-settings";
 import { usePlayerStore } from "@/stores/player-store";
+import { useActivationStore } from "@/stores/activation-store";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { check } from "@tauri-apps/plugin-updater";
 import type { Update } from "@tauri-apps/plugin-updater";
+import { Loader2, X } from "lucide-react";
 
 // const GITHUB_URL = import.meta.env.VITE_GITHUB_URL;
 const APP_VERSION = import.meta.env.VITE_APP_VERSION;
@@ -54,6 +57,7 @@ export function SettingsDialog({
   const { t, i18n } = useTranslation();
   const { deepseekApiKey, deepseekModel, setDeepseekApiKey, setDeepseekModel } =
     usePlayerStore();
+  const activated = useActivationStore((s) => s.activated);
   const [activeTab, setActiveTab] = useState<SettingsTab>("basic");
   const [localApiKey, setLocalApiKey] = useState(deepseekApiKey);
   const [localModel, setLocalModel] = useState(deepseekModel);
@@ -61,6 +65,10 @@ export function SettingsDialog({
   const [downloading, setDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [installed, setInstalled] = useState(false);
+  const [activationCode, setActivationCode] = useState("");
+  const [activating, setActivating] = useState(false);
+  const [activateError, setActivateError] = useState(false);
+  const activate = useActivationStore((s) => s.activate);
   const updateRef = useRef<Update | null>(null);
 
   const currentLng = i18n.language;
@@ -150,17 +158,43 @@ export function SettingsDialog({
     toast.success(t("settings.saved"));
   };
 
+  const handleActivate = async () => {
+    const code = activationCode.trim();
+    if (!code) return;
+    setActivating(true);
+    setActivateError(false);
+    try {
+      const result = await activate(code);
+      if (!result.success) {
+        setActivateError(true);
+        toast.error(result.error || t("activation.invalidCode"));
+      } else {
+        toast.success(t("activation.activateSuccess"));
+        setActivationCode("");
+      }
+    } catch {
+      setActivateError(true);
+      toast.error(t("activation.invalidCode"));
+    } finally {
+      setActivating(false);
+    }
+  };
+
   const tabs: { id: SettingsTab; icon: React.ReactNode; label: string }[] = [
     {
       id: "basic",
       icon: <Settings data-icon="inline-start" />,
       label: t("settings.tabBasic"),
     },
-    {
-      id: "ai",
-      icon: <Sparkles data-icon="inline-start" />,
-      label: t("settings.tabAi"),
-    },
+    ...(import.meta.env.VITE_BUILD_MODE === "oss"
+      ? [
+          {
+            id: "ai" as SettingsTab,
+            icon: <Sparkles data-icon="inline-start" />,
+            label: t("settings.tabAi"),
+          },
+        ]
+      : []),
     {
       id: "about",
       icon: <Info data-icon="inline-start" />,
@@ -263,55 +297,57 @@ export function SettingsDialog({
             </div>
           </TabsContent>
 
-          {/* Tab: AI */}
-          <TabsContent value="ai" className="px-6 py-4">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 py-1">
-                <img src={deepseekIcon} alt="" className="size-4" />
-                <span className="text-sm font-medium text-foreground">
-                  {t("settings.deepseekConfig")}
-                </span>
-              </div>
+          {/* Tab: AI — OSS mode only */}
+          {import.meta.env.VITE_BUILD_MODE === "oss" && (
+            <TabsContent value="ai" className="px-6 py-4">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 py-1">
+                  <img src={deepseekIcon} alt="" className="size-4" />
+                  <span className="text-sm font-medium text-foreground">
+                    {t("settings.deepseekConfig")}
+                  </span>
+                </div>
 
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1.5">
-                  {t("settings.apiKey")}
-                </label>
-                <input
-                  type="password"
-                  value={localApiKey}
-                  onChange={(e) => setLocalApiKey(e.target.value)}
-                  placeholder="sk-..."
-                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-                />
-              </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1.5">
+                    {t("settings.apiKey")}
+                  </label>
+                  <input
+                    type="password"
+                    value={localApiKey}
+                    onChange={(e) => setLocalApiKey(e.target.value)}
+                    placeholder="sk-..."
+                    className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none transition focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1.5">
-                  {t("settings.model")}
-                </label>
-                <Select value={localModel} onValueChange={setLocalModel}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="deepseek-v4-flash">
-                        deepseek-v4-flash
-                      </SelectItem>
-                      <SelectItem value="deepseek-v4-pro">
-                        deepseek-v4-pro
-                      </SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1.5">
+                    {t("settings.model")}
+                  </label>
+                  <Select value={localModel} onValueChange={setLocalModel}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="deepseek-v4-flash">
+                          deepseek-v4-flash
+                        </SelectItem>
+                        <SelectItem value="deepseek-v4-pro">
+                          deepseek-v4-pro
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <Button className="w-full mt-1" onClick={handleSaveConfig}>
-                {t("settings.save")}
-              </Button>
-            </div>
-          </TabsContent>
+                <Button className="w-full mt-1" onClick={handleSaveConfig}>
+                  {t("settings.save")}
+                </Button>
+              </div>
+            </TabsContent>
+          )}
 
           {/* Tab: About */}
           <TabsContent value="about" className="px-6 py-4">
@@ -371,9 +407,67 @@ export function SettingsDialog({
 
               <Separator className="mt-3" />
 
+              {import.meta.env.VITE_BUILD_MODE === "commercial" && !activated && (
+                <div className="py-3 space-y-2">
+                  <label className="block text-xs text-muted-foreground">
+                    {t("activation.codePlaceholder")}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={activationCode}
+                      onChange={(e) => {
+                        setActivationCode(e.target.value.toUpperCase());
+                        setActivateError(false);
+                      }}
+                      placeholder="XXXX-XXXX-XXXX-XXXX"
+                      disabled={activating}
+                      className={`flex-1 rounded-md border bg-transparent px-3 py-2 text-sm font-mono outline-none transition
+                        ${activateError
+                          ? "border-red-500 focus-visible:ring-red-500/50"
+                          : "border-input focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                        }`}
+                    />
+                    <Button
+                      className="h-auto py-2"
+                      onClick={handleActivate}
+                      disabled={activating || activationCode.trim().length < 19}
+                    >
+                      {activating ? (
+                        <Loader2 className="animate-spin" size={14} />
+                      ) : (
+                        <Key size={14} />
+                      )}
+                      <span className="ml-1.5">
+                        {activating
+                          ? t("activation.activating")
+                          : t("activation.activateButton")}
+                      </span>
+                    </Button>
+                  </div>
+                  {activateError && (
+                    <p className="text-xs text-red-500 flex items-center gap-1">
+                      <X size={12} />
+                      {t("activation.invalidCode")}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-center justify-between py-3">
                 <span className="text-xs text-muted-foreground">
                   {t("settings.version")} {APP_VERSION}
+                  {import.meta.env.VITE_BUILD_MODE === "commercial" && (
+                    activated ? (
+                      <span className="ml-2 inline-flex items-center rounded-sm bg-green-100 dark:bg-green-900/40 px-1.5 py-0.5 text-[10px] font-medium text-green-700 dark:text-green-300">
+                        {t("activation.activated")}
+                      </span>
+                    ) : (
+                      <span className="ml-2 inline-flex items-center rounded-sm bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                        {t("activation.notActivated")}
+                      </span>
+                    )
+                  )}
                 </span>
               </div>
             </div>

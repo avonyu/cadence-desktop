@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { type VideoCodecResult } from "@/lib/player-constants";
+import { useActivationStore } from "@/stores/activation-store";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -43,6 +44,17 @@ export function useTranscode(
   const handleTranscodeAudio = useCallback(
     async (inputPath: string | null) => {
       if (!inputPath) return;
+
+      if (import.meta.env.VITE_BUILD_MODE === "commercial") {
+        const { activated, checkAndRecord } = useActivationStore.getState();
+        if (!activated) {
+          const allowed = await checkAndRecord("transcoding");
+          if (!allowed) {
+            toast.error(t("activation.transcodeWeeklyLimitReached"));
+            return;
+          }
+        }
+      }
 
       setTranscodeState("converting");
       setTranscodeProgress(0);

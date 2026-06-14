@@ -5,6 +5,9 @@ use std::sync::{LazyLock, Mutex};
 use serde::Serialize;
 use tauri::Emitter;
 use tauri_plugin_http::reqwest;
+use tauri_plugin_store::StoreExt;
+
+mod activation;
 
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
@@ -56,7 +59,8 @@ Rules:
    - If the subtitle is only in Chinese, translate each line to English and append it after the original text separated by \N.
    - If the subtitle is only in English, translate each line to Chinese and prepend it before the original text separated by \N.
 6. Output the result in the SAME format as the input (SRT stays SRT, ASS stays ASS). Do not change formats.
-7. Return ONLY the processed subtitle content. Do NOT wrap the output in markdown code fences, do NOT add any explanation, do NOT add any commentary — just the raw subtitle text."#;
+7. For ASS format: only output Dialogue lines. Do NOT include [Events], [Script Info], [V4 Styles], Format, or any header/section lines. Only the "Dialogue: ..." lines.
+8. Return ONLY the processed subtitle content. Do NOT wrap the output in markdown code fences, do NOT add any explanation, do NOT add any commentary — just the raw subtitle text."#;
 
     let client = reqwest::Client::new();
     let response = client
@@ -346,15 +350,54 @@ async fn transcode_audio(
     .map_err(|e| format!("Transcode task failed: {}", e))?
 }
 
+#[derive(Debug, Serialize)]
+struct ActivateResult {
+    success: bool,
+    error: Option<String>,
+    fingerprint: Option<String>,
+}
+
+#[tauri::command]
+fn activate(code: String, app: tauri::AppHandle) -> Result<ActivateResult, String> {
+    match activation::validate_code(&code) {
+        Some(_index) => {
+            let fingerprint = activation::get_machine_fingerprint();
+            let store = app.store("activation.dat").map_err(|e| e.to_string())?;
+            store.set("activated", serde_json::json!(true));
+            store.set("fingerprint", serde_json::json!(&fingerprint));
+            store.set("code", serde_json::json!(&code));
+            store.save().map_err(|e| e.to_string())?;
+            Ok(ActivateResult {
+                success: true,
+                error: None,
+                fingerprint: Some(fingerprint),
+            })
+        }
+        None => Ok(ActivateResult {
+            success: false,
+            error: Some("Invalid activation code".into()),
+            fingerprint: None,
+        }),
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![call_deepseek_api, check_ffmpeg_tools, detect_video_codecs, transcode_audio, cancel_transcode])
+        .invoke_handler(tauri::generate_handler![
+            call_deepseek_api,
+            check_ffmpeg_tools,
+            detect_video_codecs,
+            transcode_audio,
+            cancel_transcode,
+            activate,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

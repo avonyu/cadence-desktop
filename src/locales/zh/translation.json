@@ -87,5 +87,21 @@
     "loadFailed": "字幕加载失败",
     "processFailed": "AI 处理失败",
     "processComplete": "AI 处理完成"
+  },
+  "activation": {
+    "title": "激活 Cadence",
+    "activated": "已激活",
+    "notActivated": "未激活",
+    "codePlaceholder": "输入激活码解锁全部功能",
+    "activateButton": "激活",
+    "activating": "验证中...",
+    "invalidCode": "激活码无效",
+    "activateSuccess": "激活成功！",
+    "aiWeeklyLimit": "AI 字幕处理",
+    "transcodeWeeklyLimit": "音频转码",
+    "remaining": "剩余 {{remaining}}/{{limit}} 次",
+    "aiWeeklyLimitReached": "本周 AI 处理次数已用完，请激活后继续使用",
+    "transcodeWeeklyLimitReached": "本周转码次数已用完，请激活后继续使用",
+    "activateToUnlock": "激活以解除限制"
   }
 }
