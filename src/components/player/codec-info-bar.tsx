@@ -83,26 +83,26 @@ export const CodecInfoBar = memo(function CodecInfoBar({
           <div className="space-y-3">
             <div className="space-y-1.5">
               {codecInfo.video && (
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Video</span>
-                  <span className="font-mono font-medium">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-muted-foreground shrink-0">Video</span>
+                  <span className="font-mono font-medium truncate">
                     {codecInfo.video.codec_long_name}
                   </span>
                 </div>
               )}
               {codecInfo.audio && (
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Audio</span>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-muted-foreground shrink-0">Audio</span>
                   <span
                     className={cn(
-                      "font-mono font-medium inline-flex items-center gap-1",
+                      "font-mono font-medium inline-flex items-center gap-1 truncate",
                       unsupported && "text-destructive"
                     )}
                   >
                     {unsupported && (
-                      <AlertTriangle size={10} aria-hidden="true" />
+                      <AlertTriangle size={10} aria-hidden="true" className="shrink-0" />
                     )}
-                    {codecInfo.audio.codec_long_name}
+                    <span className="truncate">{codecInfo.audio.codec_long_name}</span>
                   </span>
                 </div>
               )}
