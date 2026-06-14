@@ -57,17 +57,24 @@ export function SubtitlesSidebar({
     ) as HTMLElement | null;
   }, []);
 
+  // Detect user scroll (mouse wheel / trackpad) to cancel auto-follow.
+  // Uses both "scroll" and "wheel" events because macOS WKWebView may not
+  // reliably fire "scroll" on elements with hidden native scrollbars.
   useEffect(() => {
     const viewport = getViewport();
     if (!viewport) return;
 
-    const handleScroll = () => {
+    const handleUserScroll = () => {
       if (isProgrammaticScroll.current) return;
       setScrollTracking(false);
     };
 
-    viewport.addEventListener("scroll", handleScroll);
-    return () => viewport.removeEventListener("scroll", handleScroll);
+    viewport.addEventListener("scroll", handleUserScroll);
+    viewport.addEventListener("wheel", handleUserScroll);
+    return () => {
+      viewport.removeEventListener("scroll", handleUserScroll);
+      viewport.removeEventListener("wheel", handleUserScroll);
+    };
   }, [getViewport]);
 
   useEffect(() => {
@@ -92,15 +99,24 @@ export function SubtitlesSidebar({
         behavior: "smooth",
       });
 
-      const handleScrollEnd = () => {
+      // Reset the programmatic-scroll flag when scrolling finishes.
+      // Use scrollend if available (Chromium, Safari 15.4+), fall back to a
+      // timeout for older WKWebView / WebKit that don't support scrollend.
+      const resetFlag = () => {
         isProgrammaticScroll.current = false;
       };
 
-      viewport.addEventListener("scrollend", handleScrollEnd, { once: true });
-
-      cleanup = () => {
-        viewport.removeEventListener("scrollend", handleScrollEnd);
-      };
+      if ("onscrollend" in viewport) {
+        viewport.addEventListener("scrollend", resetFlag, { once: true });
+        cleanup = () => {
+          viewport.removeEventListener("scrollend", resetFlag);
+        };
+      } else {
+        const timer = setTimeout(resetFlag, 500);
+        cleanup = () => {
+          clearTimeout(timer);
+        };
+      }
     });
 
     return () => {

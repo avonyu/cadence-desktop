@@ -147,14 +147,43 @@ struct VideoCodecResult {
     audio: Option<CodecInfo>,
 }
 
-fn is_command_available(name: &str) -> bool {
+fn resolve_command(name: &str) -> Option<String> {
+    // macOS: check common install locations first, since GUI apps don't inherit shell PATH
+    #[cfg(target_os = "macos")]
+    {
+        let common_dirs = [
+            "/opt/homebrew/bin",
+            "/usr/local/bin",
+            "/opt/local/bin",
+        ];
+        for dir in &common_dirs {
+            let path = format!("{}/{}", dir, name);
+            if Path::new(&path).exists() {
+                return Some(path);
+            }
+        }
+    }
+    // Fallback: use which/where to search PATH
     let mut cmd = Command::new(if cfg!(target_os = "windows") { "where" } else { "which" });
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000);
     cmd.arg(name)
         .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
+        .ok()
+        .and_then(|o| {
+            if o.status.success() {
+                String::from_utf8(o.stdout)
+                    .ok()
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+            } else {
+                None
+            }
+        })
+}
+
+fn is_command_available(name: &str) -> bool {
+    resolve_command(name).is_some()
 }
 
 #[tauri::command]
@@ -180,11 +209,10 @@ fn cancel_transcode() -> Result<(), String> {
 
 #[tauri::command]
 fn detect_video_codecs(file_path: String) -> Result<VideoCodecResult, String> {
-    if !is_command_available("ffprobe") {
-        return Err("ffprobe is not installed or not found in PATH".into());
-    }
+    let ffprobe_path = resolve_command("ffprobe")
+        .ok_or("ffprobe is not installed or not found in PATH")?;
 
-    let mut cmd = Command::new("ffprobe");
+    let mut cmd = Command::new(&ffprobe_path);
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000);
     let output = cmd
@@ -243,7 +271,10 @@ fn build_output_path(input: &str) -> String {
 }
 
 fn get_video_duration(file_path: &str) -> Result<f64, String> {
-    let mut cmd = Command::new("ffprobe");
+    let ffprobe_path = resolve_command("ffprobe")
+        .ok_or("ffprobe is not installed")?;
+
+    let mut cmd = Command::new(&ffprobe_path);
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000);
     let output = cmd
@@ -272,9 +303,8 @@ async fn transcode_audio(
     app: tauri::AppHandle,
     input_path: String,
 ) -> Result<String, String> {
-    if !is_command_available("ffmpeg") {
-        return Err("ffmpeg is not installed or not found in PATH".into());
-    }
+    let ffmpeg_path = resolve_command("ffmpeg")
+        .ok_or("ffmpeg is not installed or not found in PATH")?;
 
     let output_path = build_output_path(&input_path);
 
@@ -293,7 +323,7 @@ async fn transcode_audio(
     let output = output_path.clone();
 
     tauri::async_runtime::spawn_blocking(move || {
-        let mut cmd = Command::new("ffmpeg");
+        let mut cmd = Command::new(&ffmpeg_path);
         #[cfg(target_os = "windows")]
         cmd.creation_flags(0x08000000);
         let mut child = cmd
