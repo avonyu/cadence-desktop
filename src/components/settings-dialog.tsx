@@ -24,6 +24,7 @@ import {
   ChevronRight,
   Sparkles,
   Info,
+  Download,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/components/theme-provider";
@@ -32,9 +33,10 @@ import deepseekIcon from "@/assets/deepseek-color.svg";
 // import githubIconWhite from "@/assets/GitHub_Invertocat_White.svg";
 import { aiSettingsSchema } from "@/lib/ai-settings";
 import { usePlayerStore } from "@/stores/player-store";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { check } from "@tauri-apps/plugin-updater";
+import type { Update } from "@tauri-apps/plugin-updater";
 
 // const GITHUB_URL = import.meta.env.VITE_GITHUB_URL;
 const APP_VERSION = import.meta.env.VITE_APP_VERSION;
@@ -56,6 +58,10 @@ export function SettingsDialog({
   const [localApiKey, setLocalApiKey] = useState(deepseekApiKey);
   const [localModel, setLocalModel] = useState(deepseekModel);
   const [updateStatus, setUpdateStatus] = useState("");
+  const [downloading, setDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [installed, setInstalled] = useState(false);
+  const updateRef = useRef<Update | null>(null);
 
   const currentLng = i18n.language;
 
@@ -66,9 +72,14 @@ export function SettingsDialog({
 
   const handleCheckUpdate = async () => {
     setUpdateStatus(t("settings.checking"));
+    setDownloading(false);
+    setDownloadProgress(0);
+    setInstalled(false);
+    updateRef.current = null;
     try {
       const update = await check();
       if (update) {
+        updateRef.current = update;
         setUpdateStatus(
           t("settings.newVersionFound", { version: update.version }),
         );
@@ -80,6 +91,45 @@ export function SettingsDialog({
       // console.error("Update check failed:", err);
       setUpdateStatus(t("settings.checkFailed"));
       setTimeout(() => setUpdateStatus(""), 3000);
+    }
+  };
+
+  const handleDownloadAndInstall = async () => {
+    const update = updateRef.current;
+    if (!update) return;
+    setDownloading(true);
+    setDownloadProgress(0);
+    try {
+      let totalLength: number | undefined;
+      let downloaded = 0;
+      await update.downloadAndInstall((event) => {
+        switch (event.event) {
+          case "Started":
+            totalLength = event.data.contentLength;
+            break;
+          case "Progress":
+            downloaded += event.data.chunkLength;
+            setDownloadProgress(
+              totalLength
+                ? Math.round((downloaded / totalLength) * 100)
+                : -1,
+            );
+            break;
+          case "Finished":
+            setDownloadProgress(100);
+            setUpdateStatus(t("settings.installing"));
+            break;
+        }
+      });
+      setUpdateStatus(t("settings.restartPrompt"));
+      setDownloading(false);
+      setInstalled(true);
+    } catch (err) {
+      console.error("Download/install failed:", err);
+      setUpdateStatus(t("settings.downloadFailed"));
+      setDownloading(false);
+      setDownloadProgress(0);
+      toast.error(t("settings.downloadFailed"));
     }
   };
 
@@ -269,6 +319,7 @@ export function SettingsDialog({
               <button
                 className="flex w-full items-center justify-between py-3 text-sm text-muted-foreground transition hover:bg-accent rounded-md"
                 onClick={handleCheckUpdate}
+                disabled={downloading}
               >
                 <span>{t("settings.checkUpdate")}</span>
                 <span className="flex items-center gap-2">
@@ -286,24 +337,44 @@ export function SettingsDialog({
                 </span>
               </button>
 
-              <Separator />
+              {updateRef.current && !downloading && !installed && (
+                <Button
+                  className="w-full mt-2"
+                  onClick={handleDownloadAndInstall}
+                >
+                  <Download className="mr-2" size={16} />
+                  {t("settings.downloadInstall")}
+                </Button>
+              )}
+
+              {downloading && (
+                <div className="mt-3 space-y-2">
+                  <span className="text-xs text-muted-foreground">
+                    {downloadProgress >= 0
+                      ? t("settings.downloading", {
+                          progress: downloadProgress,
+                        })
+                      : t("settings.downloading", { progress: "?" })}
+                  </span>
+                  <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className={`h-1.5 rounded-full bg-primary transition-all duration-300 ${downloadProgress < 0 ? "animate-pulse w-1/3" : ""}`}
+                      style={
+                        downloadProgress >= 0
+                          ? { width: `${downloadProgress}%` }
+                          : undefined
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+
+              <Separator className="mt-3" />
 
               <div className="flex items-center justify-between py-3">
                 <span className="text-xs text-muted-foreground">
                   {t("settings.version")} {APP_VERSION}
                 </span>
-                {/* <a
-                  href={GITHUB_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-foreground"
-                >
-                  <img
-                    src={isDark ? githubIconWhite : githubIconBlack}
-                    alt="GitHub"
-                    className="size-4.5"
-                  />
-                </a> */}
               </div>
             </div>
           </TabsContent>
