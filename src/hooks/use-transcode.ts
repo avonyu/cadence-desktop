@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { type VideoCodecResult } from "@/lib/player-constants";
@@ -8,9 +8,9 @@ import { toast } from "sonner";
 interface UseTranscodeReturn {
   transcodeState: "idle" | "converting" | "done" | "error";
   transcodeProgress: number;
-  transcodeDismissed: boolean;
-  setTranscodeDismissed: (dismissed: boolean) => void;
   handleTranscodeAudio: (inputPath: string | null) => Promise<void>;
+  handleCancelTranscode: () => Promise<void>;
+  resetTranscode: () => void;
 }
 
 export function useTranscode(
@@ -22,8 +22,23 @@ export function useTranscode(
     "idle" | "converting" | "done" | "error"
   >("idle");
   const [transcodeProgress, setTranscodeProgress] = useState(0);
-  const [transcodeDismissed, setTranscodeDismissed] = useState(false);
+  const cancelledRef = useRef(false);
   const { t } = useTranslation();
+
+  const resetTranscode = useCallback(() => {
+    setTranscodeState("idle");
+    setTranscodeProgress(0);
+    cancelledRef.current = false;
+  }, []);
+
+  const handleCancelTranscode = useCallback(async () => {
+    cancelledRef.current = true;
+    try {
+      await invoke("cancel_transcode");
+    } catch {
+      // process already ended or no active transcode
+    }
+  }, []);
 
   const handleTranscodeAudio = useCallback(
     async (inputPath: string | null) => {
@@ -31,6 +46,7 @@ export function useTranscode(
 
       setTranscodeState("converting");
       setTranscodeProgress(0);
+      cancelledRef.current = false;
       toast.warning(t("video.transcodeDoNotClose"));
 
       const unlisten = await listen<number>("transcode-progress", (event) => {
@@ -51,11 +67,17 @@ export function useTranscode(
         setCodecInfo(result);
         toast.success(t("video.transcodeSuccess"));
       } catch (error) {
-        console.error("Transcode failed:", error);
-        toast.error(
-          error instanceof Error ? error.message : t("video.transcodeFailed"),
-        );
-        setTranscodeState("error");
+        if (cancelledRef.current) {
+          setTranscodeState("idle");
+          setTranscodeProgress(0);
+          toast(t("video.transcodeCancelled"));
+        } else {
+          console.error("Transcode failed:", error);
+          toast.error(
+            error instanceof Error ? error.message : t("video.transcodeFailed"),
+          );
+          setTranscodeState("error");
+        }
       } finally {
         unlisten();
       }
@@ -66,8 +88,8 @@ export function useTranscode(
   return {
     transcodeState,
     transcodeProgress,
-    transcodeDismissed,
-    setTranscodeDismissed,
     handleTranscodeAudio,
+    handleCancelTranscode,
+    resetTranscode,
   };
 }

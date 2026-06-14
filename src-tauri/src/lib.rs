@@ -1,6 +1,7 @@
 use std::process::{Command, Stdio};
 use std::io::{BufRead, BufReader};
 use std::path::Path;
+use std::sync::{LazyLock, Mutex};
 use serde::Serialize;
 use tauri::Emitter;
 use tauri_plugin_http::reqwest;
@@ -102,6 +103,27 @@ Rules:
     Ok(stripped)
 }
 
+static ACTIVE_FFMPEG_PID: LazyLock<Mutex<Option<u32>>> = LazyLock::new(|| Mutex::new(None));
+
+fn kill_process(pid: u32) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        let mut cmd = Command::new("taskkill");
+        cmd.creation_flags(0x08000000);
+        cmd.args(["/F", "/PID", &pid.to_string()])
+            .output()
+            .map_err(|e| format!("Failed to kill process: {}", e))?;
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        Command::new("kill")
+            .args(["-9", &pid.to_string()])
+            .output()
+            .map_err(|e| format!("Failed to kill process: {}", e))?;
+    }
+    Ok(())
+}
+
 #[derive(Debug, Serialize)]
 struct FfmpegTools {
     ffmpeg: bool,
@@ -137,6 +159,18 @@ fn check_ffmpeg_tools() -> FfmpegTools {
         ffmpeg: is_command_available("ffmpeg"),
         ffprobe: is_command_available("ffprobe"),
         ffplay: is_command_available("ffplay"),
+    }
+}
+
+#[tauri::command]
+fn cancel_transcode() -> Result<(), String> {
+    let mut guard = ACTIVE_FFMPEG_PID.lock().map_err(|e| e.to_string())?;
+    if let Some(pid) = *guard {
+        kill_process(pid)?;
+        *guard = None;
+        Ok(())
+    } else {
+        Err("No active transcode to cancel".into())
     }
 }
 
@@ -196,7 +230,7 @@ fn detect_video_codecs(file_path: String) -> Result<VideoCodecResult, String> {
 fn build_output_path(input: &str) -> String {
     let path = Path::new(input);
     let stem = path.file_stem().unwrap_or_default();
-    let output_name = format!("{}.AAC.mp4", stem.to_string_lossy());
+    let output_name = format!("{}_transcoded.mp4", stem.to_string_lossy());
     if let Some(parent) = path.parent() {
         parent.join(&output_name).to_string_lossy().to_string()
     } else {
@@ -241,7 +275,12 @@ async fn transcode_audio(
     let output_path = build_output_path(&input_path);
 
     if Path::new(&output_path).exists() {
-        return Ok(output_path);
+        match get_video_duration(&output_path) {
+            Ok(d) if d > 0.0 => return Ok(output_path),
+            _ => {
+                let _ = std::fs::remove_file(&output_path);
+            }
+        }
     }
 
     let duration = get_video_duration(&input_path).unwrap_or(0.0);
@@ -250,10 +289,10 @@ async fn transcode_audio(
     let output = output_path.clone();
 
     tauri::async_runtime::spawn_blocking(move || {
-        let mut child = Command::new("ffmpeg");
+        let mut cmd = Command::new("ffmpeg");
         #[cfg(target_os = "windows")]
-        child.creation_flags(0x08000000);
-        let mut child = child
+        cmd.creation_flags(0x08000000);
+        let mut child = cmd
             .args([
                 "-i", &input,
                 "-c:v", "copy",
@@ -269,6 +308,8 @@ async fn transcode_audio(
             .stderr(Stdio::piped())
             .spawn()
             .map_err(|e| format!("Failed to spawn ffmpeg: {}", e))?;
+
+        *ACTIVE_FFMPEG_PID.lock().unwrap() = Some(child.id());
 
         let stdout = child.stdout.take().ok_or("Failed to capture stdout")?;
         let reader = BufReader::new(stdout);
@@ -291,6 +332,8 @@ async fn transcode_audio(
             .wait()
             .map_err(|e| format!("Failed to wait for ffmpeg: {}", e))?;
 
+        *ACTIVE_FFMPEG_PID.lock().unwrap() = None;
+
         if !status.success() {
             let _ = std::fs::remove_file(&output);
             return Err("ffmpeg transcode failed".into());
@@ -311,7 +354,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
-        .invoke_handler(tauri::generate_handler![call_deepseek_api, check_ffmpeg_tools, detect_video_codecs, transcode_audio])
+        .invoke_handler(tauri::generate_handler![call_deepseek_api, check_ffmpeg_tools, detect_video_codecs, transcode_audio, cancel_transcode])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

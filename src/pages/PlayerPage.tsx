@@ -37,9 +37,9 @@ export const PlayerPage = () => {
   const {
     transcodeState,
     transcodeProgress,
-    transcodeDismissed,
-    setTranscodeDismissed,
     handleTranscodeAudio,
+    handleCancelTranscode,
+    resetTranscode,
   } = useTranscode(setVideoSrc, setCodecInfo, videoFilePathRef);
 
   // ---- Subtitle loading ----
@@ -141,6 +141,11 @@ export const PlayerPage = () => {
     handleTranscodeAudio(videoFilePathRef.current);
   }, [handleTranscodeAudio, videoFilePathRef]);
 
+  const handleOpenFileWithReset = useCallback(async () => {
+    resetTranscode();
+    await handleOpenFile();
+  }, [resetTranscode, handleOpenFile]);
+
   const handleLoadSubtitleFile = useCallback(() => {
     handleLoadSubtitle(videoFileName);
   }, [handleLoadSubtitle, videoFileName]);
@@ -180,33 +185,35 @@ export const PlayerPage = () => {
             />
           </div>
 
-          <CodecInfoBar
-            codecInfo={codecInfo}
-            transcodeState={transcodeState}
-            transcodeProgress={transcodeProgress}
-            transcodeDismissed={transcodeDismissed}
-            setTranscodeDismissed={setTranscodeDismissed}
-            onTranscodeAudio={handleTranscode}
-          />
-
-          <PlayerControlsBar
-            videoSrc={videoSrc}
-            captions={captions}
-            isPlaying={isPlaying}
-            isFullscreen={isFullscreen}
-            playbackRate={playbackRate}
-            currentVideoTime={currentVideoTime}
-            duration={duration}
-            isAiProcessing={isAiProcessing}
-            onTogglePlay={handleTogglePlay}
-            onToggleFullscreen={handleToggleFullscreen}
-            onSpeedChange={handleSpeedChange}
-            onOpenFile={handleOpenFile}
-            onLoadSubtitle={handleLoadSubtitleFile}
-            onPrevCaption={goToPrevCaption}
-            onNextCaption={goToNextCaption}
-            onOpenSettings={handleOpenSettings}
-          />
+          <div className="relative">
+            <PlayerControlsBar
+              videoSrc={videoSrc}
+              captions={captions}
+              isPlaying={isPlaying}
+              isFullscreen={isFullscreen}
+              playbackRate={playbackRate}
+              currentVideoTime={currentVideoTime}
+              duration={duration}
+              isAiProcessing={isAiProcessing}
+              onTogglePlay={handleTogglePlay}
+              onToggleFullscreen={handleToggleFullscreen}
+              onSpeedChange={handleSpeedChange}
+              onOpenFile={handleOpenFileWithReset}
+              onLoadSubtitle={handleLoadSubtitleFile}
+              onPrevCaption={goToPrevCaption}
+              onNextCaption={goToNextCaption}
+              onOpenSettings={handleOpenSettings}
+            />
+            <div className="absolute bottom-full right-0 pointer-events-none z-10">
+              <CodecInfoBar
+                codecInfo={codecInfo}
+                transcodeState={transcodeState}
+                transcodeProgress={transcodeProgress}
+                onTranscodeAudio={handleTranscode}
+                onCancelTranscode={handleCancelTranscode}
+              />
+            </div>
+          </div>
         </main>
 
         {sidebarOpen && (

@@ -1,97 +1,160 @@
 import { memo } from "react";
-import { Minus, AudioLines } from "lucide-react";
+import { AlertTriangle, AudioLines, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
-  Tooltip as ShadcnTooltip,
-  TooltipContent,
-  TooltipProvider as ShadcnTooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { type VideoCodecResult, isAudioCodecUnsupported } from "@/lib/player-constants";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 
 interface CodecInfoBarProps {
   codecInfo: VideoCodecResult | null;
   transcodeState: "idle" | "converting" | "done" | "error";
   transcodeProgress: number;
-  transcodeDismissed: boolean;
-  setTranscodeDismissed: (dismissed: boolean) => void;
   onTranscodeAudio: () => void;
+  onCancelTranscode: () => void;
 }
 
 export const CodecInfoBar = memo(function CodecInfoBar({
   codecInfo,
   transcodeState,
   transcodeProgress,
-  transcodeDismissed,
-  setTranscodeDismissed,
   onTranscodeAudio,
+  onCancelTranscode,
 }: CodecInfoBarProps) {
   const { t } = useTranslation();
 
+  const unsupported = codecInfo?.audio
+    ? isAudioCodecUnsupported(codecInfo.audio.codec_name)
+    : false;
+
+  if (!codecInfo) return null;
+
   return (
-    <div className="flex justify-end items-center gap-2 px-4 py-1">
-      {codecInfo && (
-        <span className="inline-flex items-center gap-1.5 rounded-md bg-secondary px-2 py-1 font-mono text-xs text-muted-foreground">
-          {codecInfo.video && (
-            <span>{codecInfo.video.codec_name.toUpperCase()}</span>
-          )}
-          {codecInfo.video && codecInfo.audio && (
-            <span className="text-border">/</span>
-          )}
-          {codecInfo.audio && (
-            <span
-              className={
-                isAudioCodecUnsupported(codecInfo.audio.codec_name)
-                  ? "text-destructive"
-                  : ""
-              }
+    <div className="flex justify-end items-center gap-2 px-4 py-1 pointer-events-auto">
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            aria-label={t("video.codecInfo")}
+          >
+            <Badge
+              variant="secondary"
+              className={cn(
+                "font-mono rounded-md hover:bg-secondary/80 transition-colors",
+                transcodeState === "converting" && "ring-1 ring-(--player-accent)/40"
+              )}
             >
-              {codecInfo.audio.codec_name.toUpperCase()}
-            </span>
-          )}
-        </span>
-      )}
-      {codecInfo?.audio &&
-        isAudioCodecUnsupported(codecInfo.audio.codec_name) &&
-        !transcodeDismissed && (
-          <span className="relative inline-flex items-center">
-            {transcodeState !== "converting" && (
-              <button
-                type="button"
-                className="absolute -top-1.5 -right-1.5 z-10 flex size-3.5 items-center justify-center rounded-full bg-red-400 text-white hover:bg-red-500"
-                onClick={() => setTranscodeDismissed(true)}
-              >
-                <Minus size={10} strokeWidth={3} />
-              </button>
-            )}
-            <ShadcnTooltipProvider>
-              <ShadcnTooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-6 px-2 text-xs gap-1"
-                    disabled={transcodeState === "converting"}
-                    onClick={onTranscodeAudio}
-                  >
-                    {transcodeState !== "converting" && (
-                      <AudioLines size={12} />
+              {codecInfo.video && (
+                <span>{codecInfo.video.codec_name.toUpperCase()}</span>
+              )}
+              {codecInfo.video && codecInfo.audio && (
+                <span>/</span>
+              )}
+              {codecInfo.audio && (
+                <span
+                  className={cn(
+                    unsupported && "text-destructive",
+                    "inline-flex items-center gap-0.5"
+                  )}
+                >
+                  {transcodeState === "converting" ? (
+                    <Loader2 size={10} className="animate-spin" aria-hidden="true" />
+                  ) : unsupported ? (
+                    <AlertTriangle size={10} aria-hidden="true" />
+                  ) : null}
+                  {codecInfo.audio.codec_name.toUpperCase()}
+                </span>
+              )}
+            </Badge>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          side="top"
+          sideOffset={8}
+          className="w-64 p-3"
+        >
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              {codecInfo.video && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Video</span>
+                  <span className="font-mono font-medium">
+                    {codecInfo.video.codec_long_name}
+                  </span>
+                </div>
+              )}
+              {codecInfo.audio && (
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Audio</span>
+                  <span
+                    className={cn(
+                      "font-mono font-medium inline-flex items-center gap-1",
+                      unsupported && "text-destructive"
                     )}
-                    {transcodeState === "converting"
-                      ? `${t("video.transcoding")} ${transcodeProgress}%`
-                      : transcodeState === "done"
-                        ? t("video.transcodeDone")
-                        : t("video.transcode")}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {t("video.transcodeTooltip")}
-                </TooltipContent>
-              </ShadcnTooltip>
-            </ShadcnTooltipProvider>
-          </span>
-        )}
+                  >
+                    {unsupported && (
+                      <AlertTriangle size={10} aria-hidden="true" />
+                    )}
+                    {codecInfo.audio.codec_long_name}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {unsupported && (
+              <>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {t("video.codecWarning", {
+                    codec: codecInfo.audio!.codec_name.toUpperCase(),
+                  })}
+                </p>
+
+                <div className="flex items-center gap-2">
+                  {transcodeState === "converting" ? (
+                    <>
+                      <div className="flex-1 flex items-center gap-2">
+                        <Loader2 size={14} className="animate-spin text-(--player-accent)" />
+                        <span className="text-xs text-muted-foreground">
+                          {t("video.transcoding")} {transcodeProgress}%
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={onCancelTranscode}
+                        aria-label={t("video.transcodeCancel")}
+                      >
+                        <X size={14} />
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant={transcodeState === "error" ? "destructive" : "default"}
+                      size="sm"
+                      className="w-full text-xs gap-1.5 transition-colors duration-200"
+                      onClick={onTranscodeAudio}
+                    >
+                      <AudioLines size={14} />
+                      {transcodeState === "error"
+                        ? t("video.transcodeRetry")
+                        : transcodeState === "done"
+                          ? t("video.transcodeDone")
+                          : t("video.transcode")}
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 });

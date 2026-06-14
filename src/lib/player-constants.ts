@@ -10,6 +10,7 @@ export interface VideoCodecResult {
 
 export const UNSUPPORTED_AUDIO_CODECS = new Set([
   "dts",
+  "dts_hd",
   "ac3",
   "eac3",
   "truehd",
@@ -18,6 +19,12 @@ export const UNSUPPORTED_AUDIO_CODECS = new Set([
   "wmalossless",
   "wmavoice",
   "dtshd",
+  "flac",
+  "opus",
+  "vorbis",
+  "pcm_s16le",
+  "pcm_s24le",
+  "pcm_f32le",
 ]);
 
 export function isAudioCodecUnsupported(codecName: string): boolean {
