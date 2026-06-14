@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Minus, AudioLines } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Tooltip as ShadcnTooltip,
   TooltipContent,
@@ -9,6 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import { type VideoCodecResult, isAudioCodecUnsupported } from "@/lib/player-constants";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 
 interface CodecInfoBarProps {
   codecInfo: VideoCodecResult | null;
@@ -32,7 +34,7 @@ export const CodecInfoBar = memo(function CodecInfoBar({
   return (
     <div className="flex justify-end items-center gap-2 px-4 py-1">
       {codecInfo && (
-        <span className="inline-flex items-center gap-1.5 rounded-md bg-secondary px-2 py-1 font-mono text-xs text-muted-foreground">
+        <Badge variant="secondary" className="font-mono rounded-md">
           {codecInfo.video && (
             <span>{codecInfo.video.codec_name.toUpperCase()}</span>
           )}
@@ -41,16 +43,14 @@ export const CodecInfoBar = memo(function CodecInfoBar({
           )}
           {codecInfo.audio && (
             <span
-              className={
-                isAudioCodecUnsupported(codecInfo.audio.codec_name)
-                  ? "text-destructive"
-                  : ""
-              }
+              className={cn(
+                isAudioCodecUnsupported(codecInfo.audio.codec_name) && "text-destructive"
+              )}
             >
               {codecInfo.audio.codec_name.toUpperCase()}
             </span>
           )}
-        </span>
+        </Badge>
       )}
       {codecInfo?.audio &&
         isAudioCodecUnsupported(codecInfo.audio.codec_name) &&
