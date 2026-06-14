@@ -71,10 +71,6 @@ export const useActivationStore = create<ActivationState>()((set, get) => ({
     const state = loadActivationState();
     const usage = loadUsage();
 
-    if (!localStorage.getItem(STATE_KEY)) {
-      saveActivationState({ activated: false, code: "", fingerprint: "" });
-    }
-
     set({ activated: state.activated, usage, hydrated: true });
   },
 

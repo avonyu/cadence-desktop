@@ -3,12 +3,14 @@ import { initReactI18next } from "react-i18next";
 import zh from "@/locales/zh/translation.json";
 import en from "@/locales/en/translation.json";
 
+const savedLang = localStorage.getItem("cadence:language") ?? "zh";
+
 i18n.use(initReactI18next).init({
   resources: {
     zh: { translation: zh },
     en: { translation: en },
   },
-  lng: "zh",
+  lng: savedLang,
   fallbackLng: "zh",
   interpolation: {
     escapeValue: false,

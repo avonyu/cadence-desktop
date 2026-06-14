@@ -241,7 +241,10 @@ export function SettingsDialog({
                 </span>
                 <Select
                   value={currentLng}
-                  onValueChange={(v) => i18n.changeLanguage(v)}
+                  onValueChange={(v) => {
+                    i18n.changeLanguage(v);
+                    localStorage.setItem("cadence:language", v);
+                  }}
                 >
                   <SelectTrigger size="sm" className="w-30">
                     <SelectValue />
