@@ -41,7 +41,7 @@ import { check } from "@tauri-apps/plugin-updater";
 import type { Update } from "@tauri-apps/plugin-updater";
 import { Loader2, X } from "lucide-react";
 
-// const GITHUB_URL = import.meta.env.VITE_GITHUB_URL;
+// const GITHUB_URL = "https://github.com/avonyu/cadence-desktop";
 const APP_VERSION = import.meta.env.VITE_APP_VERSION;
 
 type SettingsTab = "basic" | "ai" | "about";
