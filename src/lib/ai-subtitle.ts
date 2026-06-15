@@ -1,4 +1,12 @@
-import { type Caption, parseSubtitles, detectFormat } from "./subtitles";
+import { type Caption, parseSubtitles, detectFormat, sanitizeSubtitleHtml } from "./subtitles";
+
+function migrateCaptions(captions: Caption[]): Caption[] {
+  return captions.map((c) => ({
+    ...c,
+    textHtml: c.textHtml ?? sanitizeSubtitleHtml(c.text),
+    translationHtml: c.translationHtml ?? sanitizeSubtitleHtml(c.translation),
+  }));
+}
 import { invoke } from "@tauri-apps/api/core";
 
 const DB_NAME = "cadence-subtitles";
@@ -46,7 +54,7 @@ export async function getCachedSubtitle(
       const request = store.get(hash);
       request.onsuccess = () => {
         const entry: CacheEntry | undefined = request.result;
-        resolve(entry?.captions ?? null);
+        resolve(entry?.captions ? migrateCaptions(entry.captions) : null);
       };
       request.onerror = () => reject(request.error);
     });
@@ -103,7 +111,7 @@ export async function getSubtitlesForVideo(
       const request = index.get(videoFileName);
       request.onsuccess = () => {
         const entry: CacheEntry | undefined = request.result;
-        resolve(entry?.captions ?? null);
+        resolve(entry?.captions ? migrateCaptions(entry.captions) : null);
       };
       request.onerror = () => reject(request.error);
     });

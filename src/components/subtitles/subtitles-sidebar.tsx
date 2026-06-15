@@ -1,7 +1,7 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Subtitles, X, Loader2, RotateCw } from "lucide-react";
-import { type Caption, sanitizeSubtitleHtml } from "@/lib/subtitles";
+import { type Caption } from "@/lib/subtitles";
 import { usePlayerStore, type BlurMode } from "@/stores/player-store";
 import { useTranslation } from "react-i18next";
 import { useRef, useEffect, useCallback, memo } from "react";
@@ -23,12 +23,6 @@ function getSidebarBlurClasses(
   if (blurMode === "secondary" && target === "translation") return "blur-sm";
   if (blurMode === "all") return "blur-sm";
   return "";
-}
-
-function formatCaptionTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
 export const SubtitlesSidebar = memo(function SubtitlesSidebar({
@@ -120,9 +114,9 @@ export const SubtitlesSidebar = memo(function SubtitlesSidebar({
 
   const getDisplayText = (caption: Caption) => {
     if (swapSubtitles) {
-      return { primary: caption.translation || "", secondary: caption.text };
+      return { primary: caption.translationHtml || "", secondary: caption.textHtml };
     }
-    return { primary: caption.text, secondary: caption.translation || "" };
+    return { primary: caption.textHtml, secondary: caption.translationHtml || "" };
   };
 
   return (
@@ -181,7 +175,7 @@ export const SubtitlesSidebar = memo(function SubtitlesSidebar({
                           : "text-muted-foreground"
                       }`}
                     >
-                      {formatCaptionTime(caption.start)}
+                      {caption.time}
                     </button>
                     <span>
                     <span
@@ -189,7 +183,7 @@ export const SubtitlesSidebar = memo(function SubtitlesSidebar({
                         getSidebarBlurClasses(blurMode, "text") || ""
                       } group-hover/item:blur-none`}
                       dangerouslySetInnerHTML={{
-                        __html: sanitizeSubtitleHtml(primary),
+                        __html: primary,
                       }}
                     />
                     <span
@@ -199,7 +193,7 @@ export const SubtitlesSidebar = memo(function SubtitlesSidebar({
                         getSidebarBlurClasses(blurMode, "translation") || ""
                       } group-hover/item:blur-none`}
                       dangerouslySetInnerHTML={{
-                        __html: sanitizeSubtitleHtml(secondary),
+                        __html: secondary,
                       }}
                     />
                     </span>

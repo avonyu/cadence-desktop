@@ -18,24 +18,29 @@ export function useCaptionSync(
 
   const lastFoundIndexRef = useRef(0);
   const lastActiveCaptionRef = useRef<number | null>(null);
+  const captionsRef = useRef(captions);
+  captionsRef.current = captions;
+  const activeCaptionRef = useRef(activeCaption);
+  activeCaptionRef.current = activeCaption;
 
   const handleTimeUpdate = useCallback(
     (currentTime: number) => {
-      if (captions.length === 0) return;
+      const capts = captionsRef.current;
+      if (capts.length === 0) return;
 
       let newIndex: number | null = null;
       let startFrom = lastFoundIndexRef.current;
 
       if (
-        startFrom >= captions.length ||
-        (startFrom > 0 && currentTime < captions[startFrom].start)
+        startFrom >= capts.length ||
+        (startFrom > 0 && currentTime < capts[startFrom].start)
       ) {
         startFrom = 0;
       }
 
-      for (let i = startFrom; i < captions.length; i++) {
-        if (currentTime < captions[i].start) break;
-        if (currentTime >= captions[i].start && currentTime < captions[i].end + 0.001) {
+      for (let i = startFrom; i < capts.length; i++) {
+        if (currentTime < capts[i].start) break;
+        if (currentTime >= capts[i].start && currentTime < capts[i].end + 0.001) {
           newIndex = i;
           break;
         }
@@ -45,7 +50,7 @@ export function useCaptionSync(
         lastFoundIndexRef.current = newIndex;
       }
 
-      if (newIndex !== activeCaption) {
+      if (newIndex !== activeCaptionRef.current) {
         setActiveCaption(newIndex);
       }
       if (
@@ -56,15 +61,15 @@ export function useCaptionSync(
         setLastActiveCaption(newIndex);
       }
     },
-    [captions, activeCaption, setActiveCaption, setLastActiveCaption],
+    [setActiveCaption, setLastActiveCaption],
   );
 
   const getDisplayText = useCallback(
     (caption: Caption): { primary: string; secondary: string } => {
       if (swapSubtitles) {
-        return { primary: caption.translation, secondary: caption.text };
+        return { primary: caption.translationHtml, secondary: caption.textHtml };
       }
-      return { primary: caption.text, secondary: caption.translation };
+      return { primary: caption.textHtml, secondary: caption.translationHtml };
     },
     [swapSubtitles],
   );

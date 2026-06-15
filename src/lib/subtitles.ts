@@ -12,6 +12,10 @@ export interface Caption {
   end: number;
   text: string;
   translation: string;
+  /** Pre-sanitized HTML-safe version of `text` */
+  textHtml: string;
+  /** Pre-sanitized HTML-safe version of `translation` */
+  translationHtml: string;
 }
 
 /**
@@ -168,6 +172,8 @@ export function parseSRT(content: string): Caption[] {
         : timestampToSeconds(startStr) + 2,
       text: captionText,
       translation,
+      textHtml: sanitizeSubtitleHtml(captionText),
+      translationHtml: sanitizeSubtitleHtml(translation),
     });
   }
 
@@ -252,6 +258,8 @@ export function parseASS(content: string): Caption[] {
         : timestampToSeconds(startStr) + 2,
       text: captionText,
       translation,
+      textHtml: sanitizeSubtitleHtml(captionText),
+      translationHtml: sanitizeSubtitleHtml(translation),
     });
   }
 

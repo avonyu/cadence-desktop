@@ -1,7 +1,6 @@
 import { memo } from "react";
 import { Loader2 } from "lucide-react";
 import { type Caption } from "@/lib/subtitles";
-import { sanitizeSubtitleHtml } from "@/lib/subtitles";
 import { type BlurMode } from "@/stores/player-store";
 import ShinyText from "@/components/ShinyText";
 import { useTranslation } from "react-i18next";
@@ -50,7 +49,7 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
                   : ""
               }`}
               dangerouslySetInnerHTML={{
-                __html: sanitizeSubtitleHtml(activeDisplay.primary),
+                __html: activeDisplay.primary,
               }}
             />
             {activeDisplay.secondary && (
@@ -61,7 +60,7 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
                     : ""
                 }`}
                 dangerouslySetInnerHTML={{
-                  __html: sanitizeSubtitleHtml(activeDisplay.secondary),
+                  __html: activeDisplay.secondary,
                 }}
               />
             )}

@@ -6,7 +6,7 @@ import { SettingsDialog } from "@/components/settings-dialog";
 import { UsageLimitBanner } from "@/components/usage-limit-banner";
 import { SubtitlesSidebar } from "@/components/subtitles/subtitles-sidebar";
 import { Resizable } from "re-resizable";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePlayerStore } from "@/stores/player-store";
 import { useActivationStore } from "@/stores/activation-store";
 import { useVideoFile } from "@/hooks/use-video-file";
@@ -106,9 +106,14 @@ export const PlayerPage = () => {
   }, []);
 
   // ---- Combined time update callback for VideoPlayer ----
+  const lastTimeDisplayRef = useRef(0);
   const onTimeUpdate = useCallback(
     (currentTime: number) => {
-      setCurrentVideoTime(currentTime);
+      const now = performance.now();
+      if (now - lastTimeDisplayRef.current >= 100) {
+        lastTimeDisplayRef.current = now;
+        setCurrentVideoTime(currentTime);
+      }
       handleTimeUpdate(currentTime);
     },
     [setCurrentVideoTime, handleTimeUpdate],

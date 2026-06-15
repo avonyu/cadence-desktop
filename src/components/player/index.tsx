@@ -34,34 +34,49 @@ export const VideoPlayer = ({
   const onTimeUpdateRef = useRef(onTimeUpdate);
   onTimeUpdateRef.current = onTimeUpdate;
 
-  const rafRef = useRef<number | null>(null);
-  const lastCallRef = useRef<number>(0);
+  const rvfcIdRef = useRef<number | null>(null);
+  const rafIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isPlaying) return;
 
+    const video = videoRef?.current;
+    if (!video) return;
+
     let running = true;
 
-    const loop = () => {
-      if (!running) return;
-      const video = videoRef?.current;
-      if (video && !video.paused) {
-        const now = performance.now();
-        if (now - lastCallRef.current >= 100) {
-          lastCallRef.current = now;
-          onTimeUpdateRef.current?.(video.currentTime);
-        }
-      }
-      rafRef.current = requestAnimationFrame(loop);
+    const rvfcVideo = video as HTMLVideoElement & {
+      requestVideoFrameCallback?(cb: (now: number, metadata: { mediaTime: number }) => void): number;
+      cancelVideoFrameCallback?(id: number): void;
     };
 
-    rafRef.current = requestAnimationFrame(loop);
+    if (typeof rvfcVideo.requestVideoFrameCallback === "function") {
+      const callback = (_now: number, metadata: { mediaTime: number }) => {
+        if (!running) return;
+        onTimeUpdateRef.current?.(metadata.mediaTime);
+        rvfcIdRef.current = rvfcVideo.requestVideoFrameCallback!(callback);
+      };
+      rvfcIdRef.current = rvfcVideo.requestVideoFrameCallback(callback);
+    } else {
+      const loop = () => {
+        if (!running) return;
+        if (video && !video.paused) {
+          onTimeUpdateRef.current?.(video.currentTime);
+        }
+        rafIdRef.current = requestAnimationFrame(loop);
+      };
+      rafIdRef.current = requestAnimationFrame(loop);
+    }
 
     return () => {
       running = false;
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
+      if (rvfcIdRef.current !== null) {
+        rvfcVideo.cancelVideoFrameCallback?.(rvfcIdRef.current);
+        rvfcIdRef.current = null;
+      }
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
       }
     };
   }, [isPlaying, videoRef]);
@@ -69,7 +84,6 @@ export const VideoPlayer = ({
   useEffect(() => {
     setVideoSize(null);
     setIsPlaying(false);
-    lastCallRef.current = 0;
   }, [src]);
 
   useLayoutEffect(() => {
