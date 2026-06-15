@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from "react";
+import { useRef, useCallback, useState, memo } from "react";
 import { usePlayerStore } from "@/stores/player-store";
 import { cn } from "@/lib/utils";
 
@@ -88,7 +88,7 @@ function ResizeIconNW() {
   );
 }
 
-export function SubtitleMask() {
+export const SubtitleMask = memo(function SubtitleMask() {
   const maskRect = usePlayerStore((s) => s.subtitleMaskRect);
   const setSubtitleMaskRect = usePlayerStore((s) => s.setSubtitleMaskRect);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -260,4 +260,4 @@ export function SubtitleMask() {
       </div>
     </div>
   );
-}
+});

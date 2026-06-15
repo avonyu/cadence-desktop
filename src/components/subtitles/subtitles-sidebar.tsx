@@ -4,7 +4,7 @@ import { Subtitles, X, Loader2, RotateCw } from "lucide-react";
 import { type Caption, sanitizeSubtitleHtml } from "@/lib/subtitles";
 import { usePlayerStore, type BlurMode } from "@/stores/player-store";
 import { useTranslation } from "react-i18next";
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, memo } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import ShinyText from "@/components/ShinyText";
 
@@ -31,7 +31,7 @@ function formatCaptionTime(seconds: number): string {
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
-export function SubtitlesSidebar({
+export const SubtitlesSidebar = memo(function SubtitlesSidebar({
   captions,
   onSeekToCaption,
   onClose,
@@ -94,29 +94,13 @@ export function SubtitlesSidebar({
       const offset =
         itemRect.top - containerRect.top - containerRect.height * 0.25;
 
-      viewport.scrollTo({
-        top: viewport.scrollTop + offset,
-        behavior: "smooth",
-      });
+      viewport.scrollTop = viewport.scrollTop + offset;
 
-      // Reset the programmatic-scroll flag when scrolling finishes.
-      // Use scrollend if available (Chromium, Safari 15.4+), fall back to a
-      // timeout for older WKWebView / WebKit that don't support scrollend.
-      const resetFlag = () => {
+      // Reset flag after a short delay to allow scroll event to process
+      const timer = setTimeout(() => {
         isProgrammaticScroll.current = false;
-      };
-
-      if ("onscrollend" in viewport) {
-        viewport.addEventListener("scrollend", resetFlag, { once: true });
-        cleanup = () => {
-          viewport.removeEventListener("scrollend", resetFlag);
-        };
-      } else {
-        const timer = setTimeout(resetFlag, 500);
-        cleanup = () => {
-          clearTimeout(timer);
-        };
-      }
+      }, 50);
+      cleanup = () => clearTimeout(timer);
     });
 
     return () => {
@@ -256,4 +240,4 @@ export function SubtitlesSidebar({
       </AnimatePresence>
     </aside>
   );
-}
+});

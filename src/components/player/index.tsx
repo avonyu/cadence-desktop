@@ -29,9 +29,47 @@ export const VideoPlayer = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState<VideoSize | null>(null);
   const [videoSize, setVideoSize] = useState<VideoSize | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+  onTimeUpdateRef.current = onTimeUpdate;
+
+  const rafRef = useRef<number | null>(null);
+  const lastCallRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+
+    let running = true;
+
+    const loop = () => {
+      if (!running) return;
+      const video = videoRef?.current;
+      if (video && !video.paused) {
+        const now = performance.now();
+        if (now - lastCallRef.current >= 100) {
+          lastCallRef.current = now;
+          onTimeUpdateRef.current?.(video.currentTime);
+        }
+      }
+      rafRef.current = requestAnimationFrame(loop);
+    };
+
+    rafRef.current = requestAnimationFrame(loop);
+
+    return () => {
+      running = false;
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [isPlaying, videoRef]);
 
   useEffect(() => {
     setVideoSize(null);
+    setIsPlaying(false);
+    lastCallRef.current = 0;
   }, [src]);
 
   useLayoutEffect(() => {
@@ -82,23 +120,21 @@ export const VideoPlayer = ({
             : undefined
         }
       >
-        <Video
-          ref={videoRef}
-          className="h-full w-full object-contain"
-          src={src ?? undefined}
-          playsInline
-          onLoadedMetadata={(e) => {
-            const target = e.target as HTMLVideoElement;
-            setVideoSize({
-              width: target.videoWidth,
-              height: target.videoHeight,
-            });
-          }}
-          onTimeUpdate={(e) => {
-            const target = e.target as HTMLVideoElement;
-            onTimeUpdate?.(target.currentTime);
-          }}
-        />
+          <Video
+            ref={videoRef}
+            className="h-full w-full object-contain"
+            src={src ?? undefined}
+            playsInline
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onLoadedMetadata={(e) => {
+              const target = e.target as HTMLVideoElement;
+              setVideoSize({
+                width: target.videoWidth,
+                height: target.videoHeight,
+              });
+            }}
+          />
         {!src && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black">
             <VideoIcon className="size-10 text-zinc-600" strokeWidth={1} />
