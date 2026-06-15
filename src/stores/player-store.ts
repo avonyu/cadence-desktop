@@ -42,6 +42,8 @@ const defaultMaskRect: MaskRect = {
 };
 
 const STORAGE_KEY_MASK = "cadence:subtitle-mask-rect";
+const MASK_SAVE_DELAY = 500;
+let maskSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
 function loadMaskRect(): MaskRect {
   try {
@@ -140,8 +142,12 @@ export class PlayerActionImpl {
   };
 
   setSubtitleMaskRect = (rect: MaskRect) => {
-    localStorage.setItem(STORAGE_KEY_MASK, JSON.stringify(rect));
     this.#set({ subtitleMaskRect: rect });
+    if (maskSaveTimer !== null) clearTimeout(maskSaveTimer);
+    maskSaveTimer = setTimeout(() => {
+      localStorage.setItem(STORAGE_KEY_MASK, JSON.stringify(rect));
+      maskSaveTimer = null;
+    }, MASK_SAVE_DELAY);
   };
 }
 

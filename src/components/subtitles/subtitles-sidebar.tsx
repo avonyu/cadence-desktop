@@ -1,7 +1,7 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Subtitles, X, Loader2, RotateCw } from "lucide-react";
-import { type Caption } from "@/lib/subtitles";
+import { type Caption, sanitizeSubtitleHtml } from "@/lib/subtitles";
 import { usePlayerStore, type BlurMode } from "@/stores/player-store";
 import { useTranslation } from "react-i18next";
 import { useRef, useEffect, useCallback } from "react";
@@ -200,22 +200,24 @@ export function SubtitlesSidebar({
                       {formatCaptionTime(caption.start)}
                     </button>
                     <span>
-                      <span
-                        className={`block text-sm font-bold leading-snug tracking-tight transition-[filter] duration-300 ${
-                          getSidebarBlurClasses(blurMode, "text") || ""
-                        } group-hover/item:blur-none`}
-                      >
-                        {primary}
-                      </span>
-                      <span
-                        className={`mt-2 block text-sm leading-snug tracking-tight transition-[filter] duration-300 ${
-                          isActive ? "text-foreground" : "text-muted-foreground"
-                        } ${
-                          getSidebarBlurClasses(blurMode, "translation") || ""
-                        } group-hover/item:blur-none`}
-                      >
-                        {secondary}
-                      </span>
+                    <span
+                      className={`block text-sm font-bold leading-snug tracking-tight transition-[filter] duration-300 ${
+                        getSidebarBlurClasses(blurMode, "text") || ""
+                      } group-hover/item:blur-none`}
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizeSubtitleHtml(primary),
+                      }}
+                    />
+                    <span
+                      className={`mt-2 block text-sm leading-snug tracking-tight transition-[filter] duration-300 ${
+                        isActive ? "text-foreground" : "text-muted-foreground"
+                      } ${
+                        getSidebarBlurClasses(blurMode, "translation") || ""
+                      } group-hover/item:blur-none`}
+                      dangerouslySetInnerHTML={{
+                        __html: sanitizeSubtitleHtml(secondary),
+                      }}
+                    />
                     </span>
                   </div>
                 );

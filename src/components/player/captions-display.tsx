@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { Loader2 } from "lucide-react";
 import { type Caption } from "@/lib/subtitles";
+import { sanitizeSubtitleHtml } from "@/lib/subtitles";
 import { type BlurMode } from "@/stores/player-store";
 import ShinyText from "@/components/ShinyText";
 import { useTranslation } from "react-i18next";
@@ -48,18 +49,22 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
                   ? "blur group-hover:blur-none"
                   : ""
               }`}
-            >
-              {activeDisplay.primary}
-            </p>
-            <p
-              className={`mt-5 text-2xl leading-[1.4] text-muted-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
-                blurMode === "secondary" || blurMode === "all"
-                  ? "blur group-hover:blur-none"
-                  : ""
-              }`}
-            >
-              {activeDisplay.secondary}
-            </p>
+              dangerouslySetInnerHTML={{
+                __html: sanitizeSubtitleHtml(activeDisplay.primary),
+              }}
+            />
+            {activeDisplay.secondary && (
+              <p
+                className={`mt-5 text-2xl leading-[1.4] text-muted-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
+                  blurMode === "secondary" || blurMode === "all"
+                    ? "blur group-hover:blur-none"
+                    : ""
+                }`}
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeSubtitleHtml(activeDisplay.secondary),
+                }}
+              />
+            )}
           </>
         )
       ) : (

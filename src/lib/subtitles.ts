@@ -53,6 +53,19 @@ function formatTime(seconds: number): string {
 }
 
 /**
+ * Sanitize subtitle text for safe HTML rendering.
+ * Escapes all HTML characters, then unescapes only <i> / </i> tags.
+ */
+export function sanitizeSubtitleHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/&lt;i&gt;/g, "<i>")
+    .replace(/&lt;\/i&gt;/g, "</i>");
+}
+
+/**
  * Strip ASS/SSA style tags from text.
  * Handles tags like {\b1}, {\i1}, {\c&H00FFFF&}, etc.
  */
@@ -63,7 +76,7 @@ function stripAssTags(text: string): string {
 /**
  * Detect whether the content is SRT or ASS format.
  */
-function detectFormat(content: string): "srt" | "ass" {
+export function detectFormat(content: string): "srt" | "ass" {
   const trimmed = content.trim();
   const lower = trimmed.toLowerCase();
 
@@ -124,9 +137,10 @@ export function parseSRT(content: string): Caption[] {
     const [startStr, endStr] = timestampLine.split("-->").map((s) => s.trim());
     const text = stripAssTags(textLines.join("\n").trim());
 
-    // Try to detect bilingual: first line = text, second line = translation
+    // Detect bilingual using \N separator (AI output format).
+    // Falls back to newline splitting for single-language SRT.
     const textParts = text
-      .split("\n")
+      .split(/\\N/)
       .map((l) => l.trim())
       .filter(Boolean);
 
@@ -137,7 +151,12 @@ export function parseSRT(content: string): Caption[] {
       captionText = textParts[0];
       translation = textParts.slice(1).join("\n");
     } else if (textParts.length === 1) {
-      captionText = textParts[0];
+      // Single-language SRT: multi-line text is all original content
+      const lines = textParts[0]
+        .split("\n")
+        .map((l) => l.trim())
+        .filter(Boolean);
+      captionText = lines.join(" ");
       translation = "";
     }
 

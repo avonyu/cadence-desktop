@@ -56,11 +56,12 @@ Rules:
 3. Remove all style and control information enclosed in curly braces {}.
 4. For bilingual subtitles (containing both Chinese and English), preserve the \N line breaks that separate the two languages.
 5. For single-language subtitles:
-   - If the subtitle is only in Chinese, translate each line to English and append it after the original text separated by \N.
-   - If the subtitle is only in English, translate each line to Chinese and prepend it before the original text separated by \N.
-6. Output the result in the SAME format as the input (SRT stays SRT, ASS stays ASS). Do not change formats.
-7. For ASS format: only output Dialogue lines. Do NOT include [Events], [Script Info], [V4 Styles], Format, or any header/section lines. Only the "Dialogue: ..." lines.
-8. Return ONLY the processed subtitle content. Do NOT wrap the output in markdown code fences, do NOT add any explanation, do NOT add any commentary — just the raw subtitle text."#;
+   - If the subtitle is only in Chinese, translate to English and append it after the original text separated by \N.
+   - If the subtitle is only in English, translate to Chinese and prepend it before the original text separated by \N.
+6. Translation must be contextual: subtitles are a continuous transcript. Adjacent entries often form one sentence split across timestamps. Always use surrounding entries for context when translating. If an entry is an obvious sentence fragment (e.g., continues from the previous line, starts with lowercase, is very short), translate it as part of a coherent Chinese sentence combined with its neighboring entries. Never produce a broken or meaningless translation that is just punctuation.
+7. Output the result in the SAME format as the input (SRT stays SRT, ASS stays ASS). Do not change formats.
+8. For ASS format: only output Dialogue lines. Do NOT include [Events], [Script Info], [V4 Styles], Format, or any header/section lines. Only the "Dialogue: ..." lines.
+9. Return ONLY the processed subtitle content. Do NOT wrap the output in markdown code fences, do NOT add any explanation, do NOT add any commentary — just the raw subtitle text."#;
 
     let client = reqwest::Client::new();
     let response = client

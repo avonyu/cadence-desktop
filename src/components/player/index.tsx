@@ -29,42 +29,9 @@ export const VideoPlayer = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState<VideoSize | null>(null);
   const [videoSize, setVideoSize] = useState<VideoSize | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-
-  const onTimeUpdateRef = useRef(onTimeUpdate);
-  onTimeUpdateRef.current = onTimeUpdate;
-
-  const rafRef = useRef<number | null>(null);
-  const lastTimeRef = useRef<number>(-1);
-
-  useEffect(() => {
-    if (!isPlaying) return;
-
-    const loop = () => {
-      const video = videoRef?.current;
-      if (video && !video.paused) {
-        const t = video.currentTime;
-        if (t !== lastTimeRef.current) {
-          lastTimeRef.current = t;
-          onTimeUpdateRef.current?.(t);
-        }
-      }
-      rafRef.current = requestAnimationFrame(loop);
-    };
-
-    rafRef.current = requestAnimationFrame(loop);
-
-    return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
-  }, [isPlaying, videoRef]);
 
   useEffect(() => {
     setVideoSize(null);
-    setIsPlaying(false);
-    lastTimeRef.current = -1;
   }, [src]);
 
   useLayoutEffect(() => {
@@ -127,8 +94,6 @@ export const VideoPlayer = ({
               height: target.videoHeight,
             });
           }}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
           onTimeUpdate={(e) => {
             const target = e.target as HTMLVideoElement;
             onTimeUpdate?.(target.currentTime);
