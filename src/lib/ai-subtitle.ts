@@ -1,34 +1,35 @@
-import { type Caption, parseSubtitles, detectFormat, sanitizeSubtitleHtml } from "./subtitles";
-
-function migrateCaptions(captions: Caption[]): Caption[] {
-  return captions.map((c) => ({
-    ...c,
-    textHtml: c.textHtml ?? sanitizeSubtitleHtml(c.text),
-    translationHtml: c.translationHtml ?? sanitizeSubtitleHtml(c.translation),
-  }));
-}
+import { type Caption, parseSubtitles } from "./subtitles";
 import { invoke } from "@tauri-apps/api/core";
 
 const DB_NAME = "cadence-subtitles";
 const STORE_NAME = "cache";
-const DB_VERSION = 1;
+const DB_VERSION = 3;
 
 interface CacheEntry {
   hash: string;
-  videoFileName: string | null;
+  videoFileName: string;
   captions: Caption[];
   processedAt: string;
+}
+
+function getVideoBaseName(fileName: string): string {
+  const dotIndex = fileName.lastIndexOf(".");
+  const stem = dotIndex === -1 ? fileName : fileName.slice(0, dotIndex);
+  return stem.replace(/(_transcoded)+$/, "");
 }
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = () => {
+      console.debug("[ai-subtitle] DB upgrade to v", DB_VERSION);
       const db = request.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: "hash" });
-        store.createIndex("videoFileName", "videoFileName", { unique: false });
+      if (db.objectStoreNames.contains(STORE_NAME)) {
+        console.debug("[ai-subtitle] deleting old store:", STORE_NAME);
+        db.deleteObjectStore(STORE_NAME);
       }
+      db.createObjectStore(STORE_NAME, { keyPath: "videoFileName" });
+      console.debug("[ai-subtitle] created store:", STORE_NAME, "keyPath: videoFileName");
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -43,22 +44,30 @@ export async function hashContent(content: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export async function getCachedSubtitle(
-  hash: string,
-): Promise<Caption[] | null> {
+async function getCacheEntry(
+  videoFileName: string,
+): Promise<CacheEntry | null> {
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
-      const request = store.get(hash);
+      const lookupKey = getVideoBaseName(videoFileName);
+      console.debug("[ai-subtitle] getCacheEntry input:", videoFileName, "→ lookupKey:", lookupKey);
+      const request = store.get(lookupKey);
       request.onsuccess = () => {
-        const entry: CacheEntry | undefined = request.result;
-        resolve(entry?.captions ? migrateCaptions(entry.captions) : null);
+        const entry = request.result ?? null;
+        if (entry) {
+          console.debug("[ai-subtitle] getCacheEntry HIT, hash:", entry.hash, "captions:", entry.captions.length);
+        } else {
+          console.debug("[ai-subtitle] getCacheEntry MISS for key:", lookupKey);
+        }
+        resolve(entry);
       };
       request.onerror = () => reject(request.error);
     });
-  } catch {
+  } catch (err) {
+    console.error("[ai-subtitle] getCacheEntry error:", err);
     return null;
   }
 }
@@ -68,56 +77,41 @@ export async function setCachedSubtitle(
   videoFileName: string | null,
   captions: Caption[],
 ): Promise<void> {
-  const db = await openDB();
-  const tx = db.transaction(STORE_NAME, "readwrite");
-  const store = tx.objectStore(STORE_NAME);
-
-  // Remove old cache entries for the same video so only the latest is kept
-  if (videoFileName) {
-    const index = store.index("videoFileName");
-    const oldEntries: CacheEntry[] = await new Promise((resolve, reject) => {
-      const req = index.getAll(videoFileName);
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-    for (const old of oldEntries) {
-      store.delete(old.hash);
-    }
+  const normalizedName = videoFileName ? getVideoBaseName(videoFileName) : null;
+  if (!normalizedName) {
+    console.debug("[ai-subtitle] setCachedSubtitle SKIP: videoFileName is null");
+    return;
   }
-
-  const entry: CacheEntry = {
-    hash,
-    videoFileName,
-    captions,
-    processedAt: new Date().toISOString(),
-  };
-  store.put(entry);
-
+  console.debug("[ai-subtitle] setCachedSubtitle input:", videoFileName, "→ normalized:", normalizedName, "hash:", hash, "captions:", captions.length);
+  const db = await openDB();
   return new Promise((resolve, reject) => {
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const entry: CacheEntry = {
+      hash,
+      videoFileName: normalizedName,
+      captions,
+      processedAt: new Date().toISOString(),
+    };
+    const request = store.put(entry);
+    request.onsuccess = () => {
+      console.debug("[ai-subtitle] setCachedSubtitle SUCCESS for key:", normalizedName);
+      resolve();
+    };
+    request.onerror = () => {
+      console.error("[ai-subtitle] setCachedSubtitle FAILED:", request.error);
+      reject(request.error);
+    };
   });
 }
 
 export async function getSubtitlesForVideo(
   videoFileName: string,
 ): Promise<Caption[] | null> {
-  try {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE_NAME, "readonly");
-      const store = tx.objectStore(STORE_NAME);
-      const index = store.index("videoFileName");
-      const request = index.get(videoFileName);
-      request.onsuccess = () => {
-        const entry: CacheEntry | undefined = request.result;
-        resolve(entry?.captions ? migrateCaptions(entry.captions) : null);
-      };
-      request.onerror = () => reject(request.error);
-    });
-  } catch {
-    return null;
-  }
+  const entry = await getCacheEntry(videoFileName);
+  const result = entry?.captions ?? null;
+  console.debug("[ai-subtitle] getSubtitlesForVideo input:", videoFileName, "→ result:", result ? `${result.length} captions` : "null");
+  return result;
 }
 
 export async function clearAllCachedSubtitles(): Promise<void> {
@@ -139,13 +133,14 @@ export async function clearAllCachedSubtitles(): Promise<void> {
  * ASS content is left unchanged (it already uses \N for line breaks).
  */
 export function preprocessSrtContent(content: string): string {
-  const format = detectFormat(content);
-  if (format === "ass") return content;
+  const format = content.trim().toLowerCase();
+  if (format.startsWith("[script info]") || format.startsWith("[v4") || /^Dialogue:/m.test(content)) {
+    return content;
+  }
 
   const normalized = content.trim().replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   const blocks = normalized.split(/\n{2,}/);
 
-  // Step 1: Parse blocks into structured entries
   interface SrtEntry {
     index: string;
     timestamp: string;
@@ -189,7 +184,6 @@ export function preprocessSrtContent(content: string): string {
 
   if (entries.length === 0) return normalized;
 
-  // Step 2: Merge consecutive entries where a sentence is split across timestamps
   const merged: SrtEntry[] = [];
 
   for (let i = 0; i < entries.length; i++) {
@@ -197,10 +191,6 @@ export function preprocessSrtContent(content: string): string {
       const prev = merged[merged.length - 1];
       const curr = entries[i];
 
-      // Heuristic for continuation:
-      // - Previous text doesn't end with sentence-ending punctuation
-      // - Current text starts with lowercase (not a new sentence or speaker tag)
-      // - Current text is short (likely a fragment, not a complete subtitle)
       const prevEndsIncomplete = !/[.!?›»"']$/.test(prev.text.trim());
       const currStartsLowercase = /^[a-z(<]/.test(curr.text.trim());
       const currIsFragment = curr.text.length < 50;
@@ -216,7 +206,6 @@ export function preprocessSrtContent(content: string): string {
     merged.push({ ...entries[i] });
   }
 
-  // Step 3: Reconstruct SRT with sequential numbering
   return merged
     .map((entry, i) => `${i + 1}\n${entry.timestamp}\n${entry.text}`)
     .join("\n\n");
@@ -232,8 +221,7 @@ export async function processSubtitleWithAI(
     apiKey,
     model,
   });
-  // Debug Output
-  console.log("AI-processed subtitle:", response);
+  console.debug("AI-processed subtitle:", response);
   return response;
 }
 
@@ -249,10 +237,23 @@ export async function processSubtitle(
 
   const processed = preprocessSrtContent(content);
   const hash = await hashContent(processed);
+  console.debug("[ai-subtitle] processSubtitle hash:", hash);
 
-  const cached = await getCachedSubtitle(hash);
-  if (cached) {
-    return cached;
+  const normalizedName = videoFileName
+    ? getVideoBaseName(videoFileName)
+    : null;
+  if (normalizedName) {
+    console.debug("[ai-subtitle] processSubtitle checking cache for:", normalizedName);
+    const entry = await getCacheEntry(normalizedName);
+    if (entry) {
+      console.debug("[ai-subtitle] processSubtitle cached entry hash:", entry.hash, "vs new hash:", hash, "match:", entry.hash === hash);
+    }
+    if (entry && entry.hash === hash) {
+      console.debug("[ai-subtitle] processSubtitle HASH MATCH, skipping AI");
+      return entry.captions;
+    }
+  } else {
+    console.debug("[ai-subtitle] processSubtitle SKIP dedup: videoFileName is null");
   }
 
   const processedText = await processSubtitleWithAI(processed, apiKey, model);

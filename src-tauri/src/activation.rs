@@ -65,3 +65,26 @@ pub fn get_machine_fingerprint() -> String {
     hasher.update(raw.as_bytes());
     hex::encode(hasher.finalize())
 }
+
+/// Trial duration in days for commercial builds without activation.
+pub const TRIAL_DURATION_DAYS: i64 = 3;
+
+/// Calculate trial days remaining from a start date ISO string.
+/// Returns number of remaining days (0 if expired).
+pub fn trial_days_remaining(trial_start_date: &str) -> i32 {
+    let start = match chrono::NaiveDate::parse_from_str(
+        &trial_start_date[..10.min(trial_start_date.len())],
+        "%Y-%m-%d",
+    ) {
+        Ok(d) => d,
+        Err(_) => return 0,
+    };
+    let today = chrono::Local::now().date_naive();
+    let elapsed = today.signed_duration_since(start).num_days();
+    (TRIAL_DURATION_DAYS - elapsed).max(0) as i32
+}
+
+/// Get today's date as ISO string (YYYY-MM-DD).
+pub fn today_iso() -> String {
+    chrono::Local::now().format("%Y-%m-%d").to_string()
+}

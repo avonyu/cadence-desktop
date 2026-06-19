@@ -141,8 +141,8 @@ export function parseSRT(content: string): Caption[] {
     const [startStr, endStr] = timestampLine.split("-->").map((s) => s.trim());
     const text = stripAssTags(textLines.join("\n").trim());
 
-    // Detect bilingual using \N separator (AI output format).
-    // Falls back to newline splitting for single-language SRT.
+    // Detect bilingual using \N separator (ASS AI output format)
+    // or real line breaks (SRT AI output: source\n\ntranslation).
     const textParts = text
       .split(/\\N/)
       .map((l) => l.trim())
@@ -152,16 +152,24 @@ export function parseSRT(content: string): Caption[] {
     let translation = "";
 
     if (textParts.length >= 2) {
+      // \N separator: first part = text, rest = translation
       captionText = textParts[0];
       translation = textParts.slice(1).join("\n");
     } else if (textParts.length === 1) {
-      // Single-language SRT: multi-line text is all original content
+      // No \N — check for real line breaks (SRT bilingual output)
       const lines = textParts[0]
         .split("\n")
         .map((l) => l.trim())
         .filter(Boolean);
-      captionText = lines.join(" ");
-      translation = "";
+      if (lines.length >= 2) {
+        // AI-processed SRT: first line = source, rest = translation
+        captionText = lines[0];
+        translation = lines.slice(1).join("\n");
+      } else {
+        // Single-language entry
+        captionText = lines.join(" ");
+        translation = "";
+      }
     }
 
     captions.push({

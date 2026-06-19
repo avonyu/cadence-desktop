@@ -92,7 +92,9 @@ export function ActivationDialog({ open, onOpenChange }: ActivationDialogProps) 
         }, 1500);
       } else {
         setStatus("error");
-        toast.error(result.error || t("activation.invalidCode"));
+        if (result.error)
+          console.warn("[activation] activate error:", result.error);
+        toast.error(t("activation.invalidCode"));
       }
     } catch {
       setStatus("error");

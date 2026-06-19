@@ -23,6 +23,11 @@ fn main() {
         }
     }
 
+    // Pass VITE_EXPIRE_MODE for dev/QA activation status override
+    if let Some(expire_mode) = env.get("VITE_EXPIRE_MODE") {
+        println!("cargo:rustc-env=VITE_EXPIRE_MODE={}", expire_mode);
+    }
+
     println!("cargo:rerun-if-changed=../.env");
 
     tauri_build::build()

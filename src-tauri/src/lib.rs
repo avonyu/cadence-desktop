@@ -12,6 +12,43 @@ use ffmpeg_sidecar::ffprobe::ffprobe_is_installed;
 
 mod activation;
 
+/// Read a single variable from the project .env file at runtime.
+/// Tries multiple paths relative to known locations (dev mode, production, etc).
+fn read_dotenv_var(key: &str) -> Option<String> {
+    let candidates = [
+        Path::new("../.env"),     // dev: cargo run from src-tauri/
+        Path::new(".env"),        // fallback: exe directory
+    ];
+    for path in &candidates {
+        let content = match std::fs::read_to_string(path) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+        for line in content.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            if let Some((k, v)) = line.split_once('=') {
+                if k.trim() == key {
+                    let val = v.trim();
+                    // Strip surrounding quotes if present
+                    let val = if val.len() >= 2
+                        && ((val.starts_with('"') && val.ends_with('"'))
+                            || (val.starts_with('\'') && val.ends_with('\'')))
+                    {
+                        &val[1..val.len() - 1]
+                    } else {
+                        val
+                    };
+                    return Some(val.to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
@@ -385,6 +422,94 @@ struct ActivateResult {
     fingerprint: Option<String>,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ActivationStatus {
+    activated: bool,
+    trial_active: bool,
+    trial_days_remaining: i32,
+}
+
+#[tauri::command]
+fn get_activation_status(app: tauri::AppHandle) -> ActivationStatus {
+    // Dev/QA expire mode override — read from .env at runtime (no recompile needed)
+    if let Some(mode) = read_dotenv_var("VITE_EXPIRE_MODE") {
+        eprintln!("[activation] get_activation_status: VITE_EXPIRE_MODE = {}", mode);
+        return match mode.as_str() {
+            "expired" => ActivationStatus {
+                activated: false,
+                trial_active: false,
+                trial_days_remaining: 0,
+            },
+            "trial" => ActivationStatus {
+                activated: false,
+                trial_active: true,
+                trial_days_remaining: activation::TRIAL_DURATION_DAYS as i32,
+            },
+            "activated" => ActivationStatus {
+                activated: true,
+                trial_active: false,
+                trial_days_remaining: 0,
+            },
+            _ => {
+                eprintln!("[activation] Unknown VITE_EXPIRE_MODE value: {}", mode);
+                ActivationStatus {
+                    activated: false,
+                    trial_active: false,
+                    trial_days_remaining: 0,
+                }
+            }
+        };
+    }
+
+    if cfg!(not(build_mode_commercial)) {
+        return ActivationStatus {
+            activated: true,
+            trial_active: false,
+            trial_days_remaining: 0,
+        };
+    }
+
+    let store = match app.store("activation.dat") {
+        Ok(s) => s,
+        Err(_) => return ActivationStatus {
+            activated: false,
+            trial_active: false,
+            trial_days_remaining: 0,
+        },
+    };
+
+    let activated = store.get("activated").and_then(|v| v.as_bool()).unwrap_or(false);
+
+    if activated {
+        return ActivationStatus {
+            activated: true,
+            trial_active: false,
+            trial_days_remaining: 0,
+        };
+    }
+
+    // Read or initialize trial start date
+    let trial_start = store
+        .get("trial_start_date")
+        .and_then(|v| v.as_str().map(|s| s.to_string()))
+        .unwrap_or_else(|| {
+            let today = activation::today_iso();
+            let _ = store.set("trial_start_date", serde_json::json!(&today));
+            let _ = store.save();
+            today
+        });
+
+    let remaining = activation::trial_days_remaining(&trial_start);
+    let trial_active = remaining > 0;
+
+    ActivationStatus {
+        activated: false,
+        trial_active,
+        trial_days_remaining: remaining,
+    }
+}
+
 #[tauri::command]
 fn activate(code: String, app: tauri::AppHandle) -> Result<ActivateResult, String> {
     match activation::validate_code(&code) {
@@ -426,6 +551,7 @@ pub fn run() {
             transcode_audio,
             cancel_transcode,
             activate,
+            get_activation_status,
             check_file_exists,
         ])
         .setup(|app| {
