@@ -11,8 +11,6 @@
     "tauri:dev": "tauri dev",
     "tauri:bnb": "tauri build --no-bundle",
     "tauri:build": "tauri build",
-    "build:oss": "tsc && vite build && tauri build",
-    "build:commercial": "tsc && vite build && tauri build",
     "test": "vitest run",
     "test:watch": "vitest",
     "gen:codes": "bun run scripts/gen-codes.ts",

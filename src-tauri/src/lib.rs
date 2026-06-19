@@ -4,7 +4,6 @@ use std::path::Path;
 use std::sync::{LazyLock, Mutex};
 use serde::Serialize;
 use tauri::Emitter;
-use tauri::Manager;
 use tauri_plugin_http::reqwest;
 use tauri_plugin_store::StoreExt;
 use ffmpeg_sidecar::command::ffmpeg_is_installed;
@@ -538,6 +537,7 @@ fn activate(code: String, app: tauri::AppHandle) -> Result<ActivateResult, Strin
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -554,44 +554,7 @@ pub fn run() {
             get_activation_status,
             check_file_exists,
         ])
-        .setup(|app| {
-            let window = app.get_webview_window("main")
-                .expect("main window not found");
-
-            // Restore saved window geometry
-            if let Ok(store) = app.store("window-state.dat") {
-                if let Some(x) = store.get("x").and_then(|v| v.as_i64()) {
-                    let y = store.get("y").and_then(|v| v.as_i64()).unwrap_or(0);
-                    let w = store.get("w").and_then(|v| v.as_u64()).unwrap_or(1200);
-                    let h = store.get("h").and_then(|v| v.as_u64()).unwrap_or(720);
-                    let _ = window.set_position(tauri::PhysicalPosition::new(x as i32, y as i32));
-                    let _ = window.set_size(tauri::PhysicalSize::new(w as u32, h as u32));
-                }
-                if let Some(true) = store.get("maximized").and_then(|v| v.as_bool()) {
-                    let _ = window.maximize();
-                }
-            }
-
-            // Save window geometry on close
-            let window_clone = window.clone();
-            window.on_window_event(move |event| {
-                if let tauri::WindowEvent::CloseRequested { .. } = event {
-                    if let Ok(store) = window_clone.app_handle().store("window-state.dat") {
-                        let is_max = window_clone.is_maximized().unwrap_or(false);
-                        let pos = window_clone.outer_position().unwrap_or(tauri::PhysicalPosition::new(100, 100));
-                        let size = window_clone.outer_size().unwrap_or(tauri::PhysicalSize::new(1200, 720));
-                        store.set("x", serde_json::json!(pos.x));
-                        store.set("y", serde_json::json!(pos.y));
-                        store.set("w", serde_json::json!(size.width));
-                        store.set("h", serde_json::json!(size.height));
-                        store.set("maximized", serde_json::json!(is_max));
-                        let _ = store.save();
-                    }
-                }
-            });
-
-            Ok(())
-        })
+        .setup(|_app| Ok(()))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
