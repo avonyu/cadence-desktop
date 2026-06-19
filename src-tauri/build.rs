@@ -54,8 +54,7 @@ fn read_dotenv() -> HashMap<String, String> {
 fn strip_quotes(s: &str) -> String {
     let s = s.trim();
     if s.len() >= 2
-        && (s.starts_with('"') && s.ends_with('"')
-            || s.starts_with('\'') && s.ends_with('\''))
+        && (s.starts_with('"') && s.ends_with('"') || s.starts_with('\'') && s.ends_with('\''))
     {
         s[1..s.len() - 1].to_string()
     } else {

@@ -1,13 +1,13 @@
-use std::process::{Command, Stdio};
+use ffmpeg_sidecar::command::ffmpeg_is_installed;
+use ffmpeg_sidecar::ffprobe::ffprobe_is_installed;
+use serde::Serialize;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
+use std::process::{Command, Stdio};
 use std::sync::{LazyLock, Mutex};
-use serde::Serialize;
 use tauri::Emitter;
 use tauri_plugin_http::reqwest;
 use tauri_plugin_store::StoreExt;
-use ffmpeg_sidecar::command::ffmpeg_is_installed;
-use ffmpeg_sidecar::ffprobe::ffprobe_is_installed;
 
 mod activation;
 
@@ -15,8 +15,8 @@ mod activation;
 /// Tries multiple paths relative to known locations (dev mode, production, etc).
 fn read_dotenv_var(key: &str) -> Option<String> {
     let candidates = [
-        Path::new("../.env"),     // dev: cargo run from src-tauri/
-        Path::new(".env"),        // fallback: exe directory
+        Path::new("../.env"), // dev: cargo run from src-tauri/
+        Path::new(".env"),    // fallback: exe directory
     ];
     for path in &candidates {
         let content = match std::fs::read_to_string(path) {
@@ -156,7 +156,15 @@ async fn call_deepseek_dictionary(
     let system_prompt = include_str!("../prompts/word-dictionary.md");
     let user_content = format!("Define: {}", word.trim().to_lowercase());
 
-    deepseek_chat(&api_key, &model, system_prompt, &user_content, 0.3, Some(1024)).await
+    deepseek_chat(
+        &api_key,
+        &model,
+        system_prompt,
+        &user_content,
+        0.3,
+        Some(1024),
+    )
+    .await
 }
 
 static ACTIVE_FFMPEG_PID: LazyLock<Mutex<Option<u32>>> = LazyLock::new(|| Mutex::new(None));
@@ -201,7 +209,14 @@ struct VideoCodecResult {
 
 fn resolve_ffmpeg() -> Option<String> {
     if ffmpeg_is_installed() {
-        Some(if cfg!(target_os = "windows") { "ffmpeg.exe" } else { "ffmpeg" }.to_string())
+        Some(
+            if cfg!(target_os = "windows") {
+                "ffmpeg.exe"
+            } else {
+                "ffmpeg"
+            }
+            .to_string(),
+        )
     } else {
         None
     }
@@ -209,7 +224,14 @@ fn resolve_ffmpeg() -> Option<String> {
 
 fn resolve_ffprobe() -> Option<String> {
     if ffprobe_is_installed() {
-        Some(if cfg!(target_os = "windows") { "ffprobe.exe" } else { "ffprobe" }.to_string())
+        Some(
+            if cfg!(target_os = "windows") {
+                "ffprobe.exe"
+            } else {
+                "ffprobe"
+            }
+            .to_string(),
+        )
     } else {
         None
     }
@@ -243,17 +265,19 @@ fn cancel_transcode() -> Result<(), String> {
 
 #[tauri::command]
 fn detect_video_codecs(file_path: String) -> Result<VideoCodecResult, String> {
-    let ffprobe = resolve_ffprobe()
-        .ok_or("ffprobe is not installed or not found")?;
+    let ffprobe = resolve_ffprobe().ok_or("ffprobe is not installed or not found")?;
 
     let mut cmd = Command::new(&ffprobe);
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000);
     let output = cmd
         .args([
-            "-v", "error",
-            "-show_entries", "stream=codec_name,codec_long_name,codec_type",
-            "-of", "json",
+            "-v",
+            "error",
+            "-show_entries",
+            "stream=codec_name,codec_long_name,codec_type",
+            "-of",
+            "json",
             &file_path,
         ])
         .output()
@@ -276,15 +300,27 @@ fn detect_video_codecs(file_path: String) -> Result<VideoCodecResult, String> {
 
     for stream in streams {
         let codec_type = stream["codec_type"].as_str().unwrap_or("");
-        let codec_name = stream["codec_name"].as_str().unwrap_or("unknown").to_string();
-        let codec_long_name = stream["codec_long_name"].as_str().unwrap_or("Unknown").to_string();
+        let codec_name = stream["codec_name"]
+            .as_str()
+            .unwrap_or("unknown")
+            .to_string();
+        let codec_long_name = stream["codec_long_name"]
+            .as_str()
+            .unwrap_or("Unknown")
+            .to_string();
 
         match codec_type {
             "video" if video.is_none() => {
-                video = Some(CodecInfo { codec_name, codec_long_name });
+                video = Some(CodecInfo {
+                    codec_name,
+                    codec_long_name,
+                });
             }
             "audio" if audio.is_none() => {
-                audio = Some(CodecInfo { codec_name, codec_long_name });
+                audio = Some(CodecInfo {
+                    codec_name,
+                    codec_long_name,
+                });
             }
             _ => {}
         }
@@ -305,17 +341,19 @@ fn build_output_path(input: &str) -> String {
 }
 
 fn get_video_duration(file_path: &str) -> Result<f64, String> {
-    let ffprobe = resolve_ffprobe()
-        .ok_or("ffprobe is not installed")?;
+    let ffprobe = resolve_ffprobe().ok_or("ffprobe is not installed")?;
 
     let mut cmd = Command::new(&ffprobe);
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000);
     let output = cmd
         .args([
-            "-v", "error",
-            "-show_entries", "format=duration",
-            "-of", "csv=p=0",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "csv=p=0",
             file_path,
         ])
         .output()
@@ -333,12 +371,8 @@ fn get_video_duration(file_path: &str) -> Result<f64, String> {
 }
 
 #[tauri::command]
-async fn transcode_audio(
-    app: tauri::AppHandle,
-    input_path: String,
-) -> Result<String, String> {
-    let ffmpeg = resolve_ffmpeg()
-        .ok_or("ffmpeg is not installed or not found")?;
+async fn transcode_audio(app: tauri::AppHandle, input_path: String) -> Result<String, String> {
+    let ffmpeg = resolve_ffmpeg().ok_or("ffmpeg is not installed or not found")?;
 
     let output_path = build_output_path(&input_path);
 
@@ -362,12 +396,18 @@ async fn transcode_audio(
         cmd.creation_flags(0x08000000);
         let mut child = cmd
             .args([
-                "-i", &input,
-                "-c:v", "copy",
-                "-c:a", "aac",
-                "-b:a", "192k",
-                "-ac", "2",
-                "-progress", "pipe:1",
+                "-i",
+                &input,
+                "-c:v",
+                "copy",
+                "-c:a",
+                "aac",
+                "-b:a",
+                "192k",
+                "-ac",
+                "2",
+                "-progress",
+                "pipe:1",
                 "-nostats",
                 "-y",
                 &output,
@@ -387,8 +427,7 @@ async fn transcode_audio(
             if let Some(rest) = line.strip_prefix("out_time_ms=") {
                 let ms: u64 = rest.parse().unwrap_or(0);
                 let pct = if duration > 0.0 {
-                    ((ms as f64 / (duration * 1_000_000.0)) * 100.0)
-                        .min(99.0) as u32
+                    ((ms as f64 / (duration * 1_000_000.0)) * 100.0).min(99.0) as u32
                 } else {
                     0
                 };
@@ -433,7 +472,10 @@ struct ActivationStatus {
 fn get_activation_status(app: tauri::AppHandle) -> ActivationStatus {
     // Dev/QA expire mode override — read from .env at runtime (no recompile needed)
     if let Some(mode) = read_dotenv_var("VITE_EXPIRE_MODE") {
-        eprintln!("[activation] get_activation_status: VITE_EXPIRE_MODE = {}", mode);
+        eprintln!(
+            "[activation] get_activation_status: VITE_EXPIRE_MODE = {}",
+            mode
+        );
         return match mode.as_str() {
             "expired" => ActivationStatus {
                 activated: false,
@@ -471,14 +513,19 @@ fn get_activation_status(app: tauri::AppHandle) -> ActivationStatus {
 
     let store = match app.store("activation.dat") {
         Ok(s) => s,
-        Err(_) => return ActivationStatus {
-            activated: false,
-            trial_active: false,
-            trial_days_remaining: 0,
-        },
+        Err(_) => {
+            return ActivationStatus {
+                activated: false,
+                trial_active: false,
+                trial_days_remaining: 0,
+            }
+        }
     };
 
-    let activated = store.get("activated").and_then(|v| v.as_bool()).unwrap_or(false);
+    let activated = store
+        .get("activated")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     if activated {
         return ActivationStatus {
@@ -536,6 +583,7 @@ fn activate(code: String, app: tauri::AppHandle) -> Result<ActivateResult, Strin
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_updater::Builder::new().build())
