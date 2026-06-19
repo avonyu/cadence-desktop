@@ -14,8 +14,8 @@ interface CaptionsDisplayProps {
   isAiProcessing: boolean;
   blurMode: BlurMode;
   onWordClick?: (e: React.MouseEvent) => void;
-  onMouseEnter?: () => void;
-  onMouseLeave?: () => void;
+  onMouseOver?: (e: React.MouseEvent) => void;
+  onMouseOut?: (e: React.MouseEvent) => void;
 }
 
 export const CaptionsDisplay = memo(function CaptionsDisplay({
@@ -25,8 +25,8 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
   isAiProcessing,
   blurMode,
   onWordClick,
-  onMouseEnter,
-  onMouseLeave,
+  onMouseOver,
+  onMouseOut,
 }: CaptionsDisplayProps) {
   const { t } = useTranslation();
 
@@ -34,8 +34,8 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
     <div
       className="group flex w-full flex-col items-center justify-center py-5 text-center min-h-36"
       onClick={onWordClick}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onMouseOver={onMouseOver}
+      onMouseOut={onMouseOut}
     >
       {isAiProcessing ? (
         <div className="flex items-center gap-2">

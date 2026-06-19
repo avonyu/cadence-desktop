@@ -248,8 +248,8 @@ export const PlayerPage = () => {
               isAiProcessing={isAiProcessing}
               blurMode={blurMode}
               onWordClick={wordTranslate.handleWordClick}
-              onMouseEnter={wordTranslate.handleMouseEnter}
-              onMouseLeave={wordTranslate.handleMouseLeave}
+              onMouseOver={wordTranslate.handleMouseOver}
+              onMouseOut={wordTranslate.handleMouseOut}
             />
           </div>
 

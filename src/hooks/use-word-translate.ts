@@ -44,8 +44,11 @@ export function useWordTranslate(
     popupOpenRef.current = false;
     currentWordRef.current = null;
     const video = videoRef.current;
-    if (video && wasPlayingBeforeClickRef.current) {
-      wasPlayingBeforeClickRef.current = false;
+    const shouldResume =
+      wasPlayingBeforeClickRef.current || wasPlayingBeforeEnterRef.current;
+    wasPlayingBeforeClickRef.current = false;
+    wasPlayingBeforeEnterRef.current = false;
+    if (video && shouldResume) {
       video.play().catch(() => {});
     }
   }, [videoRef]);
@@ -124,7 +127,12 @@ export function useWordTranslate(
     [videoRef, handleClose, t],
   );
 
-  const handleMouseEnter = useCallback(() => {
+  const handleMouseOver = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const wordSpan = target.closest(".sub-word") as HTMLElement | null;
+    if (!wordSpan) return;
+    const relatedTarget = e.relatedTarget as HTMLElement | null;
+    if (relatedTarget?.closest(".sub-word")) return;
     const video = videoRef.current;
     if (video && !video.paused) {
       wasPlayingBeforeEnterRef.current = true;
@@ -132,8 +140,12 @@ export function useWordTranslate(
     }
   }, [videoRef]);
 
-  const handleMouseLeave = useCallback(() => {
-    // Don't resume if a word popup is currently open
+  const handleMouseOut = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const wordSpan = target.closest(".sub-word") as HTMLElement | null;
+    if (!wordSpan) return;
+    const relatedTarget = e.relatedTarget as HTMLElement | null;
+    if (relatedTarget?.closest(".sub-word")) return;
     if (popupOpenRef.current) return;
     const video = videoRef.current;
     if (video && wasPlayingBeforeEnterRef.current) {
@@ -155,7 +167,7 @@ export function useWordTranslate(
     handleWordClick,
     handleClose,
     handleOpenChange,
-    handleMouseEnter,
-    handleMouseLeave,
+    handleMouseOver,
+    handleMouseOut,
   };
 }
