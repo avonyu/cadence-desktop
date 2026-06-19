@@ -41,7 +41,7 @@ export function SubtitleSettingsPopover() {
                 </Button>
               </PopoverTrigger>
             </TooltipTrigger>
-            <TooltipContent>{t("subtitle.subtitleSettings")}</TooltipContent>
+            <TooltipContent>{t("subtitle.subtitleSettings")} (B / T)</TooltipContent>
           </Tooltip>
         </TooltipProvider>
         <PopoverContent

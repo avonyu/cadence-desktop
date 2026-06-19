@@ -40,7 +40,7 @@ Cadence — rhythm and flow. A desktop video player designed specifically for **
 - 🎮 **Gamepad Support** — Full controller input: play/pause, seek, volume, sidebar, mask, loop, speed, file open, settings
 - 🔊 **Volume Control** — Vertical volume slider with mute toggle and on-screen volume display
 - 🔄 **Auto-Update** — Built-in update checker with download progress and one-click install
-- ⌨️ **Keyboard Shortcuts** — Play/pause, skip between captions, toggle loop
+- ⌨️ **Keyboard Shortcuts** — Play/pause, caption navigation, speed, volume, fullscreen, mute, loop, sidebar, blur mode, subtitle mask, line swap
 - 📂 **Open Files** — Load local video and subtitle files via native file dialog; remembers last opened video
 - 🎨 **Dark UI** — Immersive dark theme for focused learning
 - 🌐 **i18n** — UI available in English and Chinese
@@ -104,12 +104,28 @@ sudo pacman -S ffmpeg
 
 ### Keyboard Shortcuts
 
-| Key     | Action                   |
-| ------- | ------------------------ |
-| `Space` | Play / Pause             |
-| `←`     | Jump to previous caption |
-| `→`     | Jump to next caption     |
-| `L`     | Toggle single sentence loop |
+#### Playback
+
+| Key               | Action                   |
+| ----------------- | ------------------------ |
+| `Space`           | Play / Pause             |
+| `←` / `→`         | Previous / Next caption  |
+| `↑` / `↓`         | Volume Up / Down         |
+| `,` / `<` / `.` / `>` | Slow Down / Speed Up |
+
+#### Toggles
+
+| Key | Action                    |
+| --- | ------------------------- |
+| `F` | Fullscreen                |
+| `M` | Mute                      |
+| `L` | Single Sentence Loop      |
+| `S` | Sidebar                   |
+| `B` | Blur Mode (cycle 4 levels) |
+| `R` | Subtitle Mask             |
+| `T` | Swap subtitle line order  |
+
+> Letter shortcuts are disabled when focus is in an input field. Arrow keys and `Space` always work.
 
 ### Gamepad Mappings
 

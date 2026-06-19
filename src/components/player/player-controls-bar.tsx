@@ -174,7 +174,7 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {isPlaying ? t("player.pause") : t("player.play")}
+              {isPlaying ? t("player.pause") : t("player.play")} (Space)
             </TooltipContent>
           </ShadcnTooltip>
 
@@ -219,7 +219,7 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {t("player.singleSentenceLoop")} ({t("player.shortcut")}: L)
+              {t("player.singleSentenceLoop")} (L)
             </TooltipContent>
           </ShadcnTooltip>
         </ShadcnTooltipProvider>
@@ -248,7 +248,7 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
                   </Button>
                 </PopoverTrigger>
               </TooltipTrigger>
-              <TooltipContent>{t("player.playbackSpeed")}</TooltipContent>
+              <TooltipContent>{t("player.playbackSpeed")} (, / .)</TooltipContent>
             </ShadcnTooltip>
             <PopoverContent className="w-24 p-1" align="center" sideOffset={8}>
               <div className="flex flex-col gap-0.5">
@@ -280,7 +280,7 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
                   </Button>
                 </PopoverTrigger>
               </TooltipTrigger>
-              <TooltipContent>{t("player.volume")}</TooltipContent>
+              <TooltipContent>{t("player.volume")} (M / ↑↓)</TooltipContent>
             </ShadcnTooltip>
             <PopoverContent className="w-12 p-2" align="center" sideOffset={8}>
               <div className="flex flex-col items-center gap-2">
@@ -327,7 +327,8 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
             <TooltipContent>
               {isFullscreen
                 ? t("player.exitFullscreen")
-                : t("player.enterFullscreen")}
+                : t("player.enterFullscreen")}{" "}
+              (F)
             </TooltipContent>
           </ShadcnTooltip>
         </ShadcnTooltipProvider>
@@ -382,7 +383,7 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
                 <RectangleHorizontal size={18} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{t("subtitle.subtitleMask")}</TooltipContent>
+            <TooltipContent>{t("subtitle.subtitleMask")} (R)</TooltipContent>
           </ShadcnTooltip>
 
           <ShadcnTooltip>
@@ -396,7 +397,7 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
                 <PanelRight size={18} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{t("subtitle.subtitlesSidebar")}</TooltipContent>
+            <TooltipContent>{t("subtitle.subtitlesSidebar")} (S)</TooltipContent>
           </ShadcnTooltip>
 
           <ShadcnTooltip>

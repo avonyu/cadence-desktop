@@ -1,6 +1,6 @@
 [package]
 name = "cadence-desktop"
-version = "0.6.0"
+version = "0.6.1"
 description = "Immersive bilingual subtitle video player for language learning"
 authors = ["avonyu avon.yu@outlook.com"]
 edition = "2021"

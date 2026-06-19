@@ -52,7 +52,7 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
         activeDisplay && (
           <>
             <p
-              className={`text-2xl font-semibold leading-[1.4] text-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
+              className={`text-2xl font-semibold leading-[1.4] text-foreground max-w-5xl transition-[filter] duration-300 select-none ${
                 blurMode === "primary" || blurMode === "all"
                   ? "blur group-hover:blur-none"
                   : ""
@@ -64,7 +64,7 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
               }}
             />
             <p
-              className={`mt-5 text-2xl leading-[1.4] text-muted-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
+              className={`mt-5 text-2xl leading-[1.4] text-muted-foreground max-w-5xl transition-[filter] duration-300 select-none ${
                 blurMode === "secondary" || blurMode === "all"
                   ? "blur group-hover:blur-none"
                   : ""

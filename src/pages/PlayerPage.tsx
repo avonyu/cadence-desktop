@@ -26,6 +26,7 @@ import { useWordTranslate } from "@/hooks/use-word-translate";
 import { useDisableContextMenu } from "@/hooks/use-disable-context-menu";
 import { cn } from "@/lib/utils";
 import { toggleMediaPlayback } from "@/lib/media-playback";
+import { SPEEDS } from "@/lib/player-constants";
 import { Gamepad2 } from "lucide-react";
 import {
   Tooltip,
@@ -101,18 +102,12 @@ export const PlayerPage = () => {
   const autoTranscode = usePlayerStore((s) => s.autoTranscode);
   const toggleSidebar = usePlayerStore((s) => s.toggleSidebar);
   const toggleSubtitleMask = usePlayerStore((s) => s.toggleSubtitleMask);
+  const cycleBlurMode = usePlayerStore((s) => s.cycleBlurMode);
+  const toggleSwap = usePlayerStore((s) => s.toggleSwap);
   const singleSentenceLoop = usePlayerStore((s) => s.singleSentenceLoop);
   const toggleSingleSentenceLoop = usePlayerStore(
     (s) => s.toggleSingleSentenceLoop,
   );
-
-  // ---- Keyboard shortcuts ----
-  useKeyboardShortcuts({
-    videoRef,
-    goToPrevCaption,
-    goToNextCaption,
-    toggleSingleSentenceLoop,
-  });
 
   // ---- Single sentence loop ----
   const handleLoopCheck = useSingleSentenceLoop(videoRef, captions);
@@ -182,6 +177,60 @@ export const PlayerPage = () => {
     },
     [videoRef],
   );
+
+  const handleVolumeUp = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.volume = Math.min(1, Math.round((video.volume + 0.1) * 10) / 10);
+    video.muted = false;
+  }, [videoRef]);
+
+  const handleVolumeDown = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.volume = Math.max(0, Math.round((video.volume - 0.1) * 10) / 10);
+    video.muted = false;
+  }, [videoRef]);
+
+  const handleToggleMute = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+  }, [videoRef]);
+
+  const handleSpeedUp = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const idx = SPEEDS.indexOf(video.playbackRate);
+    video.playbackRate =
+      idx === -1 ? 1 : SPEEDS[(idx + 1) % SPEEDS.length];
+  }, [videoRef]);
+
+  const handleSpeedDown = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const idx = SPEEDS.indexOf(video.playbackRate);
+    video.playbackRate =
+      idx === -1 ? 1 : SPEEDS[(idx - 1 + SPEEDS.length) % SPEEDS.length];
+  }, [videoRef]);
+
+  // ---- Keyboard shortcuts ----
+  useKeyboardShortcuts({
+    videoRef,
+    goToPrevCaption,
+    goToNextCaption,
+    toggleSingleSentenceLoop,
+    toggleFullscreen: handleToggleFullscreen,
+    volumeUp: handleVolumeUp,
+    volumeDown: handleVolumeDown,
+    toggleMute: handleToggleMute,
+    speedUp: handleSpeedUp,
+    speedDown: handleSpeedDown,
+    toggleSidebar,
+    cycleBlurMode,
+    toggleSubtitleMask,
+    toggleSwap,
+  });
 
   const handleTranscode = useCallback(() => {
     handleTranscodeAudio(videoFilePathRef.current);
