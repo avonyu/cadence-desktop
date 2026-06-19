@@ -1,6 +1,6 @@
 [package]
 name = "cadence-desktop"
-version = "0.6.1"
+version = "0.6.2"
 description = "Immersive bilingual subtitle video player for language learning"
 authors = ["avonyu avon.yu@outlook.com"]
 edition = "2021"
@@ -37,6 +37,8 @@ tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
 futures-util = "0.3"
 uuid = { version = "1", features = ["v4"] }
 base64 = "0.22"
+aes-gcm = "0.10"
+rand = "0.8"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
