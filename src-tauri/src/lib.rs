@@ -4,8 +4,11 @@ use std::path::Path;
 use std::sync::{LazyLock, Mutex};
 use serde::Serialize;
 use tauri::Emitter;
+use tauri::Manager;
 use tauri_plugin_http::reqwest;
 use tauri_plugin_store::StoreExt;
+use ffmpeg_sidecar::command::ffmpeg_is_installed;
+use ffmpeg_sidecar::ffprobe::ffprobe_is_installed;
 
 mod activation;
 
@@ -48,36 +51,45 @@ async fn call_deepseek_api(
     api_key: String,
     model: String,
 ) -> Result<String, String> {
-    let system_prompt = r#"You are a subtitle processor. Your task is to clean and enhance subtitle files.
+    let system_prompt = include_str!("../prompts/subtitle-processor.md");
 
-Rules:
-1. Keep ALL original timestamps and numbering exactly as-is. Do not modify, shift, or remove any timing information.
-2. Only keep dialogue-related lines (including song lyrics). Remove credits, scene descriptions, translator names, and any non-dialogue text.
-3. Remove all style and control information enclosed in curly braces {}.
-4. For bilingual subtitles (containing both Chinese and English), preserve the \N line breaks that separate the two languages.
-5. For single-language subtitles:
-   - If the subtitle is only in Chinese, translate to English and append it after the original text separated by \N.
-   - If the subtitle is only in English, translate to Chinese and prepend it before the original text separated by \N.
-6. Translation must be contextual: subtitles are a continuous transcript. Adjacent entries often form one sentence split across timestamps. Always use surrounding entries for context when translating. If an entry is an obvious sentence fragment (e.g., continues from the previous line, starts with lowercase, is very short), translate it as part of a coherent Chinese sentence combined with its neighboring entries. Never produce a broken or meaningless translation that is just punctuation.
-7. Output the result in the SAME format as the input (SRT stays SRT, ASS stays ASS). Do not change formats.
-8. For ASS format: only output Dialogue lines. Do NOT include [Events], [Script Info], [V4 Styles], Format, or any header/section lines. Only the "Dialogue: ..." lines.
-9. Return ONLY the processed subtitle content. Do NOT wrap the output in markdown code fences, do NOT add any explanation, do NOT add any commentary — just the raw subtitle text."#;
+    let text = deepseek_chat(&api_key, &model, system_prompt, &content, 0.1, None).await?;
+
+    let stripped = strip_markdown_fences(&text)
+        .replace("\\r", "")
+        .trim()
+        .to_string();
+
+    Ok(stripped)
+}
+
+async fn deepseek_chat(
+    api_key: &str,
+    model: &str,
+    system_prompt: &str,
+    user_content: &str,
+    temperature: f64,
+    max_tokens: Option<u32>,
+) -> Result<String, String> {
+    let mut body = serde_json::json!({
+        "model": model,
+        "messages": [
+            { "role": "system", "content": system_prompt },
+            { "role": "user", "content": user_content }
+        ],
+        "temperature": temperature,
+    });
+
+    if let Some(tokens) = max_tokens {
+        body["max_tokens"] = serde_json::json!(tokens);
+    }
 
     let client = reqwest::Client::new();
     let response = client
         .post("https://api.deepseek.com/chat/completions")
         .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
-        .json(&serde_json::json!({
-            "model": model,
-            "messages": [
-                { "role": "system", "content": system_prompt },
-                { "role": "user", "content": content }
-            ],
-            "temperature": 0.1,
-            "thinking": { "type": "enabled" },
-            "reasoning_effort": "high"
-        }))
+        .json(&body)
         .send()
         .await
         .map_err(|e| format!("Request failed: {}", e))?;
@@ -93,19 +105,22 @@ Rules:
         .await
         .map_err(|e| format!("Failed to parse response: {}", e))?;
 
-    let text = json["choices"][0]["message"]["content"]
+    Ok(json["choices"][0]["message"]["content"]
         .as_str()
         .ok_or("Invalid API response format")?
-        .to_string();
+        .to_string())
+}
 
-    // Strip markdown code fences and literal \r characters.
-    // The AI may still wrap output in fences despite the prompt asking not to.
-    let stripped = strip_markdown_fences(&text)
-        .replace("\\r", "") // Remove literal \r (AI may output this as text)
-        .trim()
-        .to_string();
+#[tauri::command]
+async fn call_deepseek_dictionary(
+    word: String,
+    api_key: String,
+    model: String,
+) -> Result<String, String> {
+    let system_prompt = include_str!("../prompts/word-dictionary.md");
+    let user_content = format!("Define: {}", word.trim().to_lowercase());
 
-    Ok(stripped)
+    deepseek_chat(&api_key, &model, system_prompt, &user_content, 0.3, Some(1024)).await
 }
 
 static ACTIVE_FFMPEG_PID: LazyLock<Mutex<Option<u32>>> = LazyLock::new(|| Mutex::new(None));
@@ -148,52 +163,34 @@ struct VideoCodecResult {
     audio: Option<CodecInfo>,
 }
 
-fn resolve_command(name: &str) -> Option<String> {
-    // macOS: check common install locations first, since GUI apps don't inherit shell PATH
-    #[cfg(target_os = "macos")]
-    {
-        let common_dirs = [
-            "/opt/homebrew/bin",
-            "/usr/local/bin",
-            "/opt/local/bin",
-        ];
-        for dir in &common_dirs {
-            let path = format!("{}/{}", dir, name);
-            if Path::new(&path).exists() {
-                return Some(path);
-            }
-        }
+fn resolve_ffmpeg() -> Option<String> {
+    if ffmpeg_is_installed() {
+        Some(if cfg!(target_os = "windows") { "ffmpeg.exe" } else { "ffmpeg" }.to_string())
+    } else {
+        None
     }
-    // Fallback: use which/where to search PATH
-    let mut cmd = Command::new(if cfg!(target_os = "windows") { "where" } else { "which" });
-    #[cfg(target_os = "windows")]
-    cmd.creation_flags(0x08000000);
-    cmd.arg(name)
-        .output()
-        .ok()
-        .and_then(|o| {
-            if o.status.success() {
-                String::from_utf8(o.stdout)
-                    .ok()
-                    .map(|s| s.trim().to_string())
-                    .filter(|s| !s.is_empty())
-            } else {
-                None
-            }
-        })
 }
 
-fn is_command_available(name: &str) -> bool {
-    resolve_command(name).is_some()
+fn resolve_ffprobe() -> Option<String> {
+    if ffprobe_is_installed() {
+        Some(if cfg!(target_os = "windows") { "ffprobe.exe" } else { "ffprobe" }.to_string())
+    } else {
+        None
+    }
 }
 
 #[tauri::command]
 fn check_ffmpeg_tools() -> FfmpegTools {
     FfmpegTools {
-        ffmpeg: is_command_available("ffmpeg"),
-        ffprobe: is_command_available("ffprobe"),
-        ffplay: is_command_available("ffplay"),
+        ffmpeg: ffmpeg_is_installed(),
+        ffprobe: ffprobe_is_installed(),
+        ffplay: false,
     }
+}
+
+#[tauri::command]
+fn check_file_exists(file_path: String) -> bool {
+    Path::new(&file_path).exists()
 }
 
 #[tauri::command]
@@ -210,10 +207,10 @@ fn cancel_transcode() -> Result<(), String> {
 
 #[tauri::command]
 fn detect_video_codecs(file_path: String) -> Result<VideoCodecResult, String> {
-    let ffprobe_path = resolve_command("ffprobe")
-        .ok_or("ffprobe is not installed or not found in PATH")?;
+    let ffprobe = resolve_ffprobe()
+        .ok_or("ffprobe is not installed or not found")?;
 
-    let mut cmd = Command::new(&ffprobe_path);
+    let mut cmd = Command::new(&ffprobe);
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000);
     let output = cmd
@@ -272,10 +269,10 @@ fn build_output_path(input: &str) -> String {
 }
 
 fn get_video_duration(file_path: &str) -> Result<f64, String> {
-    let ffprobe_path = resolve_command("ffprobe")
+    let ffprobe = resolve_ffprobe()
         .ok_or("ffprobe is not installed")?;
 
-    let mut cmd = Command::new(&ffprobe_path);
+    let mut cmd = Command::new(&ffprobe);
     #[cfg(target_os = "windows")]
     cmd.creation_flags(0x08000000);
     let output = cmd
@@ -304,8 +301,8 @@ async fn transcode_audio(
     app: tauri::AppHandle,
     input_path: String,
 ) -> Result<String, String> {
-    let ffmpeg_path = resolve_command("ffmpeg")
-        .ok_or("ffmpeg is not installed or not found in PATH")?;
+    let ffmpeg = resolve_ffmpeg()
+        .ok_or("ffmpeg is not installed or not found")?;
 
     let output_path = build_output_path(&input_path);
 
@@ -324,7 +321,7 @@ async fn transcode_audio(
     let output = output_path.clone();
 
     tauri::async_runtime::spawn_blocking(move || {
-        let mut cmd = Command::new(&ffmpeg_path);
+        let mut cmd = Command::new(&ffmpeg);
         #[cfg(target_os = "windows")]
         cmd.creation_flags(0x08000000);
         let mut child = cmd
@@ -423,12 +420,52 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .invoke_handler(tauri::generate_handler![
             call_deepseek_api,
+            call_deepseek_dictionary,
             check_ffmpeg_tools,
             detect_video_codecs,
             transcode_audio,
             cancel_transcode,
             activate,
+            check_file_exists,
         ])
+        .setup(|app| {
+            let window = app.get_webview_window("main")
+                .expect("main window not found");
+
+            // Restore saved window geometry
+            if let Ok(store) = app.store("window-state.dat") {
+                if let Some(x) = store.get("x").and_then(|v| v.as_i64()) {
+                    let y = store.get("y").and_then(|v| v.as_i64()).unwrap_or(0);
+                    let w = store.get("w").and_then(|v| v.as_u64()).unwrap_or(1200);
+                    let h = store.get("h").and_then(|v| v.as_u64()).unwrap_or(720);
+                    let _ = window.set_position(tauri::PhysicalPosition::new(x as i32, y as i32));
+                    let _ = window.set_size(tauri::PhysicalSize::new(w as u32, h as u32));
+                }
+                if let Some(true) = store.get("maximized").and_then(|v| v.as_bool()) {
+                    let _ = window.maximize();
+                }
+            }
+
+            // Save window geometry on close
+            let window_clone = window.clone();
+            window.on_window_event(move |event| {
+                if let tauri::WindowEvent::CloseRequested { .. } = event {
+                    if let Ok(store) = window_clone.app_handle().store("window-state.dat") {
+                        let is_max = window_clone.is_maximized().unwrap_or(false);
+                        let pos = window_clone.outer_position().unwrap_or(tauri::PhysicalPosition::new(100, 100));
+                        let size = window_clone.outer_size().unwrap_or(tauri::PhysicalSize::new(1200, 720));
+                        store.set("x", serde_json::json!(pos.x));
+                        store.set("y", serde_json::json!(pos.y));
+                        store.set("w", serde_json::json!(size.width));
+                        store.set("h", serde_json::json!(size.height));
+                        store.set("maximized", serde_json::json!(is_max));
+                        let _ = store.save();
+                    }
+                }
+            });
+
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

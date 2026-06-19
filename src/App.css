@@ -167,6 +167,15 @@
     --ai-overlay-bg: rgba(255, 255, 255, 0.5);
 }
 
+.sub-word {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.sub-word:hover {
+  color: var(--player-accent);
+}
+
 @keyframes gradient-flow {
     0% {
         background-position: 0% 50%;

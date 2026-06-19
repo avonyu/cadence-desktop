@@ -7,29 +7,8 @@
 //   bun run gen:codes [COUNT] [--out <FILE>]
 //   COUNT defaults to CADENCE_MAX_CODES from .env
 
-import { readFileSync } from "fs";
-
 function loadEnv(): Record<string, string> {
-  const result: Record<string, string> = {};
-  try {
-    const content = readFileSync(".env", "utf-8");
-    for (const line of content.split("\n")) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const eq = trimmed.indexOf("=");
-      if (eq > 0) {
-        const key = trimmed.slice(0, eq).trim();
-        let val = trimmed.slice(eq + 1).trim();
-        if (val.length >= 2
-          && ((val.startsWith('"') && val.endsWith('"'))
-            || (val.startsWith("'") && val.endsWith("'")))) {
-          val = val.slice(1, -1);
-        }
-        result[key] = val;
-      }
-    }
-  } catch { /* .env may not exist */ }
-  return result;
+  return Bun.env as Record<string, string>;
 }
 
 function toBeBytes(n: number): Uint8Array {
@@ -48,7 +27,7 @@ async function main() {
 
   const secret = env["CADENCE_ACTIVATION_SECRET"];
   if (!secret) {
-    console.error('Missing CADENCE_ACTIVATION_SECRET in .env');
+    console.error("Missing CADENCE_ACTIVATION_SECRET in .env");
     process.exit(1);
   }
 

@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
 import { type Caption } from "@/lib/subtitles";
 import { getSubtitlesForVideo } from "@/lib/ai-subtitle";
@@ -50,6 +51,9 @@ export function useVideoFile(): UseVideoFileReturn {
       videoFilePathRef.current = filePath;
       const fileName = filePath.split(/[\\/]/).pop() || filePath;
       setVideoFileName(fileName);
+
+      // Update window title
+      await getCurrentWindow().setTitle(`Cadence Desktop - ${fileName}`);
 
       setCaptions([]);
       setActiveCaption(null);

@@ -15,7 +15,8 @@
     "build:commercial": "tsc && vite build && tauri build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "gen:codes": "bun run scripts/gen-codes.ts"
+    "gen:codes": "bun run scripts/gen-codes.ts",
+    "download:ffmpeg": "bun run scripts/download-ffmpeg.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
