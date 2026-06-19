@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 import { getWeekStart } from "@/lib/week-utils";
-import { getFeatureLimit } from "@/lib/feature-restrictions";
+import { getFeatureLimit, getRestrictedFeatureIds } from "@/lib/feature-restrictions";
 
 const USAGE_KEY = "cadence:activation-usage";
 const STATE_KEY = "cadence:activation-state";
@@ -13,6 +13,8 @@ interface UsageEntry {
 
 interface ActivationState {
   activated: boolean;
+  trialActive: boolean;
+  trialDaysRemaining: number;
   usage: Record<string, UsageEntry>;
   hydrated: boolean;
 
@@ -21,6 +23,7 @@ interface ActivationState {
   getRemaining: (featureId: string) => number;
   getLimit: (featureId: string) => number;
   checkAndRecord: (featureId: string) => Promise<boolean>;
+  canUseFeature: (featureId: string) => boolean;
 }
 
 function loadUsage(): Record<string, UsageEntry> {
@@ -41,6 +44,8 @@ interface ActivationInfo {
   activated: boolean;
   code: string;
   fingerprint: string;
+  trialActive: boolean;
+  trialDaysRemaining: number;
 }
 
 function loadActivationState(): ActivationInfo {
@@ -48,7 +53,7 @@ function loadActivationState(): ActivationInfo {
     const raw = localStorage.getItem(STATE_KEY);
     if (raw) return JSON.parse(raw) as ActivationInfo;
   } catch { /* ignore */ }
-  return { activated: false, code: "", fingerprint: "" };
+  return { activated: false, code: "", fingerprint: "", trialActive: false, trialDaysRemaining: 0 };
 }
 
 function saveActivationState(info: ActivationInfo) {
@@ -59,19 +64,43 @@ function saveActivationState(info: ActivationInfo) {
 
 export const useActivationStore = create<ActivationState>()((set, get) => ({
   activated: false,
+  trialActive: false,
+  trialDaysRemaining: 0,
   usage: {},
   hydrated: false,
 
   hydrate: async () => {
     if (import.meta.env.VITE_BUILD_MODE !== "commercial") {
-      set({ activated: true, hydrated: true });
+      set({ activated: true, trialActive: false, trialDaysRemaining: 0, hydrated: true });
       return;
     }
 
-    const state = loadActivationState();
-    const usage = loadUsage();
-
-    set({ activated: state.activated, usage, hydrated: true });
+    try {
+      const status = await invoke<{
+        activated: boolean;
+        trialActive: boolean;
+        trialDaysRemaining: number;
+      }>("get-activation-status");
+      const usage = loadUsage();
+      set({
+        activated: status.activated,
+        trialActive: status.trialActive,
+        trialDaysRemaining: status.trialDaysRemaining,
+        usage,
+        hydrated: true,
+      });
+    } catch (err) {
+      console.error("[activation] Failed to get activation status:", err);
+      const state = loadActivationState();
+      const usage = loadUsage();
+      set({
+        activated: state.activated,
+        trialActive: state.trialActive,
+        trialDaysRemaining: state.trialDaysRemaining,
+        usage,
+        hydrated: true,
+      });
+    }
   },
 
   activate: async (code: string) => {
@@ -90,9 +119,11 @@ export const useActivationStore = create<ActivationState>()((set, get) => ({
           activated: true,
           code,
           fingerprint: result.fingerprint ?? "",
+          trialActive: false,
+          trialDaysRemaining: 0,
         });
         saveUsage({});
-        set({ activated: true, usage: {} });
+        set({ activated: true, trialActive: false, trialDaysRemaining: 0, usage: {} });
       }
 
       return result;
@@ -149,5 +180,15 @@ export const useActivationStore = create<ActivationState>()((set, get) => ({
     saveUsage(newUsage);
 
     return true;
+  },
+
+  canUseFeature: (featureId: string) => {
+    if (import.meta.env.VITE_BUILD_MODE !== "commercial") return true;
+
+    const { activated, trialActive } = get();
+    if (activated || trialActive) return true;
+
+    const restrictedFeatures = getRestrictedFeatureIds();
+    return !restrictedFeatures.includes(featureId);
   },
 }));

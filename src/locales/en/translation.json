@@ -5,7 +5,8 @@
     "openVideoTitle": "Open Video File",
     "openVideoDesc": "Supported video formats: mp4, webm, mkv, avi, mov, flv, wmv",
     "selectFile": "Select File",
-    "codecWarning": "Audio codec {{codec}} may not be natively supported by WebView, audio may be missing, consider transcoding",
+    "fileDialogError": "Failed to open file dialog",
+    "codecWarning": "Audio codec {{codec}} may not be supported by the player, video may have no audio, consider transcoding",
     "transcode": "Convert",
     "codecInfo": "Codec information",
     "transcoding": "Converting...",
@@ -28,8 +29,12 @@
     "previousSubtitle": "Previous Subtitle",
     "nextSubtitle": "Next Subtitle",
     "playbackSpeed": "Playback Speed",
+    "volume": "Volume",
     "enterFullscreen": "Enter Fullscreen",
-    "exitFullscreen": "Exit Fullscreen"
+    "exitFullscreen": "Exit Fullscreen",
+    "noVideoLoaded": "No video loaded",
+    "singleSentenceLoop": "Loop Sentence",
+    "shortcut": "Key"
   },
   "subtitle": {
     "noSubtitles": "No subtitles loaded",
@@ -76,9 +81,14 @@
     "deepseekConfig": "DeepSeek Configuration",
     "apiKey": "API Key",
     "model": "Model",
+    "noModels": "Fetch models first",
+    "refreshModels": "Fetch available models",
+    "fetchModelsFailed": "Failed to fetch model list",
     "save": "Save",
     "apiKeyRequired": "Please provide an API Key",
-    "saved": "Configuration saved"
+    "saved": "Configuration saved",
+    "autoTranscode": "Auto audio transcoding",
+    "autoTranscodeDesc": "When playing unsupported audio formats, automatically convert them to AAC"
   },
   "ai": {
     "processing": "AI Processing...",
@@ -92,16 +102,27 @@
     "title": "Activate Cadence",
     "activated": "Activated",
     "notActivated": "Not Activated",
-    "codePlaceholder": "Enter activation code to unlock all features",
+    "codePlaceholder": "Enter activation code to activate the app",
     "activateButton": "Activate",
     "activating": "Verifying...",
     "invalidCode": "Invalid activation code",
     "activateSuccess": "Activation successful!",
-    "aiWeeklyLimit": "AI Subtitle Processing",
-    "transcodeWeeklyLimit": "Audio Transcoding",
-    "remaining": "{remaining}/{limit} left",
-    "aiWeeklyLimitReached": "Weekly AI processing limit reached. Please activate to continue.",
-    "transcodeWeeklyLimitReached": "Weekly transcoding limit reached. Please activate to continue.",
-    "activateToUnlock": "Activate to unlock"
+    "activateToUnlock": "Activate to unlock",
+    "trialBanner": "Free trial: {{days}} day(s) remaining",
+    "trialExpiredBanner": "Trial expired. Activate to unlock transcoding and AI features.",
+    "trialExpired": "Trial expired. Please activate to continue.",
+    "trialExpiredBadge": "Expired",
+    "trialDaysRemaining": "{{days}}d left"
+  },
+  "wordTranslate": {
+    "lookingUp": "Looking up..."
+  },
+  "gamepad": {
+    "connected": "Gamepad connected",
+    "disconnected": "Gamepad disconnected"
+  },
+  "error": {
+    "somethingWentWrong": "Something went wrong",
+    "unknownError": "Unknown error"
   }
 }

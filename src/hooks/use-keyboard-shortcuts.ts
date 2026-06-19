@@ -1,20 +1,25 @@
 import { useEffect, useRef } from "react";
+import { toggleMediaPlayback } from "@/lib/media-playback";
 
 interface UseKeyboardShortcutsOptions {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   goToPrevCaption: () => void;
   goToNextCaption: () => void;
+  toggleSingleSentenceLoop: () => void;
 }
 
 export function useKeyboardShortcuts({
   videoRef,
   goToPrevCaption,
   goToNextCaption,
+  toggleSingleSentenceLoop,
 }: UseKeyboardShortcutsOptions) {
   const prevRef = useRef(goToPrevCaption);
   const nextRef = useRef(goToNextCaption);
+  const loopRef = useRef(toggleSingleSentenceLoop);
   prevRef.current = goToPrevCaption;
   nextRef.current = goToNextCaption;
+  loopRef.current = toggleSingleSentenceLoop;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -30,11 +35,7 @@ export function useKeyboardShortcuts({
           e.preventDefault();
           const video = videoRef.current;
           if (video) {
-            if (video.paused) {
-              video.play();
-            } else {
-              video.pause();
-            }
+            toggleMediaPlayback(video).catch(() => {});
           }
         }
         return;
@@ -46,6 +47,11 @@ export function useKeyboardShortcuts({
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
         nextRef.current();
+      } else if (e.key === "l" || e.key === "L") {
+        if (!isInput) {
+          e.preventDefault();
+          loopRef.current();
+        }
       }
     };
 

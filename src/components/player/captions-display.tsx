@@ -4,28 +4,39 @@ import { type Caption } from "@/lib/subtitles";
 import { type BlurMode } from "@/stores/player-store";
 import ShinyText from "@/components/ShinyText";
 import { useTranslation } from "react-i18next";
+import { sanitizeSubtitleHtml } from "@/lib/html-sanitize";
+import { wrapSubtitleWords } from "@/lib/wrap-subtitle-words";
 
 interface CaptionsDisplayProps {
   activeCaptionData: Caption | null;
   activeDisplay: { primary: string; secondary: string } | null;
-  currentVideoTime: number;
   captions: Caption[];
   isAiProcessing: boolean;
   blurMode: BlurMode;
+  onWordClick?: (e: React.MouseEvent) => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
 export const CaptionsDisplay = memo(function CaptionsDisplay({
   activeCaptionData,
   activeDisplay,
-  currentVideoTime,
   captions,
   isAiProcessing,
   blurMode,
+  onWordClick,
+  onMouseEnter,
+  onMouseLeave,
 }: CaptionsDisplayProps) {
   const { t } = useTranslation();
 
   return (
-    <div className="group flex w-full flex-col items-center justify-center py-5 text-center min-h-36">
+    <div
+      className="group flex w-full flex-col items-center justify-center py-5 text-center min-h-36"
+      onClick={onWordClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
       {isAiProcessing ? (
         <div className="flex items-center gap-2">
           <Loader2 className="size-5 animate-spin text-(--player-accent)" />
@@ -38,8 +49,6 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
         </div>
       ) : captions.length > 0 ? (
         activeCaptionData &&
-        currentVideoTime >= activeCaptionData.start &&
-        currentVideoTime < activeCaptionData.end + 0.001 &&
         activeDisplay && (
           <>
             <p
@@ -49,21 +58,23 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
                   : ""
               }`}
               dangerouslySetInnerHTML={{
-                __html: activeDisplay.primary,
+                __html: wrapSubtitleWords(
+                  sanitizeSubtitleHtml(activeDisplay.primary),
+                ),
               }}
             />
-            {activeDisplay.secondary && (
-              <p
-                className={`mt-5 text-2xl leading-[1.4] text-muted-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
-                  blurMode === "secondary" || blurMode === "all"
-                    ? "blur group-hover:blur-none"
-                    : ""
-                }`}
-                dangerouslySetInnerHTML={{
-                  __html: activeDisplay.secondary,
-                }}
-              />
-            )}
+            <p
+              className={`mt-5 text-2xl leading-[1.4] text-muted-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
+                blurMode === "secondary" || blurMode === "all"
+                  ? "blur group-hover:blur-none"
+                  : ""
+              }`}
+              dangerouslySetInnerHTML={{
+                __html: wrapSubtitleWords(
+                  sanitizeSubtitleHtml(activeDisplay.secondary),
+                ),
+              }}
+            />
           </>
         )
       ) : (

@@ -8,39 +8,68 @@ interface UseCaptionSyncReturn {
   activeDisplay: { primary: string; secondary: string } | null;
 }
 
-export function useCaptionSync(
-  captions: Caption[],
-): UseCaptionSyncReturn {
+export function useCaptionSync(captions: Caption[]): UseCaptionSyncReturn {
   const activeCaption = usePlayerStore((s) => s.activeCaption);
   const setActiveCaption = usePlayerStore((s) => s.setActiveCaption);
   const setLastActiveCaption = usePlayerStore((s) => s.setLastActiveCaption);
   const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
+  const pendingNavigation = usePlayerStore((s) => s.pendingNavigation);
+  const setPendingNavigation = usePlayerStore((s) => s.setPendingNavigation);
 
   const lastFoundIndexRef = useRef(0);
   const lastActiveCaptionRef = useRef<number | null>(null);
-  const captionsRef = useRef(captions);
-  captionsRef.current = captions;
-  const activeCaptionRef = useRef(activeCaption);
-  activeCaptionRef.current = activeCaption;
 
   const handleTimeUpdate = useCallback(
     (currentTime: number) => {
-      const capts = captionsRef.current;
-      if (capts.length === 0) return;
+      if (captions.length === 0) return;
+
+      // If a user-initiated navigation is pending, wait for the seek to
+      // settle before allowing time-sync to change activeCaption.
+      if (
+        pendingNavigation &&
+        activeCaption !== null &&
+        activeCaption < captions.length
+      ) {
+        const target = captions[activeCaption];
+        if (currentTime >= target.start && currentTime < target.end + 0.001) {
+          // Seek complete — currentTime now matches the navigated-to caption.
+          setPendingNavigation(false);
+          lastFoundIndexRef.current = activeCaption;
+          if (activeCaption !== lastActiveCaptionRef.current) {
+            lastActiveCaptionRef.current = activeCaption;
+            setLastActiveCaption(activeCaption);
+          }
+          return;
+        }
+        // Still seeking — don't interfere with navigation.
+        return;
+      }
+
+      // If activeCaption is still valid for the current time, don't change it.
+      if (activeCaption !== null && activeCaption < captions.length) {
+        const current = captions[activeCaption];
+        if (currentTime >= current.start && currentTime < current.end + 0.001) {
+          lastFoundIndexRef.current = activeCaption;
+          return;
+        }
+      }
 
       let newIndex: number | null = null;
       let startFrom = lastFoundIndexRef.current;
 
       if (
-        startFrom >= capts.length ||
-        (startFrom > 0 && currentTime < capts[startFrom].start)
+        startFrom >= captions.length ||
+        (startFrom > 0 && currentTime < captions[startFrom].start)
       ) {
         startFrom = 0;
       }
 
-      for (let i = startFrom; i < capts.length; i++) {
-        if (currentTime < capts[i].start) break;
-        if (currentTime >= capts[i].start && currentTime < capts[i].end + 0.001) {
+      for (let i = startFrom; i < captions.length; i++) {
+        if (currentTime < captions[i].start) break;
+        if (
+          currentTime >= captions[i].start &&
+          currentTime < captions[i].end + 0.001
+        ) {
           newIndex = i;
           break;
         }
@@ -50,26 +79,30 @@ export function useCaptionSync(
         lastFoundIndexRef.current = newIndex;
       }
 
-      if (newIndex !== activeCaptionRef.current) {
+      if (newIndex !== activeCaption) {
         setActiveCaption(newIndex);
       }
-      if (
-        newIndex !== null &&
-        newIndex !== lastActiveCaptionRef.current
-      ) {
+      if (newIndex !== null && newIndex !== lastActiveCaptionRef.current) {
         lastActiveCaptionRef.current = newIndex;
         setLastActiveCaption(newIndex);
       }
     },
-    [setActiveCaption, setLastActiveCaption],
+    [
+      captions,
+      activeCaption,
+      pendingNavigation,
+      setActiveCaption,
+      setLastActiveCaption,
+      setPendingNavigation,
+    ],
   );
 
   const getDisplayText = useCallback(
     (caption: Caption): { primary: string; secondary: string } => {
       if (swapSubtitles) {
-        return { primary: caption.translationHtml, secondary: caption.textHtml };
+        return { primary: caption.translation, secondary: caption.text };
       }
-      return { primary: caption.textHtml, secondary: caption.translationHtml };
+      return { primary: caption.text, secondary: caption.translation };
     },
     [swapSubtitles],
   );

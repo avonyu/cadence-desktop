@@ -1,4 +1,6 @@
 import { Player, VideoPlayer, SubtitleMask } from "@/components/player";
+import { VolumeOSD } from "@/components/player/volume-osd";
+import { WordTranslatePopover } from "@/components/player/word-translate-popover";
 import { CaptionsDisplay } from "@/components/player/captions-display";
 import { CodecInfoBar } from "@/components/player/codec-info-bar";
 import { PlayerControlsBar } from "@/components/player/player-controls-bar";
@@ -6,7 +8,7 @@ import { SettingsDialog } from "@/components/settings-dialog";
 import { UsageLimitBanner } from "@/components/usage-limit-banner";
 import { SubtitlesSidebar } from "@/components/subtitles/subtitles-sidebar";
 import { Resizable } from "re-resizable";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePlayerStore } from "@/stores/player-store";
 import { useActivationStore } from "@/stores/activation-store";
 import { useVideoFile } from "@/hooks/use-video-file";
@@ -16,16 +18,33 @@ import { useCaptionSync } from "@/hooks/use-caption-sync";
 import { useCaptionNavigation } from "@/hooks/use-caption-navigation";
 import { useVideoEvents } from "@/hooks/use-video-events";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { useGamepad } from "@/hooks/use-gamepad";
+import { useFullscreen } from "@/hooks/use-fullscreen";
+import { useVolumeFeedback } from "@/hooks/use-volume-feedback";
+import { useSingleSentenceLoop } from "@/hooks/use-single-sentence-loop";
+import { useWordTranslate } from "@/hooks/use-word-translate";
+import { useDisableContextMenu } from "@/hooks/use-disable-context-menu";
 import { cn } from "@/lib/utils";
+import { toggleMediaPlayback } from "@/lib/media-playback";
+import { Gamepad2 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useTranslation } from "react-i18next";
 
 export const PlayerPage = () => {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
+  const { t } = useTranslation();
 
   // ---- Video source ----
   const {
     videoSrc,
     videoFileName,
     codecInfo,
+    needsTranscode,
     setVideoSrc,
     setCodecInfo,
     captions,
@@ -33,7 +52,16 @@ export const PlayerPage = () => {
     videoRef,
     videoFilePathRef,
     handleOpenFile,
+    loadLastVideo,
   } = useVideoFile();
+
+  // ---- Auto-load last video on mount ----
+  useEffect(() => {
+    loadLastVideo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const isTranscoded = videoSrc?.includes("_transcoded.mp4") ?? false;
 
   // ---- Transcode ----
   const {
@@ -42,7 +70,7 @@ export const PlayerPage = () => {
     handleTranscodeAudio,
     handleCancelTranscode,
     resetTranscode,
-  } = useTranscode(setVideoSrc, setCodecInfo, videoFilePathRef);
+  } = useTranscode(setVideoSrc, setCodecInfo, videoFilePathRef, videoRef);
 
   // ---- Subtitle loading ----
   const { handleLoadSubtitle } = useSubtitleLoader(setCaptions);
@@ -65,8 +93,35 @@ export const PlayerPage = () => {
     setIsPlaying,
   } = useVideoEvents(videoRef, videoSrc);
 
+  // ---- Store ----
+  const sidebarOpen = usePlayerStore((s) => s.sidebarOpen);
+  const blurMode = usePlayerStore((s) => s.blurMode);
+  const aiProcessing = usePlayerStore((s) => s.aiProcessing);
+  const subtitleMaskVisible = usePlayerStore((s) => s.subtitleMaskVisible);
+  const autoTranscode = usePlayerStore((s) => s.autoTranscode);
+  const toggleSidebar = usePlayerStore((s) => s.toggleSidebar);
+  const toggleSubtitleMask = usePlayerStore((s) => s.toggleSubtitleMask);
+  const singleSentenceLoop = usePlayerStore((s) => s.singleSentenceLoop);
+  const toggleSingleSentenceLoop = usePlayerStore(
+    (s) => s.toggleSingleSentenceLoop,
+  );
+
   // ---- Keyboard shortcuts ----
-  useKeyboardShortcuts({ videoRef, goToPrevCaption, goToNextCaption });
+  useKeyboardShortcuts({
+    videoRef,
+    goToPrevCaption,
+    goToNextCaption,
+    toggleSingleSentenceLoop,
+  });
+
+  // ---- Single sentence loop ----
+  const handleLoopCheck = useSingleSentenceLoop(videoRef, captions);
+
+  // ---- Word translation ----
+  const wordTranslate = useWordTranslate(videoRef);
+
+  // ---- Volume feedback OSD ----
+  const volumeFeedback = useVolumeFeedback(videoRef);
 
   // ---- Activation store hydration ----
   const hydrateActivation = useActivationStore((s) => s.hydrate);
@@ -75,61 +130,38 @@ export const PlayerPage = () => {
     hydrateActivation();
   }, [hydrateActivation]);
 
-  // ---- Store ----
-  const sidebarOpen = usePlayerStore((s) => s.sidebarOpen);
-  const blurMode = usePlayerStore((s) => s.blurMode);
-  const aiProcessing = usePlayerStore((s) => s.aiProcessing);
-  const subtitleMaskVisible = usePlayerStore((s) => s.subtitleMaskVisible);
-  const toggleSidebar = usePlayerStore((s) => s.toggleSidebar);
-
   // ---- Derived state ----
   const isAiProcessing =
     aiProcessing === "processing" || aiProcessing === "loading";
 
   // ---- Fullscreen ----
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const isFullscreen = useFullscreen();
 
+  // ---- Auto-transcode when unsupported audio codec detected ----
   useEffect(() => {
-    const onFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener("fullscreenchange", onFullscreenChange);
-    return () =>
-      document.removeEventListener("fullscreenchange", onFullscreenChange);
-  }, []);
+    if (needsTranscode && autoTranscode && videoFilePathRef.current) {
+      handleTranscodeAudio(videoFilePathRef.current, true);
+    }
+  }, [needsTranscode, autoTranscode, handleTranscodeAudio, videoFilePathRef]);
 
   // ---- Disable context menu ----
-  useEffect(() => {
-    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
-    window.addEventListener("contextmenu", handleContextMenu);
-    return () => window.removeEventListener("contextmenu", handleContextMenu);
-  }, []);
+  useDisableContextMenu();
 
   // ---- Combined time update callback for VideoPlayer ----
-  const lastTimeDisplayRef = useRef(0);
   const onTimeUpdate = useCallback(
     (currentTime: number) => {
-      const now = performance.now();
-      if (now - lastTimeDisplayRef.current >= 100) {
-        lastTimeDisplayRef.current = now;
-        setCurrentVideoTime(currentTime);
-      }
+      setCurrentVideoTime(currentTime);
       handleTimeUpdate(currentTime);
+      handleLoopCheck(currentTime);
     },
-    [setCurrentVideoTime, handleTimeUpdate],
+    [setCurrentVideoTime, handleTimeUpdate, handleLoopCheck],
   );
 
   // ---- Playback controls ----
-  const handleTogglePlay = useCallback(() => {
+  const handleTogglePlay = useCallback(async () => {
     const video = videoRef.current;
     if (!video) return;
-    if (video.paused) {
-      video.play();
-      setIsPlaying(true);
-    } else {
-      video.pause();
-      setIsPlaying(false);
-    }
+    setIsPlaying(await toggleMediaPlayback(video));
   }, [videoRef, setIsPlaying]);
 
   const handleToggleFullscreen = useCallback(() => {
@@ -165,8 +197,23 @@ export const PlayerPage = () => {
   }, [handleLoadSubtitle, videoFileName]);
 
   const handleOpenSettings = useCallback(() => {
-    setSettingsDialogOpen(true);
+    setSettingsDialogOpen((prev) => !prev);
   }, []);
+
+  // ---- Gamepad ----
+  const { isConnected: isGamepadConnected } = useGamepad({
+    videoRef,
+    onTogglePlay: handleTogglePlay,
+    onPrevCaption: goToPrevCaption,
+    onNextCaption: goToNextCaption,
+    onToggleFullscreen: handleToggleFullscreen,
+    onOpenFile: handleOpenFileWithReset,
+    onOpenSettings: handleOpenSettings,
+    toggleSidebar,
+    toggleSubtitleMask,
+    toggleSingleSentenceLoop,
+    disabled: settingsDialogOpen,
+  });
 
   // ---- Render ----
   return (
@@ -187,21 +234,29 @@ export const PlayerPage = () => {
               >
                 {subtitleMaskVisible && <SubtitleMask />}
               </VideoPlayer>
+              <VolumeOSD
+                volume={volumeFeedback.volume}
+                muted={volumeFeedback.muted}
+                visible={volumeFeedback.visible}
+              />
             </div>
 
             <CaptionsDisplay
               activeCaptionData={activeCaptionData}
               activeDisplay={activeDisplay}
-              currentVideoTime={currentVideoTime}
               captions={captions}
               isAiProcessing={isAiProcessing}
               blurMode={blurMode}
+              onWordClick={wordTranslate.handleWordClick}
+              onMouseEnter={wordTranslate.handleMouseEnter}
+              onMouseLeave={wordTranslate.handleMouseLeave}
             />
           </div>
 
           <div className="relative">
             <PlayerControlsBar
               videoSrc={videoSrc}
+              videoRef={videoRef}
               captions={captions}
               isPlaying={isPlaying}
               isFullscreen={isFullscreen}
@@ -209,6 +264,7 @@ export const PlayerPage = () => {
               currentVideoTime={currentVideoTime}
               duration={duration}
               isAiProcessing={isAiProcessing}
+              singleSentenceLoop={singleSentenceLoop}
               onTogglePlay={handleTogglePlay}
               onToggleFullscreen={handleToggleFullscreen}
               onSpeedChange={handleSpeedChange}
@@ -217,18 +273,35 @@ export const PlayerPage = () => {
               onPrevCaption={goToPrevCaption}
               onNextCaption={goToNextCaption}
               onOpenSettings={handleOpenSettings}
+              onToggleSingleSentenceLoop={toggleSingleSentenceLoop}
             />
             <div className="absolute bottom-full left-3 mb-2 z-10">
               <UsageLimitBanner />
             </div>
-            <div className="absolute bottom-full right-0 pointer-events-none z-10">
-              <CodecInfoBar
-                codecInfo={codecInfo}
-                transcodeState={transcodeState}
-                transcodeProgress={transcodeProgress}
-                onTranscodeAudio={handleTranscode}
-                onCancelTranscode={handleCancelTranscode}
-              />
+            <div className="absolute bottom-full right-0 z-10 flex items-center gap-1">
+              {isGamepadConnected && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Gamepad2
+                        size={16}
+                        className="text-(--player-accent) pointer-events-auto mt-0.5"
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>{t("gamepad.connected")}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              <div className="pointer-events-none">
+                <CodecInfoBar
+                  codecInfo={codecInfo}
+                  transcodeState={transcodeState}
+                  transcodeProgress={transcodeProgress}
+                  isTranscoded={isTranscoded}
+                  onTranscodeAudio={handleTranscode}
+                  onCancelTranscode={handleCancelTranscode}
+                />
+              </div>
             </div>
           </div>
         </main>
@@ -261,6 +334,16 @@ export const PlayerPage = () => {
         <SettingsDialog
           open={settingsDialogOpen}
           onOpenChange={setSettingsDialogOpen}
+        />
+
+        <WordTranslatePopover
+          word={wordTranslate.word}
+          definition={wordTranslate.definition}
+          loading={wordTranslate.loading}
+          open={wordTranslate.open}
+          anchorEl={wordTranslate.anchorEl}
+          onOpenChange={wordTranslate.handleOpenChange}
+          onClose={wordTranslate.handleClose}
         />
       </section>
     </Player.Provider>

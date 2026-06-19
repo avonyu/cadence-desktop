@@ -17,3 +17,8 @@ export function getFeatureLimit(id: string): number {
   const restriction = getFeatureRestrictions().find((f) => f.id === id);
   return restriction?.limit ?? Infinity;
 }
+
+export function getRestrictedFeatureIds(): string[] {
+  if (import.meta.env.VITE_BUILD_MODE !== "commercial") return [];
+  return getFeatureRestrictions().map((f) => f.id);
+}

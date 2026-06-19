@@ -15,6 +15,7 @@ interface CodecInfoBarProps {
   codecInfo: VideoCodecResult | null;
   transcodeState: "idle" | "converting" | "done" | "error";
   transcodeProgress: number;
+  isTranscoded: boolean;
   onTranscodeAudio: () => void;
   onCancelTranscode: () => void;
 }
@@ -23,6 +24,7 @@ export const CodecInfoBar = memo(function CodecInfoBar({
   codecInfo,
   transcodeState,
   transcodeProgress,
+  isTranscoded,
   onTranscodeAudio,
   onCancelTranscode,
 }: CodecInfoBarProps) {
@@ -35,7 +37,7 @@ export const CodecInfoBar = memo(function CodecInfoBar({
   if (!codecInfo) return null;
 
   return (
-    <div className="flex justify-end items-center gap-2 px-4 py-1 pointer-events-auto">
+    <div className="flex justify-end items-center gap-2 px-1 py-1 pointer-events-auto">
       <Popover>
         <PopoverTrigger asChild>
           <button
@@ -46,8 +48,7 @@ export const CodecInfoBar = memo(function CodecInfoBar({
             <Badge
               variant="secondary"
               className={cn(
-                "font-mono rounded-md hover:bg-secondary/80 transition-colors",
-                transcodeState === "converting" && "ring-1 ring-(--player-accent)/40"
+                "font-mono rounded-md hover:bg-secondary/80 transition-colors"
               )}
             >
               {codecInfo.video && (
@@ -134,6 +135,16 @@ export const CodecInfoBar = memo(function CodecInfoBar({
                         <X size={14} />
                       </Button>
                     </>
+                  ) : transcodeState === "done" || (transcodeState === "idle" && isTranscoded) ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-full text-xs gap-1.5"
+                      disabled
+                    >
+                      <AudioLines size={14} />
+                      {t("video.transcodeDone")}
+                    </Button>
                   ) : (
                     <Button
                       variant={transcodeState === "error" ? "destructive" : "default"}
@@ -144,9 +155,7 @@ export const CodecInfoBar = memo(function CodecInfoBar({
                       <AudioLines size={14} />
                       {transcodeState === "error"
                         ? t("video.transcodeRetry")
-                        : transcodeState === "done"
-                          ? t("video.transcodeDone")
-                          : t("video.transcode")}
+                        : t("video.transcode")}
                     </Button>
                   )}
                 </div>

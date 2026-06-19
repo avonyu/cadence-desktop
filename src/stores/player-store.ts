@@ -23,6 +23,7 @@ interface PlayerState {
   swapSubtitles: boolean;
   activeCaption: number | null;
   lastActiveCaption: number | null;
+  pendingNavigation: boolean;
   scrollTracking: boolean;
   aiProcessing: AiProcessingState;
   aiError: string | null;
@@ -30,6 +31,8 @@ interface PlayerState {
   deepseekModel: string;
   subtitleMaskVisible: boolean;
   subtitleMaskRect: MaskRect;
+  autoTranscode: boolean;
+  singleSentenceLoop: boolean;
 }
 
 type PlayerAction = Pick<PlayerActionImpl, keyof PlayerActionImpl>;
@@ -42,23 +45,74 @@ const defaultMaskRect: MaskRect = {
 };
 
 const STORAGE_KEY_MASK = "cadence:subtitle-mask-rect";
-const MASK_SAVE_DELAY = 500;
-let maskSaveTimer: ReturnType<typeof setTimeout> | null = null;
+const STORAGE_KEY_AUTO_TRANSCODE = "cadence:auto-transcode";
+const STORAGE_KEY_PLAYER_STATE = "cadence:player-state";
 
 function loadMaskRect(): MaskRect {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_MASK);
     if (raw) return JSON.parse(raw) as MaskRect;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return defaultMaskRect;
 }
 
-const initialState: PlayerState = {
+interface PlayerUIPersist {
+  sidebarOpen: boolean;
+  blurMode: BlurMode;
+  swapSubtitles: boolean;
+  singleSentenceLoop: boolean;
+}
+
+const defaultPlayerUI: PlayerUIPersist = {
   sidebarOpen: true,
   blurMode: "off",
   swapSubtitles: false,
+  singleSentenceLoop: false,
+};
+
+function loadPlayerUI(): PlayerUIPersist {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_PLAYER_STATE);
+    if (raw) return { ...defaultPlayerUI, ...JSON.parse(raw) };
+  } catch {
+    /* ignore */
+  }
+  return { ...defaultPlayerUI };
+}
+
+function persistPlayerUI(state: PlayerUIState) {
+  try {
+    const data: PlayerUIPersist = {
+      sidebarOpen: state.sidebarOpen,
+      blurMode: state.blurMode,
+      swapSubtitles: state.swapSubtitles,
+      singleSentenceLoop: state.singleSentenceLoop,
+    };
+    localStorage.setItem(STORAGE_KEY_PLAYER_STATE, JSON.stringify(data));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Minimal subset of PlayerState that PlayerUIPersist covers */
+interface PlayerUIState {
+  sidebarOpen: boolean;
+  blurMode: BlurMode;
+  swapSubtitles: boolean;
+  singleSentenceLoop: boolean;
+}
+
+const persistedUI = loadPlayerUI();
+
+const initialState: PlayerState = {
+  sidebarOpen: persistedUI.sidebarOpen,
+  blurMode: persistedUI.blurMode,
+  swapSubtitles: persistedUI.swapSubtitles,
   activeCaption: null,
   lastActiveCaption: null,
+  pendingNavigation: false,
   scrollTracking: true,
   aiProcessing: "idle",
   aiError: null,
@@ -69,6 +123,8 @@ const initialState: PlayerState = {
     localStorage.getItem("cadence:deepseek-model") || "deepseek-v4-flash",
   subtitleMaskVisible: false,
   subtitleMaskRect: loadMaskRect(),
+  autoTranscode: localStorage.getItem(STORAGE_KEY_AUTO_TRANSCODE) !== "false",
+  singleSentenceLoop: persistedUI.singleSentenceLoop,
 };
 
 const blurModes: BlurMode[] = ["off", "primary", "secondary", "all"];
@@ -83,25 +139,41 @@ export class PlayerActionImpl {
   }
 
   toggleSidebar = () => {
-    this.#set((s) => ({ sidebarOpen: !s.sidebarOpen }));
+    this.#set((s) => {
+      const next = !s.sidebarOpen;
+      persistPlayerUI({ ...s, sidebarOpen: next });
+      return { sidebarOpen: next };
+    });
   };
 
   setSidebarOpen = (open: boolean) => {
-    this.#set({ sidebarOpen: open });
+    this.#set((s) => {
+      persistPlayerUI({ ...s, sidebarOpen: open });
+      return { sidebarOpen: open };
+    });
   };
 
   cycleBlurMode = () => {
-    const { blurMode } = this.#get();
-    const nextIndex = (blurModes.indexOf(blurMode) + 1) % blurModes.length;
-    this.#set({ blurMode: blurModes[nextIndex] });
+    const s = this.#get();
+    const nextIndex = (blurModes.indexOf(s.blurMode) + 1) % blurModes.length;
+    const next = blurModes[nextIndex];
+    persistPlayerUI({ ...s, blurMode: next });
+    this.#set({ blurMode: next });
   };
 
   setBlurMode = (mode: BlurMode) => {
-    this.#set({ blurMode: mode });
+    this.#set((s) => {
+      persistPlayerUI({ ...s, blurMode: mode });
+      return { blurMode: mode };
+    });
   };
 
   toggleSwap = () => {
-    this.#set((s) => ({ swapSubtitles: !s.swapSubtitles }));
+    this.#set((s) => {
+      const next = !s.swapSubtitles;
+      persistPlayerUI({ ...s, swapSubtitles: next });
+      return { swapSubtitles: next };
+    });
   };
 
   setActiveCaption = (index: number | null) => {
@@ -114,6 +186,10 @@ export class PlayerActionImpl {
 
   setScrollTracking = (tracking: boolean) => {
     this.#set({ scrollTracking: tracking });
+  };
+
+  setPendingNavigation = (pending: boolean) => {
+    this.#set({ pendingNavigation: pending });
   };
 
   setAiProcessing = (state: AiProcessingState) => {
@@ -142,12 +218,21 @@ export class PlayerActionImpl {
   };
 
   setSubtitleMaskRect = (rect: MaskRect) => {
+    localStorage.setItem(STORAGE_KEY_MASK, JSON.stringify(rect));
     this.#set({ subtitleMaskRect: rect });
-    if (maskSaveTimer !== null) clearTimeout(maskSaveTimer);
-    maskSaveTimer = setTimeout(() => {
-      localStorage.setItem(STORAGE_KEY_MASK, JSON.stringify(rect));
-      maskSaveTimer = null;
-    }, MASK_SAVE_DELAY);
+  };
+
+  setAutoTranscode = (enabled: boolean) => {
+    localStorage.setItem(STORAGE_KEY_AUTO_TRANSCODE, String(enabled));
+    this.#set({ autoTranscode: enabled });
+  };
+
+  toggleSingleSentenceLoop = () => {
+    this.#set((s) => {
+      const next = !s.singleSentenceLoop;
+      persistPlayerUI({ ...s, singleSentenceLoop: next });
+      return { singleSentenceLoop: next };
+    });
   };
 }
 

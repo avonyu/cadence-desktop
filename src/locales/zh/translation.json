@@ -5,7 +5,8 @@
     "openVideoTitle": "打开视频文件",
     "openVideoDesc": "支持的视频格式：mp4, webm, mkv, avi, mov, flv, wmv",
     "selectFile": "选择文件",
-    "codecWarning": "音频编码 {{codec}} 可能不被 WebView 原生支持，视频可能无声音，建议转码",
+    "fileDialogError": "无法打开文件对话框",
+    "codecWarning": "音频编码 {{codec}} 可能不被播放器支持，视频可能无声音，建议转码",
     "transcode": "转码",
     "codecInfo": "编码信息",
     "transcoding": "转码中...",
@@ -28,8 +29,12 @@
     "previousSubtitle": "上一句",
     "nextSubtitle": "下一句",
     "playbackSpeed": "播放速度",
+    "volume": "音量",
     "enterFullscreen": "进入全屏",
-    "exitFullscreen": "退出全屏"
+    "exitFullscreen": "退出全屏",
+    "noVideoLoaded": "未加载视频",
+    "singleSentenceLoop": "单句循环",
+    "shortcut": "快捷键"
   },
   "subtitle": {
     "noSubtitles": "未加载字幕",
@@ -76,9 +81,14 @@
     "deepseekConfig": "DeepSeek 配置",
     "apiKey": "API Key",
     "model": "模型",
+    "noModels": "请先获取可用模型",
+    "refreshModels": "获取可用模型",
+    "fetchModelsFailed": "获取模型列表失败",
     "save": "保存",
     "apiKeyRequired": "请提供 API Key",
-    "saved": "配置已保存"
+    "saved": "配置已保存",
+    "autoTranscode": "自动音频转码",
+    "autoTranscodeDesc": "播放不支持的音频格式时，自动将其转换为 AAC 编码"
   },
   "ai": {
     "processing": "AI 处理中...",
@@ -92,16 +102,27 @@
     "title": "激活 Cadence",
     "activated": "已激活",
     "notActivated": "未激活",
-    "codePlaceholder": "输入激活码解锁全部功能",
+    "codePlaceholder": "输入激活码激活应用",
     "activateButton": "激活",
     "activating": "验证中...",
     "invalidCode": "激活码无效",
     "activateSuccess": "激活成功！",
-    "aiWeeklyLimit": "AI 字幕处理",
-    "transcodeWeeklyLimit": "音频转码",
-    "remaining": "剩余 {{remaining}}/{{limit}} 次",
-    "aiWeeklyLimitReached": "本周 AI 处理次数已用完，请激活后继续使用",
-    "transcodeWeeklyLimitReached": "本周转码次数已用完，请激活后继续使用",
-    "activateToUnlock": "激活以解除限制"
+    "activateToUnlock": "激活以解除限制",
+    "trialBanner": "免费试用：剩余 {{days}} 天",
+    "trialExpiredBanner": "试用已到期，请激活后使用转码和 AI 字幕功能",
+    "trialExpired": "试用已到期，请激活后继续使用",
+    "trialExpiredBadge": "已到期",
+    "trialDaysRemaining": "剩 {{days}} 天"
+  },
+  "wordTranslate": {
+    "lookingUp": "查询中..."
+  },
+  "gamepad": {
+    "connected": "手柄已连接",
+    "disconnected": "手柄已断开"
+  },
+  "error": {
+    "somethingWentWrong": "出现了一些问题",
+    "unknownError": "未知错误"
   }
 }

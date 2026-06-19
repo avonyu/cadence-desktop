@@ -23,17 +23,17 @@ export function useSubtitleLoader(
 
   const handleLoadSubtitle = useCallback(
     async (videoFileName: string | null) => {
-      if (import.meta.env.VITE_BUILD_MODE !== "commercial" && !deepseekApiKey) {
+      if (!deepseekApiKey) {
         toast.error(t("ai.noApiKey"));
         return;
       }
 
       if (import.meta.env.VITE_BUILD_MODE === "commercial") {
-        const { activated, checkAndRecord } = useActivationStore.getState();
+        const { activated, canUseFeature } = useActivationStore.getState();
         if (!activated) {
-          const allowed = await checkAndRecord("aiProcessing");
+          const allowed = canUseFeature("aiProcessing");
           if (!allowed) {
-            toast.error(t("activation.aiWeeklyLimitReached"));
+            toast.error(t("activation.trialExpired"));
             return;
           }
         }
@@ -82,9 +82,7 @@ export function useSubtitleLoader(
         }
       } catch (error) {
         console.error("AI processing failed:", error);
-        toast.error(
-          error instanceof Error ? error.message : t("ai.processFailed"),
-        );
+        toast.error(t("ai.processFailed"));
         setAiProcessing("idle");
       }
     },
