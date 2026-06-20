@@ -355,30 +355,28 @@ export const PlayerPage = () => {
           </div>
         </main>
 
-        {sidebarOpen && (
-          <Resizable
-            defaultSize={{ width: 360, height: "100%" }}
-            minWidth={280}
-            maxWidth={600}
-            enable={{ left: true }}
-            className="min-h-0"
-            handleStyles={{
-              left: {
-                width: "4px",
-                cursor: "col-resize",
-              },
-            }}
-            handleClasses={{
-              left: "hover:bg-(--player-accent)/50 transition-colors",
-            }}
-          >
-            <SubtitlesSidebar
-              captions={captions}
-              onSeekToCaption={handleSeekToCaption}
-              onClose={toggleSidebar}
-            />
-          </Resizable>
-        )}
+        <Resizable
+          defaultSize={{ width: 360, height: "100%" }}
+          minWidth={280}
+          maxWidth={600}
+          enable={{ left: true }}
+          className={`min-h-0 ${sidebarOpen ? "" : "hidden"}`}
+          handleStyles={{
+            left: {
+              width: "4px",
+              cursor: "col-resize",
+            },
+          }}
+          handleClasses={{
+            left: "hover:bg-(--player-accent)/50 transition-colors",
+          }}
+        >
+          <SubtitlesSidebar
+            captions={captions}
+            onSeekToCaption={handleSeekToCaption}
+            onClose={toggleSidebar}
+          />
+        </Resizable>
 
         <SettingsDialog
           open={settingsDialogOpen}
