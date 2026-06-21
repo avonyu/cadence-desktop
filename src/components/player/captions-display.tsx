@@ -32,7 +32,7 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
 
   return (
     <div
-      className="group flex w-full flex-col items-center justify-center py-5 text-center min-h-36"
+      className="group flex h-44 w-full shrink-0 flex-col items-center justify-center overflow-hidden py-5 text-center"
       onClick={onWordClick}
       onMouseOver={onMouseOver}
       onMouseOut={onMouseOut}
