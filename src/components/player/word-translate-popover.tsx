@@ -1,9 +1,10 @@
 import { useRef, useLayoutEffect, useState, useEffect, useCallback } from "react";
-import { Loader2, X, Volume2 } from "lucide-react";
+import { Loader2, Volume2, Heart } from "lucide-react";
 import type { WordDefinition } from "@/lib/dictionary";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
+import { useFavoritesStore } from "@/stores/favorites-store";
 import {
   Popover,
   PopoverContent,
@@ -33,6 +34,16 @@ export function WordTranslatePopover({
   const triggerRef = useRef<HTMLSpanElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [pronouncing, setPronouncing] = useState(false);
+
+  const favorited = useFavoritesStore((s) =>
+    word ? s.isFavorited(word) : false,
+  );
+  const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
+  const hydrateFavorites = useFavoritesStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrateFavorites();
+  }, [hydrateFavorites]);
 
   const cleanupAudio = useCallback(() => {
     if (audioRef.current) {
@@ -171,13 +182,26 @@ export function WordTranslatePopover({
               </button>
             )}
           </div>
-          <button
-            type="button"
-            className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
-            onClick={onClose}
-          >
-            <X size={14} />
-          </button>
+          {word && definition && (
+            <button
+              type="button"
+              className={`shrink-0 transition-colors ${
+                favorited
+                  ? "text-(--player-accent)"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              onClick={() => toggleFavorite(word, definition)}
+              title={
+                favorited
+                  ? t("wordTranslate.unfavorite")
+                  : t("wordTranslate.favorite")
+              }
+            >
+              <Heart
+                className={`size-[1rem] ${favorited ? "fill-current" : ""}`}
+              />
+            </button>
+          )}
         </div>
 
         {/* Body */}
@@ -207,7 +231,7 @@ export function WordTranslatePopover({
                     <li key={j} className="text-xs leading-relaxed">
                       <span>{d.definition}</span>
                       {d.example && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5 ml-4 italic">
+                        <p className="text-[0.6875rem] text-muted-foreground mt-0.5 ml-4 italic">
                           "{d.example}"
                         </p>
                       )}

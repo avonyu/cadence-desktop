@@ -100,7 +100,9 @@ fn read_vault_json_with_fallback(
                     return (Some(json), false);
                 }
                 Ok(None) => {
-                    eprintln!("[activation] Primary vault found but unpack returned None (missing keys?)");
+                    eprintln!(
+                        "[activation] Primary vault found but unpack returned None (missing keys?)"
+                    );
                 }
                 Err(e) => {
                     eprintln!("[activation] Primary vault found but unpack FAILED: {}", e);
@@ -150,21 +152,19 @@ fn read_vault_json_with_fallback(
 
     // 2. Try backup
     match read_backup_json(app) {
-        Some(backup_json) => {
-            match activation::unpack_vault(&backup_json, fingerprint) {
-                Ok(Some(_)) => {
-                    eprintln!("[activation] Backup vault valid — restoring primary");
-                    let _ = write_vault_to_both(app, &backup_json);
-                    return (Some(backup_json), true);
-                }
-                Ok(None) => {
-                    eprintln!("[activation] Backup vault found but unpack returned None");
-                }
-                Err(e) => {
-                    eprintln!("[activation] Backup vault unpack FAILED: {}", e);
-                }
+        Some(backup_json) => match activation::unpack_vault(&backup_json, fingerprint) {
+            Ok(Some(_)) => {
+                eprintln!("[activation] Backup vault valid — restoring primary");
+                let _ = write_vault_to_both(app, &backup_json);
+                return (Some(backup_json), true);
             }
-        }
+            Ok(None) => {
+                eprintln!("[activation] Backup vault found but unpack returned None");
+            }
+            Err(e) => {
+                eprintln!("[activation] Backup vault unpack FAILED: {}", e);
+            }
+        },
         None => {
             eprintln!("[activation] No backup file found");
         }
@@ -258,7 +258,10 @@ pub fn get_activation_status(app: tauri::AppHandle) -> ActivationStatus {
     #[cfg(build_mode_commercial)]
     {
         let fingerprint = activation::get_machine_fingerprint();
-        eprintln!("[activation] get_activation_status: fingerprint={}", fingerprint);
+        eprintln!(
+            "[activation] get_activation_status: fingerprint={}",
+            fingerprint
+        );
 
         // Try to read vault from multi-point storage.
         if let (Some(vault_json), _repaired) = read_vault_json_with_fallback(&app, &fingerprint) {
@@ -383,8 +386,7 @@ pub fn activate(code: String, app: tauri::AppHandle) -> Result<ActivateResult, S
                     }
                 };
 
-                let trial_start =
-                    existing_trial_start.unwrap_or_else(|| activation::today_iso());
+                let trial_start = existing_trial_start.unwrap_or_else(|| activation::today_iso());
 
                 let vault = activation::Vault {
                     version: 1,

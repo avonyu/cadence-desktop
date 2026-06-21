@@ -6,6 +6,7 @@ import ShinyText from "@/components/ShinyText";
 import { useTranslation } from "react-i18next";
 import { sanitizeSubtitleHtml } from "@/lib/html-sanitize";
 import { wrapSubtitleWords } from "@/lib/wrap-subtitle-words";
+import { useFavoritesStore } from "@/stores/favorites-store";
 
 interface CaptionsDisplayProps {
   activeCaptionData: Caption | null;
@@ -29,6 +30,8 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
   onMouseOut,
 }: CaptionsDisplayProps) {
   const { t } = useTranslation();
+  const favorites = useFavoritesStore((s) => s.favorites);
+  const isFavorited = (word: string) => word.toLowerCase() in favorites;
 
   return (
     <div
@@ -60,6 +63,7 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
               dangerouslySetInnerHTML={{
                 __html: wrapSubtitleWords(
                   sanitizeSubtitleHtml(activeDisplay.primary),
+                  isFavorited,
                 ),
               }}
             />
@@ -72,6 +76,7 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
               dangerouslySetInnerHTML={{
                 __html: wrapSubtitleWords(
                   sanitizeSubtitleHtml(activeDisplay.secondary),
+                  isFavorited,
                 ),
               }}
             />

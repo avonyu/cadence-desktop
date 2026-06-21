@@ -115,7 +115,9 @@
     "trialDaysRemaining": "剩 {{days}} 天"
   },
   "wordTranslate": {
-    "lookingUp": "查询中..."
+    "lookingUp": "查询中...",
+    "favorite": "收藏",
+    "unfavorite": "取消收藏"
   },
   "gamepad": {
     "connected": "手柄已连接",

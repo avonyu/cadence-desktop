@@ -177,6 +177,11 @@
   color: var(--player-accent);
 }
 
+.sub-word--fav {
+  color: var(--player-accent);
+  font-weight: 600;
+}
+
 @keyframes gradient-flow {
     0% {
         background-position: 0% 50%;

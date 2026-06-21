@@ -115,7 +115,9 @@
     "trialDaysRemaining": "{{days}}d left"
   },
   "wordTranslate": {
-    "lookingUp": "Looking up..."
+    "lookingUp": "Looking up...",
+    "favorite": "Add to favorites",
+    "unfavorite": "Remove from favorites"
   },
   "gamepad": {
     "connected": "Gamepad connected",
