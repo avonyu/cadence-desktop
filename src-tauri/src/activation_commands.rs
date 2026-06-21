@@ -246,12 +246,13 @@ pub fn get_activation_status(app: tauri::AppHandle) -> ActivationStatus {
     }
 
     // OSS mode: always activated.
-    if cfg!(not(build_mode_commercial)) {
-        return ActivationStatus {
+    #[cfg(not(build_mode_commercial))]
+    {
+        ActivationStatus {
             activated: true,
             trial_active: false,
             trial_days_remaining: 0,
-        };
+        }
     }
 
     // --- Commercial mode with full protections ---
