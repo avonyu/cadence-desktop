@@ -126,8 +126,8 @@ pub fn now_iso() -> String {
 #[cfg(build_mode_commercial)]
 fn derive_device_key(fingerprint: &str) -> [u8; 32] {
     let secret = env!("CADENCE_ACTIVATION_SECRET");
-    let mut mac =
-        <HmacSha256 as HmacMacTrait>::new_from_slice(secret.as_bytes()).expect("HMAC can take any key length");
+    let mut mac = <HmacSha256 as HmacMacTrait>::new_from_slice(secret.as_bytes())
+        .expect("HMAC can take any key length");
     mac.update(b"cadence-vault-key-v1");
     mac.update(fingerprint.as_bytes());
     let result = mac.finalize().into_bytes();
@@ -139,8 +139,8 @@ fn derive_device_key(fingerprint: &str) -> [u8; 32] {
 #[cfg(build_mode_commercial)]
 fn derive_hmac_key(fingerprint: &str) -> [u8; 32] {
     let secret = env!("CADENCE_ACTIVATION_SECRET");
-    let mut mac =
-        <HmacSha256 as HmacMacTrait>::new_from_slice(secret.as_bytes()).expect("HMAC can take any key length");
+    let mut mac = <HmacSha256 as HmacMacTrait>::new_from_slice(secret.as_bytes())
+        .expect("HMAC can take any key length");
     mac.update(b"cadence-hmac-key-v1");
     mac.update(fingerprint.as_bytes());
     let result = mac.finalize().into_bytes();
@@ -190,7 +190,8 @@ fn decrypt(encrypted: &[u8], key: &[u8; 32]) -> Result<Vec<u8>, String> {
 
 #[cfg(build_mode_commercial)]
 fn hmac_sign(data: &[u8], key: &[u8; 32]) -> String {
-    let mut mac = <HmacSha256 as HmacMacTrait>::new_from_slice(key).expect("HMAC can take any key length");
+    let mut mac =
+        <HmacSha256 as HmacMacTrait>::new_from_slice(key).expect("HMAC can take any key length");
     mac.update(data);
     hex::encode(mac.finalize().into_bytes())
 }
@@ -217,10 +218,7 @@ pub fn pack_vault(vault: &Vault, fingerprint: &str) -> Result<serde_json::Value,
     let hmac_key = derive_hmac_key(fingerprint);
     let hmac = hmac_sign(&encrypted, &hmac_key);
 
-    let vault_b64 = base64::Engine::encode(
-        &base64::engine::general_purpose::STANDARD,
-        &encrypted,
-    );
+    let vault_b64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &encrypted);
 
     Ok(serde_json::json!({
         "vault": vault_b64,
@@ -245,11 +243,8 @@ pub fn unpack_vault(
         None => return Ok(None),
     };
 
-    let encrypted = base64::Engine::decode(
-        &base64::engine::general_purpose::STANDARD,
-        vault_b64,
-    )
-    .map_err(|e| format!("base64 decode: {}", e))?;
+    let encrypted = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, vault_b64)
+        .map_err(|e| format!("base64 decode: {}", e))?;
 
     let hmac_key = derive_hmac_key(fingerprint);
     if !hmac_verify(&encrypted, &hmac_key, stored_hmac) {

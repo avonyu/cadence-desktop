@@ -1,6 +1,6 @@
 [package]
 name = "cadence-desktop"
-version = "0.6.3"
+version = "0.6.4"
 description = "Immersive bilingual subtitle video player for language learning"
 authors = ["avonyu avon.yu@outlook.com"]
 edition = "2021"
@@ -39,6 +39,7 @@ uuid = { version = "1", features = ["v4"] }
 base64 = "0.22"
 aes-gcm = "0.10"
 rand = "0.8"
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"

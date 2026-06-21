@@ -19,6 +19,11 @@
     "store:allow-set",
     "store:allow-save",
     "store:allow-load",
+    "sql:default",
+    "sql:allow-load",
+    "sql:allow-execute",
+    "sql:allow-select",
+    "sql:allow-close",
     {
       "identifier": "http:default",
       "allow": [
