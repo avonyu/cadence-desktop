@@ -310,7 +310,7 @@ dependencies = [
 
 [[package]]
 name = "block2"
-version = "0.6.2"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cdeb9d870516001442e364c5220d3574d2da8dc765554b4a617230d33fa58ef5"
 dependencies = [
@@ -389,7 +389,7 @@ dependencies = [
 
 [[package]]
 name = "cadence-desktop"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
  "aes-gcm",
  "base64 0.22.1",
@@ -2971,7 +2971,7 @@ dependencies = [
 
 [[package]]
 name = "polyval"
-version = "0.6.2"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d1fe60d06143b2430aa532c94cfe9e29783047f06c0d7fd359a9a51b729fa25"
 dependencies = [
@@ -3245,7 +3245,7 @@ dependencies = [
 
 [[package]]
 name = "raw-window-handle"
-version = "0.6.2"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
 

@@ -49,3 +49,14 @@
   3. `bun tauri build --debug --no-bundle`：使用真实 Tauri WebView、`frontendDist` 和生产 CSP 验证
 - 在 Tauri debug build 中检查 WebView 控制台，不得忽略 `Refused to apply inline style`、`Refused to load` 或 CSP directive violation 等错误
 - 发布前至少执行 `bun test`、`bun run build` 和 `bun tauri build --debug --no-bundle`；如果存在与当前修改无关的测试失败，需要明确记录
+
+### 开发与生产内存/性能差异
+
+- **`bun tauri dev` 的内存/性能指标不能代表生产表现**，不要据此判断是否存在内存泄漏或性能问题
+- dev 与 release 加载前端的方式不同：
+  - dev：Vite dev server（`http://localhost:1420`），React 处于 development 模式，开启 HMR / Fast Refresh，代码未压缩并带 source map，WebView 启用 debug 特性
+  - release：内嵌静态资源（`frontendDist`），React production 模式，无 HMR/source map，无 debug WebView
+- dev 专属层（React dev 记账、HMR/Fast Refresh 运行时保留引用并关闭优化、source map 等）会随运行时间持续累积内存，**这些在打包后全部被剥离**
+- 已知现象：视频播放时 `bun tauri dev` 下 WebView2 渲染进程内存随播放进度线性增长（≈码率），而**打包安装版完全没有此问题**——根因是 dev 工具链层累积，而非解码媒体或应用代码（视频解码在两种模式下是同一个 WebView2 引擎，行为一致）
+- 高频回调（如 `requestVideoFrameCallback` 每帧驱动的 `onTimeUpdate`/重渲染）会放大 dev 模式的内存累积，进一步误导判断
+- 排查内存/性能问题时，必须用 `bun tauri build`（或 `bun tauri build --debug --no-bundle`）的真实 release WebView 复现后再下结论；不要在 dev 模式下为 dev-only 的假象设计修复方案
