@@ -126,7 +126,7 @@
     }
     html {
         @apply font-sans;
-        font-size: clamp(14px, calc(11px + 0.5vw), 22px);
+        font-size: clamp(14px, calc(10px + 0.3vw), 22px);
     }
     button {
         @apply cursor-pointer;

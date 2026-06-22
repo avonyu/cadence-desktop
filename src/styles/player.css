@@ -56,7 +56,7 @@
   letter-spacing: normal;
   outline: 2px solid transparent;
   outline-offset: -4px;
-  border-radius: var(--media-border-radius, 2rem);
+  border-radius: var(--media-border-radius, 1rem);
   isolation: isolate;
   transition-timing-function: ease-out;
   transition-duration: 100ms;

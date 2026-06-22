@@ -281,7 +281,12 @@ export const PlayerPage = () => {
                 videoRef={videoRef}
                 onTimeUpdate={onTimeUpdate}
               >
-                {subtitleMaskVisible && <SubtitleMask />}
+                {subtitleMaskVisible && (
+                  <SubtitleMask
+                    activeDisplay={activeDisplay}
+                    isFullscreen={isFullscreen}
+                  />
+                )}
               </VideoPlayer>
               <VolumeOSD
                 volume={volumeFeedback.volume}
