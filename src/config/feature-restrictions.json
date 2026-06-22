@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "features": [
+    {
+      "id": "aiProcessing",
+      "label": "AI subtitle processing",
+      "type": "count",
+      "period": "weekly",
+      "limit": 3
+    },
+    {
+      "id": "transcoding",
+      "label": "Audio transcoding",
+      "type": "count",
+      "period": "weekly",
+      "limit": 3
+    },
+    {
+      "id": "wordTranslate",
+      "label": "AI word lookup",
+      "type": "count",
+      "period": "weekly",
+      "limit": 30
+    }
+  ]
+}

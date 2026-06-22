@@ -20,6 +20,7 @@ export function useCaptionNavigation(
   const setActiveCaption = usePlayerStore((s) => s.setActiveCaption);
   const setLastActiveCaption = usePlayerStore((s) => s.setLastActiveCaption);
   const setScrollTracking = usePlayerStore((s) => s.setScrollTracking);
+  const setPendingNavigation = usePlayerStore((s) => s.setPendingNavigation);
 
   const handleSeekToCaption = useCallback(
     (caption: Caption) => {
@@ -38,6 +39,7 @@ export function useCaptionNavigation(
       activeCaption,
     );
     if (prev === null) return;
+    setPendingNavigation(true);
     setScrollTracking(true);
     setActiveCaption(prev);
     setLastActiveCaption(prev);
@@ -47,6 +49,7 @@ export function useCaptionNavigation(
     activeCaption,
     handleSeekToCaption,
     setScrollTracking,
+    setPendingNavigation,
     setActiveCaption,
     setLastActiveCaption,
     videoRef,
@@ -60,6 +63,7 @@ export function useCaptionNavigation(
       activeCaption,
     );
     if (next === null) return;
+    setPendingNavigation(true);
     setScrollTracking(true);
     setActiveCaption(next);
     setLastActiveCaption(next);
@@ -69,6 +73,7 @@ export function useCaptionNavigation(
     activeCaption,
     handleSeekToCaption,
     setScrollTracking,
+    setPendingNavigation,
     setActiveCaption,
     setLastActiveCaption,
     videoRef,

@@ -3,6 +3,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { type Caption } from "@/lib/subtitles";
 import { processSubtitle } from "@/lib/ai-subtitle";
 import { usePlayerStore } from "@/stores/player-store";
+import { useActivationStore } from "@/stores/activation-store";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
@@ -25,6 +26,17 @@ export function useSubtitleLoader(
       if (!deepseekApiKey) {
         toast.error(t("ai.noApiKey"));
         return;
+      }
+
+      if (import.meta.env.VITE_BUILD_MODE === "commercial") {
+        const { activated, canUseFeature } = useActivationStore.getState();
+        if (!activated) {
+          const allowed = canUseFeature("aiProcessing");
+          if (!allowed) {
+            toast.error(t("activation.trialExpired"));
+            return;
+          }
+        }
       }
 
       const selected = await open({
@@ -70,9 +82,7 @@ export function useSubtitleLoader(
         }
       } catch (error) {
         console.error("AI processing failed:", error);
-        toast.error(
-          error instanceof Error ? error.message : t("ai.processFailed"),
-        );
+        toast.error(t("ai.processFailed"));
         setAiProcessing("idle");
       }
     },

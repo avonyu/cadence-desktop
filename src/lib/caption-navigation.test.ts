@@ -12,6 +12,8 @@ const captions: Caption[] = [
     end: 2,
     text: "First",
     translation: "",
+    textHtml: "First",
+    translationHtml: "",
   },
   {
     time: "00:05",
@@ -19,6 +21,8 @@ const captions: Caption[] = [
     end: 7,
     text: "Second",
     translation: "",
+    textHtml: "Second",
+    translationHtml: "",
   },
   {
     time: "00:10",
@@ -26,6 +30,8 @@ const captions: Caption[] = [
     end: 12,
     text: "Third",
     translation: "",
+    textHtml: "Third",
+    translationHtml: "",
   },
 ];
 

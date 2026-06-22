@@ -34,29 +34,49 @@ export const VideoPlayer = ({
   const onTimeUpdateRef = useRef(onTimeUpdate);
   onTimeUpdateRef.current = onTimeUpdate;
 
-  const rafRef = useRef<number | null>(null);
-  const lastTimeRef = useRef<number>(-1);
+  const rvfcIdRef = useRef<number | null>(null);
+  const rafIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isPlaying) return;
 
-    const loop = () => {
-      const video = videoRef?.current;
-      if (video && !video.paused) {
-        const t = video.currentTime;
-        if (t !== lastTimeRef.current) {
-          lastTimeRef.current = t;
-          onTimeUpdateRef.current?.(t);
-        }
-      }
-      rafRef.current = requestAnimationFrame(loop);
+    const video = videoRef?.current;
+    if (!video) return;
+
+    let running = true;
+
+    const rvfcVideo = video as HTMLVideoElement & {
+      requestVideoFrameCallback?(cb: (now: number, metadata: { mediaTime: number }) => void): number;
+      cancelVideoFrameCallback?(id: number): void;
     };
 
-    rafRef.current = requestAnimationFrame(loop);
+    if (typeof rvfcVideo.requestVideoFrameCallback === "function") {
+      const callback = (_now: number, metadata: { mediaTime: number }) => {
+        if (!running) return;
+        onTimeUpdateRef.current?.(metadata.mediaTime);
+        rvfcIdRef.current = rvfcVideo.requestVideoFrameCallback!(callback);
+      };
+      rvfcIdRef.current = rvfcVideo.requestVideoFrameCallback(callback);
+    } else {
+      const loop = () => {
+        if (!running) return;
+        if (video && !video.paused) {
+          onTimeUpdateRef.current?.(video.currentTime);
+        }
+        rafIdRef.current = requestAnimationFrame(loop);
+      };
+      rafIdRef.current = requestAnimationFrame(loop);
+    }
 
     return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
+      running = false;
+      if (rvfcIdRef.current !== null) {
+        rvfcVideo.cancelVideoFrameCallback?.(rvfcIdRef.current);
+        rvfcIdRef.current = null;
+      }
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
       }
     };
   }, [isPlaying, videoRef]);
@@ -64,7 +84,6 @@ export const VideoPlayer = ({
   useEffect(() => {
     setVideoSize(null);
     setIsPlaying(false);
-    lastTimeRef.current = -1;
   }, [src]);
 
   useLayoutEffect(() => {
@@ -115,25 +134,21 @@ export const VideoPlayer = ({
             : undefined
         }
       >
-        <Video
-          ref={videoRef}
-          className="h-full w-full object-contain"
-          src={src ?? undefined}
-          playsInline
-          onLoadedMetadata={(e) => {
-            const target = e.target as HTMLVideoElement;
-            setVideoSize({
-              width: target.videoWidth,
-              height: target.videoHeight,
-            });
-          }}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          onTimeUpdate={(e) => {
-            const target = e.target as HTMLVideoElement;
-            onTimeUpdate?.(target.currentTime);
-          }}
-        />
+          <Video
+            ref={videoRef}
+            className="h-full w-full object-contain"
+            src={src ?? undefined}
+            playsInline
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onLoadedMetadata={(e) => {
+              const target = e.target as HTMLVideoElement;
+              setVideoSize({
+                width: target.videoWidth,
+                height: target.videoHeight,
+              });
+            }}
+          />
         {!src && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black">
             <VideoIcon className="size-10 text-zinc-600" strokeWidth={1} />

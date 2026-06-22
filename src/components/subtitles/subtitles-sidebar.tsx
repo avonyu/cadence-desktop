@@ -2,9 +2,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Subtitles, X, Loader2, RotateCw } from "lucide-react";
 import { type Caption } from "@/lib/subtitles";
+import { sanitizeSubtitleHtml } from "@/lib/html-sanitize";
 import { usePlayerStore, type BlurMode } from "@/stores/player-store";
 import { useTranslation } from "react-i18next";
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, memo } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import ShinyText from "@/components/ShinyText";
 
@@ -31,7 +32,7 @@ function formatCaptionTime(seconds: number): string {
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
-export function SubtitlesSidebar({
+export const SubtitlesSidebar = memo(function SubtitlesSidebar({
   captions,
   onSeekToCaption,
   onClose,
@@ -41,6 +42,8 @@ export function SubtitlesSidebar({
   const lastActiveCaption = usePlayerStore((s) => s.lastActiveCaption);
   const scrollTracking = usePlayerStore((s) => s.scrollTracking);
   const setScrollTracking = usePlayerStore((s) => s.setScrollTracking);
+  const setActiveCaption = usePlayerStore((s) => s.setActiveCaption);
+  const setPendingNavigation = usePlayerStore((s) => s.setPendingNavigation);
   const setLastActiveCaption = usePlayerStore((s) => s.setLastActiveCaption);
   const aiProcessing = usePlayerStore((s) => s.aiProcessing);
   const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
@@ -57,18 +60,23 @@ export function SubtitlesSidebar({
     ) as HTMLElement | null;
   }, []);
 
+  // Detect user scroll (mouse wheel / trackpad) to cancel auto-follow.
   useEffect(() => {
     const viewport = getViewport();
     if (!viewport) return;
 
-    const handleScroll = () => {
+    const handleUserScroll = () => {
       if (isProgrammaticScroll.current) return;
       setScrollTracking(false);
     };
 
-    viewport.addEventListener("scroll", handleScroll);
-    return () => viewport.removeEventListener("scroll", handleScroll);
-  }, [getViewport]);
+    viewport.addEventListener("scroll", handleUserScroll);
+    viewport.addEventListener("wheel", handleUserScroll, { passive: true });
+    return () => {
+      viewport.removeEventListener("scroll", handleUserScroll);
+      viewport.removeEventListener("wheel", handleUserScroll);
+    };
+  }, [getViewport, setScrollTracking]);
 
   useEffect(() => {
     if (!scrollTracking) return;
@@ -92,15 +100,22 @@ export function SubtitlesSidebar({
         behavior: "smooth",
       });
 
-      const handleScrollEnd = () => {
+      // Reset the programmatic-scroll flag when scrolling finishes.
+      const resetFlag = () => {
         isProgrammaticScroll.current = false;
       };
 
-      viewport.addEventListener("scrollend", handleScrollEnd, { once: true });
-
-      cleanup = () => {
-        viewport.removeEventListener("scrollend", handleScrollEnd);
-      };
+      if ("onscrollend" in viewport) {
+        viewport.addEventListener("scrollend", resetFlag, { once: true });
+        cleanup = () => {
+          viewport.removeEventListener("scrollend", resetFlag);
+        };
+      } else {
+        const timer = setTimeout(resetFlag, 500);
+        cleanup = () => {
+          clearTimeout(timer);
+        };
+      }
     });
 
     return () => {
@@ -111,11 +126,19 @@ export function SubtitlesSidebar({
 
   const handleCaptionClick = useCallback(
     (caption: Caption, index: number) => {
+      setPendingNavigation(true);
       setScrollTracking(true);
+      setActiveCaption(index);
       setLastActiveCaption(index);
       onSeekToCaption(caption);
     },
-    [onSeekToCaption, setLastActiveCaption],
+    [
+      onSeekToCaption,
+      setActiveCaption,
+      setLastActiveCaption,
+      setPendingNavigation,
+      setScrollTracking,
+    ],
   );
 
   const getDisplayText = (caption: Caption) => {
@@ -188,18 +211,20 @@ export function SubtitlesSidebar({
                         className={`block text-sm font-bold leading-snug tracking-tight transition-[filter] duration-300 ${
                           getSidebarBlurClasses(blurMode, "text") || ""
                         } group-hover/item:blur-none`}
-                      >
-                        {primary}
-                      </span>
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeSubtitleHtml(primary),
+                        }}
+                      />
                       <span
                         className={`mt-2 block text-sm leading-snug tracking-tight transition-[filter] duration-300 ${
                           isActive ? "text-foreground" : "text-muted-foreground"
                         } ${
                           getSidebarBlurClasses(blurMode, "translation") || ""
                         } group-hover/item:blur-none`}
-                      >
-                        {secondary}
-                      </span>
+                        dangerouslySetInnerHTML={{
+                          __html: sanitizeSubtitleHtml(secondary),
+                        }}
+                      />
                     </span>
                   </div>
                 );
@@ -216,26 +241,28 @@ export function SubtitlesSidebar({
       </ScrollArea>
 
       <AnimatePresence>
-        {!scrollTracking && captions.length > 0 && lastActiveCaption !== null && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
-            className="absolute bottom-4 right-4 z-10"
-          >
-            <Button
-              size="icon"
-              className="size-10 rounded-full shadow-lg !bg-[var(--player-accent)] !text-white hover:!bg-[var(--player-accent-hover)]"
-              onClick={() => {
-                isProgrammaticScroll.current = true;
-                setScrollTracking(true);
-              }}
+        {!scrollTracking &&
+          captions.length > 0 &&
+          lastActiveCaption !== null && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              className="absolute bottom-4 right-4 z-10"
             >
-              <RotateCw size={18} />
-            </Button>
-          </motion.div>
-        )}
+              <Button
+                size="icon"
+                className="size-10 rounded-full shadow-lg !bg-[var(--player-accent)] !text-white hover:!bg-[var(--player-accent-hover)]"
+                onClick={() => {
+                  isProgrammaticScroll.current = true;
+                  setScrollTracking(true);
+                }}
+              >
+                <RotateCw size={18} />
+              </Button>
+            </motion.div>
+          )}
       </AnimatePresence>
     </aside>
   );
-}
+});

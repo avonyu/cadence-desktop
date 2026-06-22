@@ -4,28 +4,42 @@ import { type Caption } from "@/lib/subtitles";
 import { type BlurMode } from "@/stores/player-store";
 import ShinyText from "@/components/ShinyText";
 import { useTranslation } from "react-i18next";
+import { sanitizeSubtitleHtml } from "@/lib/html-sanitize";
+import { wrapSubtitleWords } from "@/lib/wrap-subtitle-words";
+import { useFavoritesStore } from "@/stores/favorites-store";
 
 interface CaptionsDisplayProps {
   activeCaptionData: Caption | null;
   activeDisplay: { primary: string; secondary: string } | null;
-  currentVideoTime: number;
   captions: Caption[];
   isAiProcessing: boolean;
   blurMode: BlurMode;
+  onWordClick?: (e: React.MouseEvent) => void;
+  onMouseOver?: (e: React.MouseEvent) => void;
+  onMouseOut?: (e: React.MouseEvent) => void;
 }
 
 export const CaptionsDisplay = memo(function CaptionsDisplay({
   activeCaptionData,
   activeDisplay,
-  currentVideoTime,
   captions,
   isAiProcessing,
   blurMode,
+  onWordClick,
+  onMouseOver,
+  onMouseOut,
 }: CaptionsDisplayProps) {
   const { t } = useTranslation();
+  const favorites = useFavoritesStore((s) => s.favorites);
+  const isFavorited = (word: string) => word.toLowerCase() in favorites;
 
   return (
-    <div className="group flex w-full flex-col items-center justify-center py-5 text-center min-h-36">
+    <div
+      className="group flex h-44 w-full shrink-0 flex-col items-center justify-center overflow-hidden py-5 text-center"
+      onClick={onWordClick}
+      onMouseOver={onMouseOver}
+      onMouseOut={onMouseOut}
+    >
       {isAiProcessing ? (
         <div className="flex items-center gap-2">
           <Loader2 className="size-5 animate-spin text-(--player-accent)" />
@@ -38,28 +52,34 @@ export const CaptionsDisplay = memo(function CaptionsDisplay({
         </div>
       ) : captions.length > 0 ? (
         activeCaptionData &&
-        currentVideoTime >= activeCaptionData.start &&
-        currentVideoTime < activeCaptionData.end + 0.001 &&
         activeDisplay && (
           <>
             <p
-              className={`text-2xl font-semibold leading-[1.4] text-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
+              className={`text-2xl font-semibold leading-[1.4] text-foreground max-w-5xl transition-[filter] duration-300 select-none ${
                 blurMode === "primary" || blurMode === "all"
                   ? "blur group-hover:blur-none"
                   : ""
               }`}
-            >
-              {activeDisplay.primary}
-            </p>
+              dangerouslySetInnerHTML={{
+                __html: wrapSubtitleWords(
+                  sanitizeSubtitleHtml(activeDisplay.primary),
+                  isFavorited,
+                ),
+              }}
+            />
             <p
-              className={`mt-5 text-2xl leading-[1.4] text-muted-foreground max-w-[64rem] transition-[filter] duration-300 select-none ${
+              className={`mt-5 text-2xl leading-[1.4] text-muted-foreground max-w-5xl transition-[filter] duration-300 select-none ${
                 blurMode === "secondary" || blurMode === "all"
                   ? "blur group-hover:blur-none"
                   : ""
               }`}
-            >
-              {activeDisplay.secondary}
-            </p>
+              dangerouslySetInnerHTML={{
+                __html: wrapSubtitleWords(
+                  sanitizeSubtitleHtml(activeDisplay.secondary),
+                  isFavorited,
+                ),
+              }}
+            />
           </>
         )
       ) : (

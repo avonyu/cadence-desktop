@@ -71,12 +71,11 @@ describe("parseSRT", () => {
 // Multi-line text & bilingual detection
 // ---------------------------------------------------------------------------
 describe("parseSRT - multiline text", () => {
-  it("joins multi-line text with newline, splits first line as text", () => {
+  it("splits bilingual using \\N separator (AI output format)", () => {
     const src = [
       "1",
       "00:00:02,000 --> 00:00:05,000",
-      "Original line",
-      "Translation line",
+      "Original line\\NTranslation line",
     ].join("\n");
 
     const result = parseSRT(src);
@@ -84,7 +83,19 @@ describe("parseSRT - multiline text", () => {
     expect(result[0].translation).toBe("Translation line");
   });
 
-  it("treats 3+ lines as text + translation (rest joined)", () => {
+  it("3+ parts with \\N: first = text, rest joined as translation", () => {
+    const src = [
+      "1",
+      "00:00:02,000 --> 00:00:05,000",
+      "Line A\\NLine B\\NLine C",
+    ].join("\n");
+
+    const result = parseSRT(src);
+    expect(result[0].text).toBe("Line A");
+    expect(result[0].translation).toBe("Line B\nLine C");
+  });
+
+  it("multi-line without \\N = single-language, joined as text", () => {
     const src = [
       "1",
       "00:00:02,000 --> 00:00:05,000",
@@ -94,8 +105,8 @@ describe("parseSRT - multiline text", () => {
     ].join("\n");
 
     const result = parseSRT(src);
-    expect(result[0].text).toBe("Line A");
-    expect(result[0].translation).toBe("Line B\nLine C");
+    expect(result[0].text).toBe("Line A Line B Line C");
+    expect(result[0].translation).toBe("");
   });
 
   it("single-line text has empty translation", () => {
@@ -235,12 +246,11 @@ describe("parseSRT - edge cases", () => {
 // ASS tag stripping in SRT context
 // ---------------------------------------------------------------------------
 describe("parseSRT - ASS tag stripping", () => {
-  it("strips ASS style tags from text", () => {
+  it("strips ASS style tags and splits bilingual on \\N", () => {
     const src = [
       "1",
       "00:00:02,000 --> 00:00:05,000",
-      "{\\b1}Hello{\\b0} World",
-      "{\\i1}Translation{\\i0}",
+      "{\\b1}Hello{\\b0} World\\N{\\i1}Translation{\\i0}",
     ].join("\n");
 
     const result = parseSRT(src);
@@ -272,7 +282,7 @@ describe("parseSRT - ASS tag stripping", () => {
 // Real-world SRT snippets
 // ---------------------------------------------------------------------------
 describe("parseSRT - real-world SRT", () => {
-  it("parses HTML-italic subtitles with music notes", () => {
+  it("joins music lyric lines as single-language text (without \\N)", () => {
     const src = [
       "1",
       "00:00:41,600 --> 00:00:47,480",
@@ -287,12 +297,12 @@ describe("parseSRT - real-world SRT", () => {
 
     const result = parseSRT(src);
     expect(result).toHaveLength(2);
-    // Current behavior: first line = text, second line = translation
-    expect(result[0].text).toBe("<i>♪ I walk along the city streets");
-    expect(result[0].translation).toBe("You used to walk along with me ♪</i>");
+    // Single-language multi-line: all lines joined, no translation
+    expect(result[0].text).toBe("<i>♪ I walk along the city streets You used to walk along with me ♪</i>");
+    expect(result[0].translation).toBe("");
   });
 
-  it("parses subtitles with sound effect descriptions", () => {
+  it("joins sound effect + dialogue as single-language text (without \\N)", () => {
     const src = [
       "1",
       "00:01:54,040 --> 00:01:56,240",
@@ -302,8 +312,9 @@ describe("parseSRT - real-world SRT", () => {
 
     const result = parseSRT(src);
     expect(result).toHaveLength(1);
-    expect(result[0].text).toBe("<i>- ♪ I was born-- ♪</i>");
-    expect(result[0].translation).toBe("- [engine and music stop]");
+    // Single-language multi-line: all joined as text
+    expect(result[0].text).toBe("<i>- ♪ I was born-- ♪</i> - [engine and music stop]");
+    expect(result[0].translation).toBe("");
   });
 });
 
@@ -773,6 +784,24 @@ describe("parseSubtitles", () => {
     const src = ["[V4 Styles]", "Style: Default,Arial,20"].join("\n");
     const result = parseSubtitles(src);
     expect(result).toEqual([]);
+  });
+
+  it("detects ASS with [Events] header (AI response fragment)", () => {
+    const src = [
+      "[Events]",
+      "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
+      "Dialogue: 0,0:00:01.00,0:00:03.00,Default,,0,0,0,,Hello",
+    ].join("\n");
+    const result = parseSubtitles(src);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Hello");
+  });
+
+  it("detects ASS from Dialogue lines without header", () => {
+    const src = "Dialogue: 0,0:00:01.00,0:00:03.00,Default,,0,0,0,,Hello";
+    const result = parseSubtitles(src);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Hello");
   });
 
   it("defaults to SRT for unknown format", () => {

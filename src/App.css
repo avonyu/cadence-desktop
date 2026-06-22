@@ -126,6 +126,7 @@
     }
     html {
         @apply font-sans;
+        font-size: clamp(14px, calc(11px + 0.5vw), 22px);
     }
     button {
         @apply cursor-pointer;
@@ -165,6 +166,20 @@
 
 :not(.dark) {
     --ai-overlay-bg: rgba(255, 255, 255, 0.5);
+}
+
+.sub-word {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.sub-word:hover {
+  color: var(--player-accent);
+}
+
+.sub-word--fav {
+  color: var(--player-accent);
+  font-weight: 600;
 }
 
 @keyframes gradient-flow {

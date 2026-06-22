@@ -5,6 +5,7 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
+    "core:window:allow-set-title",
     "opener:default",
     "dialog:default",
     "dialog:allow-open",
@@ -13,6 +14,16 @@
     "http:default",
     "http:allow-fetch",
     "updater:default",
+    "store:default",
+    "store:allow-get",
+    "store:allow-set",
+    "store:allow-save",
+    "store:allow-load",
+    "sql:default",
+    "sql:allow-load",
+    "sql:allow-execute",
+    "sql:allow-select",
+    "sql:allow-close",
     {
       "identifier": "http:default",
       "allow": [

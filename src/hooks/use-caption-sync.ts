@@ -8,13 +8,13 @@ interface UseCaptionSyncReturn {
   activeDisplay: { primary: string; secondary: string } | null;
 }
 
-export function useCaptionSync(
-  captions: Caption[],
-): UseCaptionSyncReturn {
+export function useCaptionSync(captions: Caption[]): UseCaptionSyncReturn {
   const activeCaption = usePlayerStore((s) => s.activeCaption);
   const setActiveCaption = usePlayerStore((s) => s.setActiveCaption);
   const setLastActiveCaption = usePlayerStore((s) => s.setLastActiveCaption);
   const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
+  const pendingNavigation = usePlayerStore((s) => s.pendingNavigation);
+  const setPendingNavigation = usePlayerStore((s) => s.setPendingNavigation);
 
   const lastFoundIndexRef = useRef(0);
   const lastActiveCaptionRef = useRef<number | null>(null);
@@ -22,6 +22,37 @@ export function useCaptionSync(
   const handleTimeUpdate = useCallback(
     (currentTime: number) => {
       if (captions.length === 0) return;
+
+      // If a user-initiated navigation is pending, wait for the seek to
+      // settle before allowing time-sync to change activeCaption.
+      if (
+        pendingNavigation &&
+        activeCaption !== null &&
+        activeCaption < captions.length
+      ) {
+        const target = captions[activeCaption];
+        if (currentTime >= target.start && currentTime < target.end + 0.001) {
+          // Seek complete — currentTime now matches the navigated-to caption.
+          setPendingNavigation(false);
+          lastFoundIndexRef.current = activeCaption;
+          if (activeCaption !== lastActiveCaptionRef.current) {
+            lastActiveCaptionRef.current = activeCaption;
+            setLastActiveCaption(activeCaption);
+          }
+          return;
+        }
+        // Still seeking — don't interfere with navigation.
+        return;
+      }
+
+      // If activeCaption is still valid for the current time, don't change it.
+      if (activeCaption !== null && activeCaption < captions.length) {
+        const current = captions[activeCaption];
+        if (currentTime >= current.start && currentTime < current.end + 0.001) {
+          lastFoundIndexRef.current = activeCaption;
+          return;
+        }
+      }
 
       let newIndex: number | null = null;
       let startFrom = lastFoundIndexRef.current;
@@ -35,7 +66,10 @@ export function useCaptionSync(
 
       for (let i = startFrom; i < captions.length; i++) {
         if (currentTime < captions[i].start) break;
-        if (currentTime >= captions[i].start && currentTime < captions[i].end + 0.001) {
+        if (
+          currentTime >= captions[i].start &&
+          currentTime < captions[i].end + 0.001
+        ) {
           newIndex = i;
           break;
         }
@@ -48,15 +82,19 @@ export function useCaptionSync(
       if (newIndex !== activeCaption) {
         setActiveCaption(newIndex);
       }
-      if (
-        newIndex !== null &&
-        newIndex !== lastActiveCaptionRef.current
-      ) {
+      if (newIndex !== null && newIndex !== lastActiveCaptionRef.current) {
         lastActiveCaptionRef.current = newIndex;
         setLastActiveCaption(newIndex);
       }
     },
-    [captions, activeCaption, setActiveCaption, setLastActiveCaption],
+    [
+      captions,
+      activeCaption,
+      pendingNavigation,
+      setActiveCaption,
+      setLastActiveCaption,
+      setPendingNavigation,
+    ],
   );
 
   const getDisplayText = useCallback(
