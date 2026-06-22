@@ -175,9 +175,9 @@ export function WordTranslatePopover({
                 title="Pronounce"
               >
                 {pronouncing ? (
-                  <Loader2 size={14} className="animate-spin" />
+                  <Loader2 className="size-[0.875rem] animate-spin" />
                 ) : (
-                  <Volume2 size={14} />
+                  <Volume2 className="size-[0.875rem]" />
                 )}
               </button>
             )}

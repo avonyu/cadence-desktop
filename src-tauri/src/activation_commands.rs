@@ -1,6 +1,8 @@
 use crate::activation;
 use serde::Serialize;
+#[cfg(build_mode_commercial)]
 use tauri::Manager;
+#[cfg(build_mode_commercial)]
 use tauri_plugin_store::StoreExt;
 
 #[derive(Debug, Serialize)]
@@ -179,6 +181,7 @@ fn read_vault_json_with_fallback(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
+#[cfg_attr(not(build_mode_commercial), allow(unused_variables))]
 pub fn get_activation_status(app: tauri::AppHandle) -> ActivationStatus {
     // Dev-mode only: read VITE_EXPIRE_MODE from .env for rapid testing.
     #[cfg(debug_assertions)]
@@ -246,13 +249,12 @@ pub fn get_activation_status(app: tauri::AppHandle) -> ActivationStatus {
     }
 
     // OSS mode: always activated.
-    if cfg!(not(build_mode_commercial)) {
-        return ActivationStatus {
-            activated: true,
-            trial_active: false,
-            trial_days_remaining: 0,
-        };
-    }
+    #[cfg(not(build_mode_commercial))]
+    return ActivationStatus {
+        activated: true,
+        trial_active: false,
+        trial_days_remaining: 0,
+    };
 
     // --- Commercial mode with full protections ---
     #[cfg(build_mode_commercial)]
@@ -346,15 +348,15 @@ pub fn get_activation_status(app: tauri::AppHandle) -> ActivationStatus {
 }
 
 #[tauri::command]
+#[cfg_attr(not(build_mode_commercial), allow(unused_variables))]
 pub fn activate(code: String, app: tauri::AppHandle) -> Result<ActivateResult, String> {
     // OSS mode: always succeeds.
-    if cfg!(not(build_mode_commercial)) {
-        return Ok(ActivateResult {
-            success: true,
-            error: None,
-            fingerprint: Some(activation::get_machine_fingerprint()),
-        });
-    }
+    #[cfg(not(build_mode_commercial))]
+    return Ok(ActivateResult {
+        success: true,
+        error: None,
+        fingerprint: Some(activation::get_machine_fingerprint()),
+    });
 
     #[cfg(build_mode_commercial)]
     {
