@@ -15,8 +15,6 @@ import {
   Volume2,
   VolumeX,
   Repeat1,
-  RefreshCw,
-  Eraser,
 } from "lucide-react";
 import { TimeSlider } from "@videojs/react";
 import { type Caption } from "@/lib/subtitles";
@@ -54,8 +52,6 @@ interface PlayerControlsBarProps {
   onSpeedChange: (speed: number) => void;
   onOpenFile: () => void;
   onLoadSubtitle: () => void;
-  onRegenerateSubtitle: () => void;
-  onClearSubtitleCache: () => void;
   onPrevCaption: () => void;
   onNextCaption: () => void;
   onOpenSettings: () => void;
@@ -78,8 +74,6 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
   onSpeedChange,
   onOpenFile,
   onLoadSubtitle,
-  onRegenerateSubtitle,
-  onClearSubtitleCache,
   onPrevCaption,
   onNextCaption,
   onOpenSettings,
@@ -377,34 +371,6 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
           </ShadcnTooltip>
 
           <SubtitleSettingsPopover />
-
-          <ShadcnTooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                disabled={isAiProcessing || !videoSrc}
-                onClick={onRegenerateSubtitle}
-              >
-                <RefreshCw size={18} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("subtitle.regenerate")}</TooltipContent>
-          </ShadcnTooltip>
-
-          <ShadcnTooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                disabled={isAiProcessing || !videoSrc || captions.length === 0}
-                onClick={onClearSubtitleCache}
-              >
-                <Eraser size={18} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("subtitle.clearCache")}</TooltipContent>
-          </ShadcnTooltip>
 
           <ShadcnTooltip>
             <TooltipTrigger asChild>

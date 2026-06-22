@@ -1,6 +1,12 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Subtitles, X, Loader2, RotateCw } from "lucide-react";
+import { Subtitles, X, Loader2, RotateCw, RefreshCw, Eraser } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { type Caption } from "@/lib/subtitles";
 import { sanitizeSubtitleHtml } from "@/lib/html-sanitize";
 import { usePlayerStore, type BlurMode } from "@/stores/player-store";
@@ -11,8 +17,11 @@ import ShinyText from "@/components/ShinyText";
 
 interface SubtitlesSidebarProps {
   captions: Caption[];
+  videoSrc: string | null;
   onSeekToCaption: (caption: Caption) => void;
   onClose: () => void;
+  onRegenerateSubtitle: () => void;
+  onClearSubtitleCache: () => void;
 }
 
 function getSidebarBlurClasses(
@@ -34,8 +43,11 @@ function formatCaptionTime(seconds: number): string {
 
 export const SubtitlesSidebar = memo(function SubtitlesSidebar({
   captions,
+  videoSrc,
   onSeekToCaption,
   onClose,
+  onRegenerateSubtitle,
+  onClearSubtitleCache,
 }: SubtitlesSidebarProps) {
   const { t } = useTranslation();
   const blurMode = usePlayerStore((s) => s.blurMode);
@@ -171,6 +183,38 @@ export const SubtitlesSidebar = memo(function SubtitlesSidebar({
           <span className="text-xs font-semibold uppercase tracking-[0.16em]">
             {t("subtitle.subtitlesList")}
           </span>
+          <TooltipProvider>
+            <div className="ml-1 flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={isAiProcessing || !videoSrc}
+                    onClick={onRegenerateSubtitle}
+                  >
+                    <RefreshCw size={18} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("subtitle.regenerate")}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={
+                      isAiProcessing || !videoSrc || captions.length === 0
+                    }
+                    onClick={onClearSubtitleCache}
+                  >
+                    <Eraser size={18} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{t("subtitle.clearCache")}</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         </div>
         <Button variant="ghost" size="icon-sm" onClick={onClose}>
           <X size={20} />

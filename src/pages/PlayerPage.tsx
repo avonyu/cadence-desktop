@@ -333,8 +333,6 @@ export const PlayerPage = () => {
               onSpeedChange={handleSpeedChange}
               onOpenFile={handleOpenFileWithReset}
               onLoadSubtitle={handleLoadSubtitleFile}
-              onRegenerateSubtitle={handleRegenerate}
-              onClearSubtitleCache={handleClearCache}
               onPrevCaption={goToPrevCaption}
               onNextCaption={goToNextCaption}
               onOpenSettings={handleOpenSettings}
@@ -389,8 +387,11 @@ export const PlayerPage = () => {
         >
           <SubtitlesSidebar
             captions={captions}
+            videoSrc={videoSrc}
             onSeekToCaption={handleSeekToCaption}
             onClose={toggleSidebar}
+            onRegenerateSubtitle={handleRegenerate}
+            onClearSubtitleCache={handleClearCache}
           />
         </Resizable>
 
