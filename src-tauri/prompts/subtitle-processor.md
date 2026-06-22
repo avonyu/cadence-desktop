@@ -34,13 +34,55 @@ Text lines here
 
 1. **Merge multi-line text**: Within a single SRT block, merge ALL text lines into ONE line. Join multi-speaker lines with spaces. No real line breaks should remain inside the text content.
 
-2. **Merge split sentences**: If a complete sentence is split across consecutive entries (the sentence continues in the next entry, starts with lowercase, or is a short fragment such as "by wireless"), merge those entries:
-   - Combine timestamps: start time of first entry + end time of last entry.
-   - Combine all original text into one coherent sentence for translation.
-   - Use the first entry's index number. Remove the merged subsequent entries.
-   - Renumber ALL remaining entries sequentially starting from 1.
+2. **Never merge or split entries**: Keep EVERY SRT entry exactly as-is — same boundaries, same ORIGINAL timestamp. After removing non-dialogue entries (per the Common Rules), the number of output entries MUST equal the number of remaining input entries. Do NOT merge consecutive entries, do NOT split an entry, and do NOT alter any timestamp — even if:
+   - a sentence is split across several entries,
+   - an entry ends mid-sentence (e.g. ends with a comma),
+   - an entry starts with a lowercase word or a conjunction (and / or / but),
+   - an entry is a short fragment (e.g. "over the next three days"),
+   - an entry contains song lyrics (`♪`).
+   Only after removing non-dialogue entries, renumber the remaining entries sequentially starting from 1.
 
-3. **Bilingual output**: Output each SRT entry in TWO-LINE format separated by a REAL line break:
+3. **Translate each entry in context**: When a sentence spans multiple entries, translate each entry on its OWN line, using the surrounding entries as context so the translations read naturally when played in sequence. The translation of a fragment may itself be a natural fragment — do NOT pad it into a full sentence, and do NOT pull text from other entries into it.
+
+   Example — input (4 entries):
+
+   ```
+   1
+   00:14:21,199 --> 00:14:24,520
+   <i>Right. So, as I was saying, you anointed the talisman,</i>
+   2
+   00:14:24,520 --> 00:14:27,599
+   <i>and the rules are you've gotta carry out three human sacrifices</i>
+   3
+   00:14:27,599 --> 00:14:29,000
+   <i>over the next three days</i>
+   4
+   00:14:29,000 --> 00:14:30,599
+   <i>or else the world's gonna end.</i>
+   ```
+
+   Correct output — STILL 4 entries, timestamps unchanged, each translated as a natural fragment:
+
+   ```
+   1
+   00:14:21,199 --> 00:14:24,520
+   <i>Right. So, as I was saying, you anointed the talisman,</i>
+   <i>对。所以，就像我刚说的，你给护身符涂了油，</i>
+   2
+   00:14:24,520 --> 00:14:27,599
+   <i>and the rules are you've gotta carry out three human sacrifices</i>
+   <i>规则是你必须完成三次活人献祭，</i>
+   3
+   00:14:27,599 --> 00:14:29,000
+   <i>over the next three days</i>
+   <i>就在接下来的三天里，</i>
+   4
+   00:14:29,000 --> 00:14:30,599
+   <i>or else the world's gonna end.</i>
+   <i>否则世界就会终结。</i>
+   ```
+
+4. **Bilingual output**: Output each SRT entry in TWO-LINE format separated by a REAL line break:
 
    ```
    1

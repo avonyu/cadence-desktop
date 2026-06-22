@@ -145,7 +145,7 @@ export function WordTranslatePopover({
       <PopoverContent
         side="top"
         align="center"
-        className="max-w-sm rounded-lg p-0 gap-0"
+        className="min-w-[22rem] max-w-md rounded-lg p-0 gap-0"
         onPointerDownOutside={(e) => {
           // Don't close when clicking a subtitle word — the click handler
           // manages toggle (same word → close, different word → switch).
@@ -158,11 +158,11 @@ export function WordTranslatePopover({
         {/* Header */}
         <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-sm font-semibold text-(--player-accent) truncate">
+            <span className="text-base font-semibold text-(--player-accent) truncate">
               {word}
             </span>
             {definition?.phonetic && (
-              <span className="text-xs text-muted-foreground shrink-0">
+              <span className="text-sm text-muted-foreground shrink-0">
                 {definition.phonetic}
               </span>
             )}
@@ -206,7 +206,7 @@ export function WordTranslatePopover({
 
         {/* Body */}
         <ScrollArea className="max-h-64 **:data-[slot=scroll-area-viewport]:max-h-64">
-          <div className="px-3 py-2 text-sm">
+          <div className="px-3 py-2 text-base">
             {loading && (
               <div className="flex items-center justify-center gap-2 py-3 text-muted-foreground">
                 <Loader2 size={14} className="animate-spin" />
@@ -215,7 +215,7 @@ export function WordTranslatePopover({
             )}
 
             {!loading && !definition && word && (
-              <p className="py-2 text-muted-foreground text-xs">
+              <p className="py-2 text-muted-foreground text-sm">
                 No definition found for "
                 <span className="font-medium text-foreground">{word}</span>"
               </p>
@@ -223,15 +223,15 @@ export function WordTranslatePopover({
 
             {definition?.meanings.map((meaning, i) => (
               <div key={i} className={i > 0 ? "mt-2" : ""}>
-                <span className="text-xs font-medium text-(--player-accent) italic">
+                <span className="text-sm font-medium text-(--player-accent) italic">
                   {meaning.partOfSpeech}
                 </span>
                 <ol className="mt-1 list-decimal list-inside space-y-0.5">
                   {meaning.definitions.map((d, j) => (
-                    <li key={j} className="text-xs leading-relaxed">
+                    <li key={j} className="text-sm leading-relaxed">
                       <span>{d.definition}</span>
                       {d.example && (
-                        <p className="text-[0.6875rem] text-muted-foreground mt-0.5 ml-4 italic">
+                        <p className="text-xs text-muted-foreground mt-0.5 ml-4 italic">
                           "{d.example}"
                         </p>
                       )}
