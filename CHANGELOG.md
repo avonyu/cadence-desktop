@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.6.5] - 2026-06-22
+
+### Bug Fixes
+
+- **Reliable model list fetching**: Fetching the available DeepSeek model list now goes through the Rust backend (`tauri-plugin-http`) instead of a direct frontend request. This fixes the model list failing to load in packaged builds, where the production Content-Security-Policy blocked the frontend from reaching the API.
+
+### Improvements
+
+- **Request timeout & clearer errors**: The model list request now has a 15s timeout, and failures surface the real reason (e.g. invalid API key, rate limit, server error) in the error toast instead of a generic message.
+
+### Internal
+
+- Adjusted activation functions for commercial mode and added the `tauri-plugin-sql` dependency.
+
 ## [0.6.4] - 2026-06-21
 
 ### New Features
