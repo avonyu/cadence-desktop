@@ -93,7 +93,8 @@ export function SettingsDialog({
         setUpdateStatus(t("settings.upToDate"));
         setTimeout(() => setUpdateStatus(""), 3000);
       }
-    } catch {
+    } catch (e) {
+      console.error("Update check failed:", e);
       setUpdateStatus(t("settings.checkFailed"));
       setTimeout(() => setUpdateStatus(""), 3000);
     }
@@ -181,10 +182,9 @@ export function SettingsDialog({
       if (!apiKey) return;
       setModelsLoading(true);
       try {
-        const models = await invoke<{ id: string }[]>(
-          "fetch_deepseek_models",
-          { apiKey },
-        );
+        const models = await invoke<{ id: string }[]>("fetch_deepseek_models", {
+          apiKey,
+        });
         setAvailableModels(models);
         localStorage.setItem(STORAGE_KEY_MODELS, JSON.stringify(models));
       } catch (err) {
