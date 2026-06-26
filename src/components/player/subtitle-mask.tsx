@@ -155,9 +155,15 @@ export const SubtitleMask = memo(function SubtitleMask({
       if (info.type === "resize") {
         const centerX = sr.x + sr.width / 2;
         const maxWidth = 2 * Math.min(centerX, 100 - centerX);
-        const width = Math.min(Math.max(sr.width + dx * 2, MIN_WIDTH), maxWidth);
+        const width = Math.min(
+          Math.max(sr.width + dx * 2, MIN_WIDTH),
+          maxWidth,
+        );
         const x = centerX - width / 2;
-        const height = Math.min(Math.max(sr.height + dy, MIN_HEIGHT), 100 - sr.y);
+        const height = Math.min(
+          Math.max(sr.height + dy, MIN_HEIGHT),
+          100 - sr.y,
+        );
         setSubtitleMaskRect({ x, y: sr.y, width, height });
         return;
       }
@@ -179,7 +185,7 @@ export const SubtitleMask = memo(function SubtitleMask({
     >
       <div
         className={cn(
-          "absolute pointer-events-auto border border-white/20 rounded-md transition-opacity duration-150",
+          "absolute pointer-events-auto rounded-md transition-opacity duration-150",
           interacting ? "bg-black/40" : "bg-black/90",
         )}
         style={{
