@@ -19,6 +19,7 @@ interface WordTranslatePopoverProps {
   anchorEl: HTMLElement | null;
   onOpenChange: (open: boolean) => void;
   onClose: () => void;
+  tryRecoverAnchor: () => boolean;
 }
 
 export function WordTranslatePopover({
@@ -29,6 +30,7 @@ export function WordTranslatePopover({
   anchorEl,
   onOpenChange,
   onClose,
+  tryRecoverAnchor,
 }: WordTranslatePopoverProps) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLSpanElement>(null);
@@ -95,7 +97,11 @@ export function WordTranslatePopover({
   // (e.g. navigating to the next caption replaces the subtitle text).
   useLayoutEffect(() => {
     if (open && anchorEl && !anchorEl.isConnected) {
-      onClose();
+      // Anchor may have been replaced by React (e.g. favorite toggle
+      // re-renders captions). Try to recover before closing.
+      if (!tryRecoverAnchor()) {
+        onClose();
+      }
     }
   });
 

@@ -408,6 +408,7 @@ export const PlayerPage = () => {
           anchorEl={wordTranslate.anchorEl}
           onOpenChange={wordTranslate.handleOpenChange}
           onClose={wordTranslate.handleClose}
+          tryRecoverAnchor={wordTranslate.tryRecoverAnchor}
         />
       </section>
     </Player.Provider>
