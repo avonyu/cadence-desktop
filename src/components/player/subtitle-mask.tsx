@@ -1,19 +1,32 @@
 import { useRef, useCallback, useState, memo } from "react";
 import { usePlayerStore } from "@/stores/player-store";
 import { cn } from "@/lib/utils";
+import { sanitizeSubtitleHtml } from "@/lib/html-sanitize";
 
 /**
  * SubtitleMask — a draggable & resizable black overlay placed over the
  * video to hide hard-burned subtitles.
  *
- * - Drag handle: grip icon at the top center → moves the mask
- * - Resize handle: icon at the bottom-right corner → resizes the mask
+ * - Drag handle: grip icon at the top center → moves the mask vertically only,
+ *   keeping its vertical symmetry axis aligned with the video center
+ * - Resize handle: icon at the bottom-right corner → resizes the mask; width
+ *   grows symmetrically (mirrored) about the mask's vertical symmetry axis
+ * - In fullscreen mode the active subtitle is rendered inside the mask so the
+ *   user keeps reading captions after the surrounding UI is hidden.
  *
  * Positions are stored as **percentages** of the video container so that
  * the mask stays correct when the container is resized.
  */
 
-const MIN_SIZE = 4; // minimum width/height in percent
+interface SubtitleMaskProps {
+  /** Active subtitle text to render inside the mask (fullscreen only). */
+  activeDisplay?: { primary: string; secondary: string } | null;
+  /** Whether the player is currently in fullscreen mode. */
+  isFullscreen?: boolean;
+}
+
+const MIN_WIDTH = 20; // minimum mask width in percent
+const MIN_HEIGHT = 6; // minimum mask height in percent
 
 /** Drag grip icon — three horizontal lines */
 function DragGripIcon() {
@@ -60,42 +73,17 @@ function ResizeIcon() {
   );
 }
 
-/** Resize icon rotated for top-left corner */
-function ResizeIconNW() {
-  return (
-    <svg
-      width="8"
-      height="8"
-      viewBox="0 0 8 8"
-      fill="none"
-      className="text-white/60 rotate-180"
-    >
-      <path
-        d="M7 1v6H1"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M7 7L1 1"
-        stroke="currentColor"
-        strokeWidth="1"
-        strokeLinecap="round"
-        strokeDasharray="1.5 1.5"
-      />
-    </svg>
-  );
-}
-
-export const SubtitleMask = memo(function SubtitleMask() {
+export const SubtitleMask = memo(function SubtitleMask({
+  activeDisplay,
+  isFullscreen = false,
+}: SubtitleMaskProps) {
   const maskRect = usePlayerStore((s) => s.subtitleMaskRect);
   const setSubtitleMaskRect = usePlayerStore((s) => s.setSubtitleMaskRect);
   const containerRef = useRef<HTMLDivElement>(null);
   const [hovering, setHovering] = useState(false);
   const [interacting, setInteracting] = useState(false);
   const interactionRef = useRef<{
-    type: "move" | "resize" | "resize-nw";
+    type: "move" | "resize";
     startX: number;
     startY: number;
     startRect: { x: number; y: number; width: number; height: number };
@@ -141,23 +129,6 @@ export const SubtitleMask = memo(function SubtitleMask() {
     [maskRect],
   );
 
-  // --- Resize handle (top-left corner - nw direction) ---
-  const handleResizeNWPointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      (e.target as Element).setPointerCapture(e.pointerId);
-      setInteracting(true);
-      interactionRef.current = {
-        type: "resize-nw",
-        startX: e.clientX,
-        startY: e.clientY,
-        startRect: { ...maskRect },
-      };
-    },
-    [maskRect],
-  );
-
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
       const info = interactionRef.current;
@@ -169,33 +140,31 @@ export const SubtitleMask = memo(function SubtitleMask() {
       const dy = ((e.clientY - info.startY) / size.h) * 100;
       const sr = info.startRect;
 
+      // Move — only vertical: keep the mask's vertical symmetry axis aligned
+      // with the video's vertical center (x = 50%).
       if (info.type === "move") {
-        const x = Math.max(0, Math.min(100 - sr.width, sr.x + dx));
+        const width = sr.width;
+        const x = 50 - width / 2;
         const y = Math.max(0, Math.min(100 - sr.height, sr.y + dy));
-        setSubtitleMaskRect({
-          x,
-          y,
-          width: sr.width,
-          height: sr.height,
-        });
+        setSubtitleMaskRect({ x, y, width, height: sr.height });
         return;
       }
 
-      // Resize (se direction only)
+      // Resize (bottom-right) — width grows symmetrically about the mask's
+      // vertical symmetry axis (center x fixed); height grows downward.
       if (info.type === "resize") {
-        const width = Math.min(Math.max(sr.width + dx, MIN_SIZE), 100 - sr.x);
-        const height = Math.min(Math.max(sr.height + dy, MIN_SIZE), 100 - sr.y);
-        setSubtitleMaskRect({ x: sr.x, y: sr.y, width, height });
-        return;
-      }
-
-      // Resize (nw direction — moves top-left corner)
-      if (info.type === "resize-nw") {
-        const width = Math.min(Math.max(sr.width - dx, MIN_SIZE), sr.x + sr.width);
-        const height = Math.min(Math.max(sr.height - dy, MIN_SIZE), sr.y + sr.height);
-        const x = Math.max(0, Math.min(sr.x + sr.width - MIN_SIZE, sr.x + dx));
-        const y = Math.max(0, Math.min(sr.y + sr.height - MIN_SIZE, sr.y + dy));
-        setSubtitleMaskRect({ x, y, width, height });
+        const centerX = sr.x + sr.width / 2;
+        const maxWidth = 2 * Math.min(centerX, 100 - centerX);
+        const width = Math.min(
+          Math.max(sr.width + dx * 2, MIN_WIDTH),
+          maxWidth,
+        );
+        const x = centerX - width / 2;
+        const height = Math.min(
+          Math.max(sr.height + dy, MIN_HEIGHT),
+          100 - sr.y,
+        );
+        setSubtitleMaskRect({ x, y: sr.y, width, height });
         return;
       }
     },
@@ -216,7 +185,7 @@ export const SubtitleMask = memo(function SubtitleMask() {
     >
       <div
         className={cn(
-          "absolute pointer-events-auto border border-white/20 rounded-md transition-opacity duration-150",
+          "absolute pointer-events-auto rounded-md transition-opacity duration-150",
           interacting ? "bg-black/40" : "bg-black/90",
         )}
         style={{
@@ -228,20 +197,32 @@ export const SubtitleMask = memo(function SubtitleMask() {
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
       >
-        {/* Resize handle — top left */}
-        {hovering && (
-          <div
-            className="absolute top-1 left-1 flex items-center justify-center cursor-nw-resize p-0.5 pointer-events-auto z-10"
-            onPointerDown={handleResizeNWPointerDown}
-          >
-            <ResizeIconNW />
+        {/* Subtitle text — shown inside the mask only in fullscreen */}
+        {isFullscreen && activeDisplay && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-[1vh] px-[2%] text-center overflow-hidden pointer-events-none select-none">
+            {activeDisplay.primary && (
+              <p
+                className="text-[2.6vh] font-semibold leading-[1.3] text-white break-words"
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeSubtitleHtml(activeDisplay.primary),
+                }}
+              />
+            )}
+            {activeDisplay.secondary && (
+              <p
+                className="text-[2.2vh] leading-[1.3] text-white/75 break-words"
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeSubtitleHtml(activeDisplay.secondary),
+                }}
+              />
+            )}
           </div>
         )}
 
-        {/* Drag handle — top center */}
+        {/* Drag handle — top center (vertical move only) */}
         {hovering && (
           <div
-            className="absolute top-1 left-1/2 -translate-x-1/2 flex items-center justify-center cursor-move py-1 pointer-events-auto z-10"
+            className="absolute top-1 left-1/2 -translate-x-1/2 flex items-center justify-center cursor-ns-resize py-1 pointer-events-auto z-10"
             onPointerDown={handleDragPointerDown}
           >
             <DragGripIcon />

@@ -36,12 +36,20 @@
     "singleSentenceLoop": "单句循环",
     "shortcut": "快捷键"
   },
+  "sidebar": {
+    "title": "侧边栏"
+  },
   "subtitle": {
     "noSubtitles": "未加载字幕",
     "loadSubtitle": "加载字幕",
     "loadSubtitleTitle": "加载字幕文件",
     "loadSubtitleDesc": "支持的字幕格式：SRT, ASS",
-    "subtitlesSidebar": "字幕侧边栏",
+    "regenerate": "重新生成字幕",
+    "clearCache": "清空字幕缓存",
+    "cacheCleared": "已清空当前视频的字幕缓存",
+    "cacheClearFailed": "清空字幕缓存失败",
+    "noCachedSubtitle": "未找到当前视频匹配的字幕文件，请先加载字幕",
+    "subtitleFileMissing": "匹配的字幕文件已不存在或无法读取",
     "subtitleSettings": "字幕设置",
     "subtitlesList": "字幕列表",
     "swapPosition": "位置切换",
@@ -118,6 +126,20 @@
     "lookingUp": "查询中...",
     "favorite": "收藏",
     "unfavorite": "取消收藏"
+  },
+  "favorites": {
+    "title": "单词本",
+    "searchPlaceholder": "搜索单词或释义",
+    "sortLabel": "排序",
+    "sortRecent": "最近添加",
+    "sortOldest": "最早添加",
+    "sortAlpha": "字母 A–Z",
+    "empty": "还没有收藏单词",
+    "emptyHint": "播放时点击字幕中的单词即可收藏",
+    "emptySearch": "没有匹配的单词",
+    "remove": "移除收藏",
+    "removed": "已移除 {{word}}",
+    "pronounce": "发音"
   },
   "gamepad": {
     "connected": "手柄已连接",

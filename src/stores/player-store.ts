@@ -3,6 +3,8 @@ import { flattenActions, type StoreSetter, type StoreGetter } from "./helpers";
 
 export type BlurMode = "off" | "primary" | "secondary" | "all";
 
+export type SidebarTab = "subtitles" | "favorites";
+
 export type AiProcessingState =
   | "idle"
   | "loading"
@@ -19,6 +21,7 @@ export interface MaskRect {
 
 interface PlayerState {
   sidebarOpen: boolean;
+  sidebarTab: SidebarTab;
   blurMode: BlurMode;
   swapSubtitles: boolean;
   activeCaption: number | null;
@@ -60,6 +63,7 @@ function loadMaskRect(): MaskRect {
 
 interface PlayerUIPersist {
   sidebarOpen: boolean;
+  sidebarTab: SidebarTab;
   blurMode: BlurMode;
   swapSubtitles: boolean;
   singleSentenceLoop: boolean;
@@ -67,6 +71,7 @@ interface PlayerUIPersist {
 
 const defaultPlayerUI: PlayerUIPersist = {
   sidebarOpen: true,
+  sidebarTab: "subtitles",
   blurMode: "off",
   swapSubtitles: false,
   singleSentenceLoop: false,
@@ -86,6 +91,7 @@ function persistPlayerUI(state: PlayerUIState) {
   try {
     const data: PlayerUIPersist = {
       sidebarOpen: state.sidebarOpen,
+      sidebarTab: state.sidebarTab,
       blurMode: state.blurMode,
       swapSubtitles: state.swapSubtitles,
       singleSentenceLoop: state.singleSentenceLoop,
@@ -99,6 +105,7 @@ function persistPlayerUI(state: PlayerUIState) {
 /** Minimal subset of PlayerState that PlayerUIPersist covers */
 interface PlayerUIState {
   sidebarOpen: boolean;
+  sidebarTab: SidebarTab;
   blurMode: BlurMode;
   swapSubtitles: boolean;
   singleSentenceLoop: boolean;
@@ -108,6 +115,7 @@ const persistedUI = loadPlayerUI();
 
 const initialState: PlayerState = {
   sidebarOpen: persistedUI.sidebarOpen,
+  sidebarTab: persistedUI.sidebarTab,
   blurMode: persistedUI.blurMode,
   swapSubtitles: persistedUI.swapSubtitles,
   activeCaption: null,
@@ -150,6 +158,13 @@ export class PlayerActionImpl {
     this.#set((s) => {
       persistPlayerUI({ ...s, sidebarOpen: open });
       return { sidebarOpen: open };
+    });
+  };
+
+  setSidebarTab = (tab: SidebarTab) => {
+    this.#set((s) => {
+      persistPlayerUI({ ...s, sidebarTab: tab });
+      return { sidebarTab: tab };
     });
   };
 

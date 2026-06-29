@@ -52,6 +52,8 @@ interface PlayerControlsBarProps {
   onSpeedChange: (speed: number) => void;
   onOpenFile: () => void;
   onLoadSubtitle: () => void;
+  onRegenerateSubtitle: () => void;
+  onClearSubtitleCache: () => void;
   onPrevCaption: () => void;
   onNextCaption: () => void;
   onOpenSettings: () => void;
@@ -74,6 +76,8 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
   onSpeedChange,
   onOpenFile,
   onLoadSubtitle,
+  onRegenerateSubtitle,
+  onClearSubtitleCache,
   onPrevCaption,
   onNextCaption,
   onOpenSettings,
@@ -370,7 +374,13 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
             </TooltipContent>
           </ShadcnTooltip>
 
-          <SubtitleSettingsPopover />
+          <SubtitleSettingsPopover
+            isAiProcessing={isAiProcessing}
+            videoSrc={videoSrc}
+            hasCaptions={captions.length > 0}
+            onRegenerateSubtitle={onRegenerateSubtitle}
+            onClearSubtitleCache={onClearSubtitleCache}
+          />
 
           <ShadcnTooltip>
             <TooltipTrigger asChild>
@@ -397,7 +407,7 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
                 <PanelRight size={18} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>{t("subtitle.subtitlesSidebar")} (S)</TooltipContent>
+            <TooltipContent>{t("sidebar.title")} (S)</TooltipContent>
           </ShadcnTooltip>
 
           <ShadcnTooltip>

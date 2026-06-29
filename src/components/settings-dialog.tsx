@@ -15,6 +15,7 @@ import { usePlayerStore } from "@/stores/player-store";
 import { useActivationStore } from "@/stores/activation-store";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
+import { invoke } from "@tauri-apps/api/core";
 import { check } from "@tauri-apps/plugin-updater";
 import type { Update } from "@tauri-apps/plugin-updater";
 import { GamepadListener } from "gamepad.js";
@@ -92,7 +93,8 @@ export function SettingsDialog({
         setUpdateStatus(t("settings.upToDate"));
         setTimeout(() => setUpdateStatus(""), 3000);
       }
-    } catch {
+    } catch (e) {
+      console.error("Update check failed:", e);
       setUpdateStatus(t("settings.checkFailed"));
       setTimeout(() => setUpdateStatus(""), 3000);
     }
@@ -180,16 +182,15 @@ export function SettingsDialog({
       if (!apiKey) return;
       setModelsLoading(true);
       try {
-        const res = await fetch("https://api.deepseek.com/models", {
-          headers: { Authorization: `Bearer ${apiKey}` },
+        const models = await invoke<{ id: string }[]>("fetch_deepseek_models", {
+          apiKey,
         });
-        if (!res.ok) throw new Error("Failed to fetch models");
-        const data = await res.json();
-        const models = data.data || [];
         setAvailableModels(models);
         localStorage.setItem(STORAGE_KEY_MODELS, JSON.stringify(models));
-      } catch {
-        toast.error(t("settings.fetchModelsFailed"));
+      } catch (err) {
+        toast.error(t("settings.fetchModelsFailed"), {
+          description: String(err),
+        });
       } finally {
         setModelsLoading(false);
       }

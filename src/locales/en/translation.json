@@ -36,12 +36,20 @@
     "singleSentenceLoop": "Loop Sentence",
     "shortcut": "Key"
   },
+  "sidebar": {
+    "title": "Sidebar"
+  },
   "subtitle": {
     "noSubtitles": "No subtitles loaded",
     "loadSubtitle": "Load Subtitle",
     "loadSubtitleTitle": "Load Subtitle File",
     "loadSubtitleDesc": "Supported subtitle formats: SRT, ASS",
-    "subtitlesSidebar": "Subtitle Sidebar",
+    "regenerate": "Regenerate Subtitles",
+    "clearCache": "Clear Subtitle Cache",
+    "cacheCleared": "Cleared subtitle cache for the current video",
+    "cacheClearFailed": "Failed to clear subtitle cache",
+    "noCachedSubtitle": "No matched subtitle file for this video. Load a subtitle first.",
+    "subtitleFileMissing": "The matched subtitle file no longer exists or cannot be read",
     "subtitleSettings": "Subtitle Settings",
     "subtitlesList": "Subtitles",
     "swapPosition": "Swap Position",
@@ -118,6 +126,20 @@
     "lookingUp": "Looking up...",
     "favorite": "Add to favorites",
     "unfavorite": "Remove from favorites"
+  },
+  "favorites": {
+    "title": "Favorites",
+    "searchPlaceholder": "Search words or definitions",
+    "sortLabel": "Sort",
+    "sortRecent": "Recently added",
+    "sortOldest": "Oldest first",
+    "sortAlpha": "Alphabetical",
+    "empty": "No favorite words yet",
+    "emptyHint": "Click a word in the subtitles while watching to add it",
+    "emptySearch": "No matching words",
+    "remove": "Remove",
+    "removed": "Removed {{word}}",
+    "pronounce": "Pronounce"
   },
   "gamepad": {
     "connected": "Gamepad connected",

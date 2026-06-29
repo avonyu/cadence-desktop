@@ -1,6 +1,55 @@
+use serde::Serialize;
 use tauri_plugin_http::reqwest;
 
 use crate::util::strip_markdown_fences;
+
+#[derive(Serialize)]
+pub struct DeepSeekModel {
+    pub id: String,
+}
+
+#[tauri::command]
+pub async fn fetch_deepseek_models(api_key: String) -> Result<Vec<DeepSeekModel>, String> {
+    if api_key.trim().is_empty() {
+        return Err("API key is required".to_string());
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("Failed to build client: {}", e))?;
+
+    let response = client
+        .get("https://api.deepseek.com/models")
+        .header("Authorization", format!("Bearer {}", api_key))
+        .send()
+        .await
+        .map_err(|e| format!("Request failed: {}", e))?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(format!("API error {}: {}", status, body));
+    }
+
+    let json: serde_json::Value = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse response: {}", e))?;
+
+    let models = json["data"]
+        .as_array()
+        .ok_or("Invalid API response format")?
+        .iter()
+        .filter_map(|m| {
+            m["id"]
+                .as_str()
+                .map(|id| DeepSeekModel { id: id.to_string() })
+        })
+        .collect();
+
+    Ok(models)
+}
 
 #[tauri::command]
 pub async fn call_deepseek_api(

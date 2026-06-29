@@ -154,6 +154,23 @@ export function useWordTranslate(
     }
   }, [videoRef]);
 
+  const tryRecoverAnchor = useCallback((): boolean => {
+    const currentWord = currentWordRef.current;
+    if (!currentWord) return false;
+
+    const allWords = document.querySelectorAll(".sub-word");
+    for (const el of allWords) {
+      if (
+        el.textContent?.trim().toLowerCase() === currentWord.toLowerCase() &&
+        el.isConnected
+      ) {
+        setState((prev) => ({ ...prev, anchorEl: el as HTMLElement }));
+        return true;
+      }
+    }
+    return false;
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -169,5 +186,6 @@ export function useWordTranslate(
     handleOpenChange,
     handleMouseOver,
     handleMouseOut,
+    tryRecoverAnchor,
   };
 }

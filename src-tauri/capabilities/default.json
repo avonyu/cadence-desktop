@@ -10,7 +10,14 @@
     "dialog:default",
     "dialog:allow-open",
     "fs:default",
-    "fs:allow-read-text-file",
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [
+        {
+          "path": "**"
+        }
+      ]
+    },
     "http:default",
     "http:allow-fetch",
     "updater:default",

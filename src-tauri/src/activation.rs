@@ -96,6 +96,7 @@ pub fn get_machine_fingerprint() -> String {
 
 /// Calculate trial days remaining from a start date ISO string.
 /// Returns number of remaining days (0 if expired).
+#[cfg(build_mode_commercial)]
 pub fn trial_days_remaining(trial_start_date: &str) -> i32 {
     let start = match chrono::NaiveDate::parse_from_str(
         &trial_start_date[..10.min(trial_start_date.len())],
@@ -110,11 +111,13 @@ pub fn trial_days_remaining(trial_start_date: &str) -> i32 {
 }
 
 /// Get today's date as ISO string (YYYY-MM-DD).
+#[cfg(build_mode_commercial)]
 pub fn today_iso() -> String {
     chrono::Local::now().format("%Y-%m-%d").to_string()
 }
 
 /// Get current datetime as ISO string for last_seen tracking (UTC).
+#[cfg(build_mode_commercial)]
 pub fn now_iso() -> String {
     chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S").to_string()
 }

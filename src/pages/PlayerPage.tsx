@@ -74,7 +74,8 @@ export const PlayerPage = () => {
   } = useTranscode(setVideoSrc, setCodecInfo, videoFilePathRef, videoRef);
 
   // ---- Subtitle loading ----
-  const { handleLoadSubtitle } = useSubtitleLoader(setCaptions);
+  const { handleLoadSubtitle, handleRegenerateSubtitle, handleClearSubtitleCache } =
+    useSubtitleLoader(setCaptions);
 
   // ---- Caption sync ----
   const { handleTimeUpdate, activeCaptionData, activeDisplay } =
@@ -245,6 +246,14 @@ export const PlayerPage = () => {
     handleLoadSubtitle(videoFileName);
   }, [handleLoadSubtitle, videoFileName]);
 
+  const handleRegenerate = useCallback(() => {
+    handleRegenerateSubtitle(videoFileName);
+  }, [handleRegenerateSubtitle, videoFileName]);
+
+  const handleClearCache = useCallback(() => {
+    handleClearSubtitleCache(videoFileName);
+  }, [handleClearSubtitleCache, videoFileName]);
+
   const handleOpenSettings = useCallback(() => {
     setSettingsDialogOpen((prev) => !prev);
   }, []);
@@ -281,7 +290,12 @@ export const PlayerPage = () => {
                 videoRef={videoRef}
                 onTimeUpdate={onTimeUpdate}
               >
-                {subtitleMaskVisible && <SubtitleMask />}
+                {subtitleMaskVisible && (
+                  <SubtitleMask
+                    activeDisplay={activeDisplay}
+                    isFullscreen={isFullscreen}
+                  />
+                )}
               </VideoPlayer>
               <VolumeOSD
                 volume={volumeFeedback.volume}
@@ -319,6 +333,8 @@ export const PlayerPage = () => {
               onSpeedChange={handleSpeedChange}
               onOpenFile={handleOpenFileWithReset}
               onLoadSubtitle={handleLoadSubtitleFile}
+              onRegenerateSubtitle={handleRegenerate}
+              onClearSubtitleCache={handleClearCache}
               onPrevCaption={goToPrevCaption}
               onNextCaption={goToNextCaption}
               onOpenSettings={handleOpenSettings}
@@ -391,6 +407,7 @@ export const PlayerPage = () => {
           anchorEl={wordTranslate.anchorEl}
           onOpenChange={wordTranslate.handleOpenChange}
           onClose={wordTranslate.handleClose}
+          tryRecoverAnchor={wordTranslate.tryRecoverAnchor}
         />
       </section>
     </Player.Provider>

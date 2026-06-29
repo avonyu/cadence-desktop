@@ -2,6 +2,39 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.6.6] - 2026-06-24
+
+### New Features
+
+- **Regenerate subtitles**: A new button in the subtitle sidebar re-runs AI processing on the current video's matched subtitle file, bypassing the cache to produce a fresh result.
+- **Clear subtitle cache**: A new button clears the cached subtitles for the current video and resets the on-screen captions.
+
+### Improvements
+
+- **More accurate subtitle timing**: The AI subtitle processor no longer merges or splits SRT entries. Every entry keeps its original boundaries and timestamps, and each line is translated in context, so subtitles stay aligned with the original timeline instead of drifting after merges.
+- **Subtitle mask overlay**: Added fullscreen support, smoother drag-and-resize behavior, refined resize constraints, and updated button styles (removed the unused top-left resize handle).
+- **More readable word lookup panel**: The popover is now wider and the word, phonetic, part-of-speech, definitions, and examples all use larger text for easier reading.
+
+### Internal
+
+- Subtitle cache entries now store the source subtitle file path, enabling the regenerate feature to re-read the original file.
+- Broadened the `fs:read-text-file` capability to allow reading subtitle files from any path (required by regenerate).
+- Rotated the auto-updater signing public key in `tauri.conf.json`.
+
+## [0.6.5] - 2026-06-22
+
+### Bug Fixes
+
+- **Reliable model list fetching**: Fetching the available DeepSeek model list now goes through the Rust backend (`tauri-plugin-http`) instead of a direct frontend request. This fixes the model list failing to load in packaged builds, where the production Content-Security-Policy blocked the frontend from reaching the API.
+
+### Improvements
+
+- **Request timeout & clearer errors**: The model list request now has a 15s timeout, and failures surface the real reason (e.g. invalid API key, rate limit, server error) in the error toast instead of a generic message.
+
+### Internal
+
+- Adjusted activation functions for commercial mode and added the `tauri-plugin-sql` dependency.
+
 ## [0.6.4] - 2026-06-21
 
 ### New Features

@@ -20,6 +20,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             deepseek::call_deepseek_api,
             deepseek::call_deepseek_dictionary,
+            deepseek::fetch_deepseek_models,
             tts::synthesize_edge_tts,
             ffmpeg::check_ffmpeg_tools,
             ffmpeg::detect_video_codecs,

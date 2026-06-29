@@ -81,6 +81,8 @@ export function useKeyboardShortcuts({
         return;
       }
 
+      if (isInput) return;
+
       switch (e.key) {
         case "ArrowLeft":
           e.preventDefault();
@@ -99,8 +101,6 @@ export function useKeyboardShortcuts({
           volDownRef.current();
           return;
       }
-
-      if (isInput) return;
 
       switch (e.key.toLowerCase()) {
         case "f":
