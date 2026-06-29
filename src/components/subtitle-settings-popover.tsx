@@ -10,7 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
-import { ArrowUpDown, Eye } from "lucide-react";
+import { ArrowUpDown, Eye, RefreshCw, Eraser } from "lucide-react";
 import { usePlayerStore, type BlurMode } from "@/stores/player-store";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,21 @@ const blurModeKeys: Record<BlurMode, string> = {
   all: "subtitle.blurAllLines",
 };
 
-export function SubtitleSettingsPopover() {
+interface SubtitleSettingsPopoverProps {
+  isAiProcessing: boolean;
+  videoSrc: string | null;
+  hasCaptions: boolean;
+  onRegenerateSubtitle: () => void;
+  onClearSubtitleCache: () => void;
+}
+
+export function SubtitleSettingsPopover({
+  isAiProcessing,
+  videoSrc,
+  hasCaptions,
+  onRegenerateSubtitle,
+  onClearSubtitleCache,
+}: SubtitleSettingsPopoverProps) {
   const blurMode = usePlayerStore((s) => s.blurMode);
   const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
   const cycleBlurMode = usePlayerStore((s) => s.cycleBlurMode);
@@ -71,6 +85,23 @@ export function SubtitleSettingsPopover() {
             <span className="text-xs text-muted-foreground">
               {t(blurModeKeys[blurMode])}
             </span>
+          </button>
+          <div className="my-1 border-t border-border" />
+          <button
+            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-muted-foreground transition hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
+            disabled={isAiProcessing || !videoSrc}
+            onClick={onRegenerateSubtitle}
+          >
+            <RefreshCw size={14} className="text-muted-foreground" />
+            {t("subtitle.regenerate")}
+          </button>
+          <button
+            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-muted-foreground transition hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
+            disabled={isAiProcessing || !videoSrc || !hasCaptions}
+            onClick={onClearSubtitleCache}
+          >
+            <Eraser size={14} className="text-muted-foreground" />
+            {t("subtitle.clearCache")}
           </button>
         </PopoverContent>
       </Popover>

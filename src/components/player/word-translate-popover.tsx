@@ -1,9 +1,9 @@
-import { useRef, useLayoutEffect, useState, useEffect, useCallback } from "react";
+import { useRef, useLayoutEffect, useEffect } from "react";
 import { Loader2, Volume2, Heart } from "lucide-react";
 import type { WordDefinition } from "@/lib/dictionary";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTranslation } from "react-i18next";
-import { invoke } from "@tauri-apps/api/core";
+import { useWordPronounce } from "@/hooks/use-word-pronounce";
 import { useFavoritesStore } from "@/stores/favorites-store";
 import {
   Popover,
@@ -34,8 +34,8 @@ export function WordTranslatePopover({
 }: WordTranslatePopoverProps) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLSpanElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [pronouncing, setPronouncing] = useState(false);
+  const { pronounce, pronouncingWord } = useWordPronounce();
+  const pronouncing = word ? pronouncingWord === word : false;
 
   const favorited = useFavoritesStore((s) =>
     word ? s.isFavorited(word) : false,
@@ -46,52 +46,6 @@ export function WordTranslatePopover({
   useEffect(() => {
     hydrateFavorites();
   }, [hydrateFavorites]);
-
-  const cleanupAudio = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      URL.revokeObjectURL(audioRef.current.src);
-      audioRef.current = null;
-    }
-  }, []);
-
-  useEffect(() => {
-    return cleanupAudio;
-  }, [cleanupAudio]);
-
-  const handlePronounce = useCallback(async () => {
-    if (!word || pronouncing) return;
-    setPronouncing(true);
-    cleanupAudio();
-    try {
-      const base64 = await invoke<string>("synthesize_edge_tts", {
-        text: word,
-      });
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-      }
-      const blob = new Blob([bytes], { type: "audio/mp3" });
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audio.onended = () => {
-        setPronouncing(false);
-      };
-      audio.onerror = () => {
-        setPronouncing(false);
-      };
-      await audio.play();
-    } catch {
-      const utterance = new SpeechSynthesisUtterance(word);
-      utterance.lang = "en-US";
-      utterance.rate = 0.8;
-      utterance.onend = () => setPronouncing(false);
-      utterance.onerror = () => setPronouncing(false);
-      speechSynthesis.speak(utterance);
-    }
-  }, [word, pronouncing, cleanupAudio]);
 
   // Close immediately when the anchor word leaves the DOM on any re-render
   // (e.g. navigating to the next caption replaces the subtitle text).
@@ -176,7 +130,7 @@ export function WordTranslatePopover({
               <button
                 type="button"
                 className="text-muted-foreground hover:text-foreground transition-colors shrink-0 disabled:opacity-50"
-                onClick={handlePronounce}
+                onClick={() => word && pronounce(word)}
                 disabled={pronouncing}
                 title="Pronounce"
               >
