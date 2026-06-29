@@ -2,6 +2,7 @@
 name = "cadence-desktop"
 version = "0.6.7"
 description = "Immersive bilingual subtitle video player for language learning"
+license = "GPL-3.0-or-later"
 authors = ["avonyu avon.yu@outlook.com"]
 edition = "2021"
 
