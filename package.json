@@ -1,7 +1,7 @@
 {
   "name": "cadence-desktop",
   "private": true,
-  "version": "0.6.7",
+  "version": "0.7.0",
   "license": "GPL-3.0-or-later",
   "type": "module",
   "scripts": {
@@ -16,7 +16,7 @@
     "test:watch": "vitest",
     "gen:codes": "bun run scripts/gen-codes.ts",
     "gen:latest-json": "bun run scripts/generate-latest-json.ts",
-    "download:ffmpeg": "bun run scripts/download-ffmpeg.ts",
+    "download:ffmpeg": "bun run scripts/download-ffmpeg.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.9",
