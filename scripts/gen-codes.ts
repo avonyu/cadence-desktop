@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 // gen-codes.ts — Generate activation codes for Cadence Desktop
 //
 // Reads CADENCE_ACTIVATION_SECRET and CADENCE_MAX_CODES from .env automatically.

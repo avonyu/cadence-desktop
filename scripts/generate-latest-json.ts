@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 // generate-latest-json.ts — Generate latest.json for Tauri updater
 //
 // Reads version from tauri.conf.json and signatures from bundle .sig files.
@@ -6,8 +7,7 @@
 // Usage:
 //   bun run scripts/generate-latest-json.ts [--out <FILE>] [--version <VER>] [--notes <NOTES>]
 
-import { readFile, writeFile } from "node:fs/promises";
-import { resolve, dirname } from "node:path";
+import { resolve } from "node:path";
 
 const REPO_OWNER = "avonyu";
 const REPO_NAME = "cadence-desktop";
@@ -26,12 +26,7 @@ interface LatestJson {
 }
 
 async function pathExists(p: string): Promise<boolean> {
-  try {
-    await readFile(p);
-    return true;
-  } catch {
-    return false;
-  }
+  return Bun.file(p).exists();
 }
 
 async function main() {
@@ -77,7 +72,7 @@ async function main() {
   const bundleDir = resolve(projectRoot, "src-tauri", "target", "release", "bundle");
 
   // Read version from tauri.conf.json
-  const confRaw = await readFile(tauriConfPath, "utf-8");
+  const confRaw = await Bun.file(tauriConfPath).text();
   const conf = JSON.parse(confRaw);
   const version = versionOverride || conf.version;
   const productName: string = conf.productName ?? "Cadence Desktop";
@@ -124,7 +119,7 @@ async function main() {
 
   for (const { key, sigPath, assetName } of platforms) {
     if (await pathExists(sigPath)) {
-      const signature = (await readFile(sigPath, "utf-8")).trim();
+      const signature = (await Bun.file(sigPath).text()).trim();
       const url = `${RELEASES_BASE}/v${version}/${assetName}`;
       platformsMap[key] = { signature, url };
       console.log(`  ✓ ${key}`);
@@ -146,7 +141,7 @@ async function main() {
   };
 
   const jsonStr = JSON.stringify(latestJson, null, 2) + "\n";
-  await writeFile(outFile, jsonStr, "utf-8");
+  await Bun.write(outFile, jsonStr);
 
   console.log(`\nGenerated ${outFile}`);
   console.log(`Version: ${version}`);
