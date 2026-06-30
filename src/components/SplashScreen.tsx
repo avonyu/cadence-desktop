@@ -16,7 +16,7 @@ export function SplashScreen({ visible }: SplashScreenProps) {
           transition={{ duration: 0.5 }}
           className="fixed inset-0 z-50 flex items-center justify-center gap-3 bg-background"
         >
-          <Loader2 className="size-6 animate-spin text-[var(--player-accent)]" />
+          <Loader2 className="size-6 animate-spin text-(--player-accent)" />
           <motion.h1
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}

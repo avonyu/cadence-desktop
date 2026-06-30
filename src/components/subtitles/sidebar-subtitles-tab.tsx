@@ -13,10 +13,7 @@ interface SidebarSubtitlesTabProps {
   onSeekToCaption: (caption: Caption) => void;
 }
 
-function getSidebarBlurClasses(
-  blurMode: BlurMode,
-  target: "text" | "translation",
-): string {
+function getSidebarBlurClasses(blurMode: BlurMode, target: "text" | "translation"): string {
   if (blurMode === "off") return "";
   if (blurMode === "primary" && target === "text") return "blur-sm";
   if (blurMode === "secondary" && target === "translation") return "blur-sm";
@@ -49,9 +46,7 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
   const isProgrammaticScroll = useRef(false);
 
   const getViewport = useCallback(() => {
-    return sidebarRef.current?.closest(
-      "[data-radix-scroll-area-viewport]",
-    ) as HTMLElement | null;
+    return sidebarRef.current?.closest("[data-radix-scroll-area-viewport]") as HTMLElement | null;
   }, []);
 
   // Detect user scroll (mouse wheel / trackpad) to cancel auto-follow.
@@ -86,8 +81,7 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
 
       const containerRect = viewport.getBoundingClientRect();
       const itemRect = activeItemRef.current.getBoundingClientRect();
-      const offset =
-        itemRect.top - containerRect.top - containerRect.height * 0.25;
+      const offset = itemRect.top - containerRect.top - containerRect.height * 0.25;
 
       viewport.scrollTo({
         top: viewport.scrollTop + offset,
@@ -126,13 +120,7 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
       setLastActiveCaption(index);
       onSeekToCaption(caption);
     },
-    [
-      onSeekToCaption,
-      setActiveCaption,
-      setLastActiveCaption,
-      setPendingNavigation,
-      setScrollTracking,
-    ],
+    [onSeekToCaption, setActiveCaption, setLastActiveCaption, setPendingNavigation, setScrollTracking],
   );
 
   const getDisplayText = (caption: Caption) => {
@@ -158,17 +146,15 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
                     ref={ref}
                     className={`group/item grid w-full grid-cols-[62px_1fr] items-start gap-1 rounded-md px-2 py-2 text-left transition ${
                       isActive
-                        ? "bg-accent text-[var(--player-accent)]"
+                        ? "bg-accent text-(--player-accent)"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                     key={`${caption.start}-${caption.text}`}
                   >
                     <button
                       onClick={() => handleCaptionClick(caption, index)}
-                      className={`text-sm font-bold text-center transition cursor-pointer hover:text-[var(--player-accent)] ${
-                        isActive
-                          ? "text-[var(--player-accent)]"
-                          : "text-muted-foreground"
+                      className={`text-sm font-bold text-center transition cursor-pointer hover:text-(--player-accent) ${
+                        isActive ? "text-(--player-accent)" : "text-muted-foreground"
                       }`}
                     >
                       {formatCaptionTime(caption.start)}
@@ -185,9 +171,7 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
                       <span
                         className={`mt-2 block text-sm leading-snug tracking-tight transition-[filter] duration-300 ${
                           isActive ? "text-foreground" : "text-muted-foreground"
-                        } ${
-                          getSidebarBlurClasses(blurMode, "translation") || ""
-                        } group-hover/item:blur-none`}
+                        } ${getSidebarBlurClasses(blurMode, "translation") || ""} group-hover/item:blur-none`}
                         dangerouslySetInnerHTML={{
                           __html: sanitizeSubtitleHtml(secondary),
                         }}
@@ -199,36 +183,32 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
             </div>
           ) : (
             <div className="flex h-full items-center justify-center">
-              <p className="text-sm text-muted-foreground">
-                {t("subtitle.noSubtitles")}
-              </p>
+              <p className="text-sm text-muted-foreground">{t("subtitle.noSubtitles")}</p>
             </div>
           )}
         </div>
       </ScrollArea>
 
       <AnimatePresence>
-        {!scrollTracking &&
-          captions.length > 0 &&
-          lastActiveCaption !== null && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 400, damping: 25 }}
-              className="absolute bottom-4 right-4 z-10"
+        {!scrollTracking && captions.length > 0 && lastActiveCaption !== null && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="absolute bottom-4 right-4 z-10"
+          >
+            <Button
+              size="icon"
+              className="size-10 rounded-full shadow-lg bg-(--player-accent)! text-white! hover:bg-(--player-accent-hover)!"
+              onClick={() => {
+                isProgrammaticScroll.current = true;
+                setScrollTracking(true);
+              }}
             >
-              <Button
-                size="icon"
-                className="size-10 rounded-full shadow-lg !bg-[var(--player-accent)] !text-white hover:!bg-[var(--player-accent-hover)]"
-                onClick={() => {
-                  isProgrammaticScroll.current = true;
-                  setScrollTracking(true);
-                }}
-              >
-                <RotateCw size={18} />
-              </Button>
-            </motion.div>
-          )}
+              <RotateCw size={18} />
+            </Button>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );

@@ -2,6 +2,49 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.1] - 2026-06-30
+
+### 🚀 New Features
+
+- **Settings dialog**: A new SettingsDialog with three tabs — **Basic** (general preferences), **AI Config** (API keys, models, activation codes), and **About** (version info, update check, download progress).
+- **Progress component**: New `Progress` UI component for visual feedback during update downloads.
+- **Enhanced subtitle processing**: The AI subtitle pipeline now supports JSON output and automatic subtitle format detection (`src-tauri/prompts/subtitle-processor.md`, `src/lib/ai-subtitle.ts`, `src/lib/subtitles.ts`).
+
+### ⚡ Improvements
+
+- **Subtitle mask**: Improved text wrapping behavior (`word-break`/`overflow-wrap`).
+- **Subtitle settings popover**: Refactored for better UI and interaction.
+- **Sidebar subtitles tab**: Refactored for improved UI and functionality.
+
+### 🧹 Internal
+
+- Bumped dependencies and migrated build scripts to Bun APIs (`scripts/download-ffmpeg.ts`, `scripts/generate-latest-json.ts`).
+- Removed stale `prototype/index.html` (~2,490 lines of legacy code).
+
+## [0.7.0] - 2026-06-29
+
+### New Features
+
+- **Sidebar favorites tab**: The subtitle sidebar is now split into "Subtitles" and "Favorites" tabs. The favorites tab supports keyword search, sort by recency / oldest / alphabetical, expand to view translation details, and one-click word pronunciation.
+- **Word pronunciation**: Added a speak button in the favorites tab and the word lookup popover to pronounce words aloud.
+
+### Bug Fixes
+
+- **Lookup panel stays open on bookmark**: The word translation popover now remains visible after clicking the favorite button, so you can continue reading the definition.
+
+### Style
+
+- Removed the unnecessary border from the subtitle mask overlay for a cleaner look.
+
+### Changes
+
+- **License**: Changed from MIT to GPL v3.
+- **Updater key rotation**: Rotated the auto-updater signing public key. Previous versions will not receive automatic updates — manual upgrade to this version is required.
+
+### Internal
+
+- Removed `package-lock.json` (project uses bun exclusively for dependency management).
+
 ## [0.6.6] - 2026-06-24
 
 ### New Features

@@ -1,6 +1,6 @@
+/// <reference types="bun" />
 import { join } from "node:path";
-import { mkdirSync, existsSync, readdirSync, statSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { mkdirSync, existsSync, readdirSync, statSync, rmSync } from "node:fs";
 
 const BIN_DIR = join(import.meta.dirname, "..", "src-tauri", "binaries");
 const EXTRACT_DIR = join(BIN_DIR, "_extract");
@@ -44,9 +44,9 @@ function alreadyDownloaded(): boolean {
 }
 
 function run(cmd: string, args: string[], cwd?: string): void {
-  const result = spawnSync(cmd, args, { cwd, stdio: "inherit", shell: true });
-  if (result.status !== 0 && result.status !== null) {
-    throw new Error(`${cmd} ${args.join(" ")} exited with ${result.status}`);
+  const result = Bun.spawnSync([cmd, ...args], { cwd, stdio: ["inherit", "inherit", "inherit"] });
+  if (result.exitCode !== 0) {
+    throw new Error(`${cmd} ${args.join(" ")} exited with ${result.exitCode}`);
   }
 }
 
@@ -61,7 +61,9 @@ function findFiles(dir: string, names: string[]): Map<string, string> {
       if (names.some((n) => n.toLowerCase() === name)) {
         found.set(entry, full);
       }
-      try { if (statSync(full).isDirectory()) stack.push(full); } catch {}
+      try {
+        if (statSync(full).isDirectory()) stack.push(full);
+      } catch {}
     }
   }
   return found;
@@ -101,10 +103,7 @@ async function main() {
 
   if (info.archive.endsWith(".zip")) {
     if (process.platform === "win32") {
-      run("powershell", [
-        "-Command",
-        `Expand-Archive -Path '${archivePath}' -DestinationPath '${EXTRACT_DIR}' -Force`,
-      ]);
+      run("powershell", ["-Command", `Expand-Archive -Path '${archivePath}' -DestinationPath '${EXTRACT_DIR}' -Force`]);
     } else {
       run("unzip", ["-o", archivePath, "-d", EXTRACT_DIR]);
     }
@@ -130,8 +129,9 @@ async function main() {
 
   // Cleanup
   Bun.file(archivePath).delete?.();
-  const { rmSync } = await import("node:fs");
-  try { rmSync(EXTRACT_DIR, { recursive: true, force: true }); } catch {}
+  try {
+    rmSync(EXTRACT_DIR, { recursive: true, force: true });
+  } catch {}
 
   console.log("[download-ffmpeg] Done.");
 }

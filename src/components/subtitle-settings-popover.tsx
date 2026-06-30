@@ -55,17 +55,19 @@ export function SubtitleSettingsPopover({
                 </Button>
               </PopoverTrigger>
             </TooltipTrigger>
-            <TooltipContent>{t("subtitle.subtitleSettings")} (B / T)</TooltipContent>
+            <TooltipContent>
+              {t("subtitle.subtitleSettings")} (B / T)
+            </TooltipContent>
           </Tooltip>
         </TooltipProvider>
         <PopoverContent
           side="top"
           align="center"
-          className="w-[220px] rounded-[10px] p-1.5"
+          className="w-55 rounded-[10px] p-1.5"
         >
           <div className="flex items-center justify-between rounded-md px-2.5 py-2 hover:bg-accent">
-            <span className="flex items-center gap-2 text-[13px] text-muted-foreground">
-              <ArrowUpDown size={14} className="text-muted-foreground" />
+            <span className="flex items-center gap-2 text-[13px]">
+              <ArrowUpDown size={14} />
               {t("subtitle.swapPosition")}
             </span>
             <Switch
@@ -75,32 +77,30 @@ export function SubtitleSettingsPopover({
             />
           </div>
           <button
-            className="flex w-full items-center justify-between rounded-md px-2.5 py-2 text-[13px] text-muted-foreground transition hover:bg-accent"
+            className="flex w-full items-center justify-between rounded-md px-2.5 py-2 text-[13px] transition hover:bg-accent"
             onClick={cycleBlurMode}
           >
             <span className="flex items-center gap-2">
-              <Eye size={14} className="text-muted-foreground" />
+              <Eye size={14} />
               {t("subtitle.blur")}
             </span>
-            <span className="text-xs text-muted-foreground">
-              {t(blurModeKeys[blurMode])}
-            </span>
+            <span className="text-xs">{t(blurModeKeys[blurMode])}</span>
           </button>
           <div className="my-1 border-t border-border" />
           <button
-            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-muted-foreground transition hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
+            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-[13px] transition hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
             disabled={isAiProcessing || !videoSrc}
             onClick={onRegenerateSubtitle}
           >
-            <RefreshCw size={14} className="text-muted-foreground" />
+            <RefreshCw size={14} />
             {t("subtitle.regenerate")}
           </button>
           <button
-            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-[13px] text-muted-foreground transition hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
+            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-[13px] transition hover:bg-accent disabled:opacity-50 disabled:pointer-events-none"
             disabled={isAiProcessing || !videoSrc || !hasCaptions}
             onClick={onClearSubtitleCache}
           >
-            <Eraser size={14} className="text-muted-foreground" />
+            <Eraser size={14} />
             {t("subtitle.clearCache")}
           </button>
         </PopoverContent>

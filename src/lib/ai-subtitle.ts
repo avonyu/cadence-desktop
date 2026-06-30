@@ -1,4 +1,4 @@
-import { type Caption, parseSubtitles } from "./subtitles";
+import { type Caption, parseSubtitles, sanitizeSubtitleHtml } from "./subtitles";
 import { invoke } from "@tauri-apps/api/core";
 
 const DB_NAME = "cadence-subtitles";
@@ -150,30 +150,48 @@ export async function clearCachedSubtitleForVideo(
   });
 }
 
-/**
- * Pre-process SRT content for AI:
- * - Merge multi-line text WITHIN a single timestamp block into one line.
- * - Keep every entry independent with its ORIGINAL timestamp.
- *   Cross-entry merging (split sentences) is intentionally NOT done here;
- *   that decision is delegated to the AI per the system prompt
- *   (default: do not merge; merge only when translation requires it; never merge lyrics).
- * ASS content is left unchanged (it already uses \N for line breaks).
- */
-export function preprocessSrtContent(content: string): string {
-  const format = content.trim().toLowerCase();
-  if (format.startsWith("[script info]") || format.startsWith("[v4") || /^Dialogue:/m.test(content)) {
-    return content;
-  }
+// ─── JSON schema types ──────────────────────────────────────────────────────
 
+export interface SubtitleInputEntry {
+  index: number;
+  timestamp: string;
+  text: string;
+}
+
+interface SubtitleJSONEntry {
+  i: number;
+  s: string;
+  t: string | null;
+  st?: "i" | "b" | "u";
+  sh: boolean;
+}
+
+interface SubtitleJSON {
+  f: "srt" | "ass";
+  e: SubtitleJSONEntry[];
+}
+
+// ─── Preprocessing: extract entries (timestamps stay in memory) ─────────────
+
+function stripAssStyleTags(text: string): string {
+  return text.replace(/\{[^}]*\}/g, "").trim();
+}
+
+export function preprocessSubtitleEntries(content: string): SubtitleInputEntry[] {
+  const lower = content.trim().toLowerCase();
+  const isAss = lower.startsWith("[script info]") || lower.startsWith("[v4") || /^Dialogue:/m.test(content);
+
+  if (isAss) {
+    return preprocessAssEntries(content);
+  }
+  return preprocessSrtEntries(content);
+}
+
+function preprocessSrtEntries(content: string): SubtitleInputEntry[] {
   const normalized = content.trim().replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   const blocks = normalized.split(/\n{2,}/);
-
-  interface SrtEntry {
-    timestamp: string;
-    text: string;
-  }
-
-  const entries: SrtEntry[] = [];
+  const entries: SubtitleInputEntry[] = [];
+  let index = 0;
 
   for (const block of blocks) {
     const lines = block.trim().split("\n");
@@ -192,28 +210,204 @@ export function preprocessSrtContent(content: string): string {
     }
 
     if (timestamp && textLines.length > 0) {
-      entries.push({ timestamp, text: textLines.join(" ") });
+      index++;
+      entries.push({ index, timestamp, text: textLines.join(" ") });
     }
   }
 
-  if (entries.length === 0) return normalized;
-
-  return entries
-    .map((entry, i) => `${i + 1}\n${entry.timestamp}\n${entry.text}`)
-    .join("\n\n");
+  return entries;
 }
+
+function preprocessAssEntries(content: string): SubtitleInputEntry[] {
+  const lines = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  const entries: SubtitleInputEntry[] = [];
+  let index = 0;
+
+  for (const line of lines) {
+    if (!line.startsWith("Dialogue:")) continue;
+
+    const contentPart = line.slice("Dialogue:".length).trim();
+
+    const commaIndices: number[] = [];
+    for (let i = 0; i < contentPart.length && commaIndices.length < 9; i++) {
+      if (contentPart[i] === ",") commaIndices.push(i);
+    }
+    if (commaIndices.length < 9) continue;
+
+    const fields: string[] = [];
+    let prevIdx = 0;
+    for (const idx of commaIndices) {
+      fields.push(contentPart.slice(prevIdx, idx));
+      prevIdx = idx + 1;
+    }
+
+    const rawText = stripAssStyleTags(contentPart.slice(prevIdx).trim());
+    if (!rawText) continue;
+
+    const timestamp = `${fields[1]} --> ${fields[2]}`;
+
+    // Merge \N / \n line breaks into a single line joined by spaces
+    const text = rawText
+      .split(/\\N|\\n/)
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .join(" ");
+
+    if (!text) continue;
+
+    index++;
+    entries.push({ index, timestamp, text });
+  }
+
+  return entries;
+}
+
+/**
+ * Build a compact numbered list for the AI.
+ * Only sends index + text — timestamps stay in memory.
+ */
+export function buildEntriesForAI(entries: SubtitleInputEntry[]): string {
+  return entries.map((e) => `${e.index}: ${e.text}`).join("\n");
+}
+
+// ─── JSON parsing & assembly ────────────────────────────────────────────────
+
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
+
+function timestampToSeconds(timestamp: string): number {
+  let match = timestamp.trim().match(/(\d+):(\d{2}):(\d{2})([,.](\d+))?/);
+  if (match) {
+    const hours = parseInt(match[1], 10);
+    const mins = parseInt(match[2], 10);
+    const secs = parseInt(match[3], 10);
+    let frac = 0;
+    if (match[5]) frac = parseInt(match[5].padEnd(3, "0").slice(0, 3), 10);
+    return hours * 3600 + mins * 60 + secs + frac / 1000;
+  }
+  match = timestamp.trim().match(/(\d+):(\d{2})([,.](\d+))?/);
+  if (match) {
+    const mins = parseInt(match[1], 10);
+    const secs = parseInt(match[2], 10);
+    let frac = 0;
+    if (match[4]) frac = parseInt(match[4].padEnd(3, "0").slice(0, 3), 10);
+    return mins * 60 + secs + frac / 1000;
+  }
+  return 0;
+}
+
+function applyStyle(text: string, style: SubtitleJSONEntry["st"]): string {
+  if (!text || !style) return text;
+  return `<${style}>${text}</${style}>`;
+}
+
+/**
+ * Parse AI JSON response and merge with input entries (which hold timestamps).
+ */
+function parseSubtitleJSON(
+  json: SubtitleJSON,
+  inputEntries: SubtitleInputEntry[],
+): Caption[] {
+  const entryMap = new Map(inputEntries.map((e) => [e.index, e]));
+  const captions: Caption[] = [];
+
+  for (const je of json.e) {
+    if (!je.sh) continue;
+
+    const inputEntry = entryMap.get(je.i);
+    if (!inputEntry) {
+      console.warn("[ai-subtitle] parseSubtitleJSON: no input entry for index", je.i);
+      continue;
+    }
+
+    const [startStr, endStr] = inputEntry.timestamp.split("-->").map((s) => s.trim());
+    const start = timestampToSeconds(startStr);
+    const end = endStr ? timestampToSeconds(endStr) : start + 2;
+
+    const styledSource = applyStyle(je.s, je.st);
+    const styledTranslation = applyStyle(je.t ?? "", je.st);
+
+    captions.push({
+      time: formatTime(start),
+      start,
+      end,
+      text: styledSource,
+      translation: styledTranslation,
+      textHtml: sanitizeSubtitleHtml(styledSource),
+      translationHtml: sanitizeSubtitleHtml(styledTranslation),
+    });
+  }
+
+  captions.sort((a, b) => a.start - b.start);
+  return captions;
+}
+
+/**
+ * Attempt to parse AI response as JSON. Returns null if parsing fails
+ * (caller should fall back to legacy text parsing).
+ */
+function tryParseJSONResponse(raw: string): SubtitleJSON | null {
+  try {
+    // Strip possible markdown fences
+    const cleaned = raw.trim().replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    let jsonStr = cleaned;
+
+    const fenceStart = cleaned.indexOf("```");
+    if (fenceStart !== -1) {
+      const afterFence = cleaned.slice(fenceStart + 3);
+      const nlIdx = afterFence.indexOf("\n");
+      const bodyStart = nlIdx !== -1 ? afterFence.slice(nlIdx + 1) : afterFence;
+      const fenceEnd = bodyStart.lastIndexOf("```");
+      jsonStr = fenceEnd !== -1 ? bodyStart.slice(0, fenceEnd) : bodyStart;
+    }
+
+    const json = JSON.parse(jsonStr) as SubtitleJSON;
+
+    if (!json.f || !Array.isArray(json.e)) {
+      console.warn("[ai-subtitle] JSON parse: missing f or e fields");
+      return null;
+    }
+    if (json.f !== "srt" && json.f !== "ass") {
+      console.warn("[ai-subtitle] JSON parse: invalid format", json.f);
+      return null;
+    }
+
+    for (const x of json.e) {
+      if (typeof x.i !== "number") { console.warn("[ai-subtitle] JSON parse: entry has invalid i (expected number)"); return null; }
+      if (typeof x.s !== "string") { console.warn("[ai-subtitle] JSON parse: entry has invalid s (expected string)"); return null; }
+      if (x.t !== null && typeof x.t !== "string") { console.warn("[ai-subtitle] JSON parse: entry has invalid t"); return null; }
+      if (typeof x.sh !== "boolean") { console.warn("[ai-subtitle] JSON parse: entry has invalid sh (expected boolean)"); return null; }
+      if (x.st !== undefined && !["i", "b", "u"].includes(x.st)) { console.warn("[ai-subtitle] JSON parse: entry has invalid st:", x.st); return null; }
+    }
+
+    return json;
+  } catch (e) {
+    console.warn("[ai-subtitle] JSON parse failed:", e instanceof Error ? e.message : e);
+    console.warn("[ai-subtitle] raw response length:", raw.length);
+    return null;
+  }
+}
+
+// ─── AI invocation & main processing ────────────────────────────────────────
+
+const CHUNK_SIZE = 300;
 
 export async function processSubtitleWithAI(
   content: string,
+  format: string,
   apiKey: string,
   model: string,
 ): Promise<string> {
   const response = await invoke<string>("call_deepseek_api", {
     content,
+    format,
     apiKey,
     model,
   });
-  console.debug("AI-processed subtitle:", response);
+  console.debug("[ai-subtitle] AI response length:", response.length);
   return response;
 }
 
@@ -229,8 +423,17 @@ export async function processSubtitle(
     throw new Error("DeepSeek API key is required");
   }
 
-  const processed = preprocessSrtContent(content);
-  const hash = await hashContent(processed);
+  // Extract entries (timestamps preserved in memory)
+  const entries = preprocessSubtitleEntries(content);
+  if (entries.length === 0) {
+    throw new Error("No subtitle entries found in the file");
+  }
+
+  console.debug("[ai-subtitle] extracted", entries.length, "entries");
+
+  // Build full input for hash (dedup uses full content)
+  const fullAiInput = buildEntriesForAI(entries);
+  const hash = await hashContent(fullAiInput);
   console.debug("[ai-subtitle] processSubtitle hash:", hash, "force:", force);
 
   const normalizedName = videoFileName
@@ -250,20 +453,97 @@ export async function processSubtitle(
     console.debug("[ai-subtitle] processSubtitle SKIP dedup: videoFileName is null");
   }
 
-  const processedText = await processSubtitleWithAI(processed, apiKey, model);
+  // Detect format from content for the AI hint
+  const lower = content.trim().toLowerCase();
+  const detectedFormat = lower.startsWith("[script info]") || lower.startsWith("[v4") || /^Dialogue:/m.test(content)
+    ? "ass"
+    : "srt";
 
-  const captions = parseSubtitles(processedText);
+  const aiStart = performance.now();
+  const captions = entries.length <= CHUNK_SIZE
+    ? await processOneChunk(entries, detectedFormat, apiKey, model)
+    : await processChunks(entries, detectedFormat, apiKey, model);
+  console.debug("[ai-subtitle] total AI processing time:", (performance.now() - aiStart).toFixed(0), "ms, result:", captions.length, "captions");
+
+  await setCachedSubtitle(hash, videoFileName, captions, subtitlePath);
+  return captions;
+}
+
+async function processOneChunk(
+  entries: SubtitleInputEntry[],
+  format: string,
+  apiKey: string,
+  model: string,
+): Promise<Caption[]> {
+  const start = performance.now();
+  const aiInput = buildEntriesForAI(entries);
+  const rawResponse = await processSubtitleWithAI(aiInput, format, apiKey, model);
+  const captions = parseAIResponse(rawResponse, entries);
+  console.debug("[ai-subtitle] processed", entries.length, "entries in", (performance.now() - start).toFixed(0), "ms");
+  return captions;
+}
+
+async function processChunks(
+  entries: SubtitleInputEntry[],
+  format: string,
+  apiKey: string,
+  model: string,
+): Promise<Caption[]> {
+  const chunks: SubtitleInputEntry[][] = [];
+  for (let i = 0; i < entries.length; i += CHUNK_SIZE) {
+    chunks.push(entries.slice(i, i + CHUNK_SIZE));
+  }
+
+  console.debug("[ai-subtitle] processing", chunks.length, "chunks in parallel (up to", CHUNK_SIZE, "entries each)");
+
+  const chunkStart = performance.now();
+  const results = await Promise.all(
+    chunks.map((chunk) =>
+      processSubtitleWithAI(buildEntriesForAI(chunk), format, apiKey, model)
+        .then((raw) => parseAIResponse(raw, chunk)),
+    ),
+  );
+  console.debug("[ai-subtitle] all", chunks.length, "chunks completed in", (performance.now() - chunkStart).toFixed(0), "ms");
+
+  const allCaptions = results.flat();
+  allCaptions.sort((a, b) => a.start - b.start);
+  return allCaptions;
+}
+
+function parseAIResponse(rawResponse: string, entries: SubtitleInputEntry[]): Caption[] {
+  // Try JSON parsing first
+  const json = tryParseJSONResponse(rawResponse);
+  if (json) {
+    console.debug("[ai-subtitle] JSON parsed successfully, format:", json.f, "showable entries:", json.e.filter((e) => e.sh).length);
+    const captions = parseSubtitleJSON(json, entries);
+
+    if (captions.length === 0) {
+      throw new Error("AI returned no showable entries");
+    }
+
+    return captions;
+  }
+
+  // Fallback: parse as legacy text format
+  console.debug("[ai-subtitle] JSON parse failed, falling back to legacy text parsing");
+  const captions = parseSubtitles(rawResponse);
   if (captions.length === 0) {
     const preview =
-      processedText.length > 200
-        ? processedText.slice(0, 200) + "..."
-        : processedText;
+      rawResponse.length > 200
+        ? rawResponse.slice(0, 200) + "..."
+        : rawResponse;
     throw new Error(
       `AI-processed subtitles could not be parsed. Response preview: "${preview}"`,
     );
   }
 
-  await setCachedSubtitle(hash, videoFileName, captions, subtitlePath);
-
   return captions;
+}
+
+// Re-export preprocessSrtContent as a backward-compat alias for existing callers
+export function preprocessSrtContent(content: string): string {
+  const entries = preprocessSubtitleEntries(content);
+  return entries
+    .map((entry) => `${entry.index}\n${entry.timestamp}\n${entry.text}`)
+    .join("\n\n");
 }

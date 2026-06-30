@@ -202,7 +202,7 @@ export const SubtitleMask = memo(function SubtitleMask({
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-[1vh] px-[2%] text-center overflow-hidden pointer-events-none select-none">
             {activeDisplay.primary && (
               <p
-                className="text-[2.6vh] font-semibold leading-[1.3] text-white break-words"
+                className="text-[2.6vh] font-semibold leading-[1.3] text-white wrap-break-word"
                 dangerouslySetInnerHTML={{
                   __html: sanitizeSubtitleHtml(activeDisplay.primary),
                 }}
@@ -210,7 +210,7 @@ export const SubtitleMask = memo(function SubtitleMask({
             )}
             {activeDisplay.secondary && (
               <p
-                className="text-[2.2vh] leading-[1.3] text-white/75 break-words"
+                className="text-[2.2vh] leading-[1.3] text-white/75 wrap-break-word"
                 dangerouslySetInnerHTML={{
                   __html: sanitizeSubtitleHtml(activeDisplay.secondary),
                 }}

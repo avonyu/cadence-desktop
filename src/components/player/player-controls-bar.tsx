@@ -30,11 +30,7 @@ import { SubtitleSettingsPopover } from "@/components/subtitle-settings-popover"
 import { usePlayerStore } from "@/stores/player-store";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface PlayerControlsBarProps {
   videoSrc: string | null;
@@ -168,28 +164,16 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
         <ShadcnTooltipProvider>
           <ShadcnTooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                disabled={!videoSrc}
-                onClick={onTogglePlay}
-              >
+              <Button variant="ghost" size="icon-sm" disabled={!videoSrc} onClick={onTogglePlay}>
                 {isPlaying ? <Pause size={18} /> : <Play size={18} />}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              {isPlaying ? t("player.pause") : t("player.play")} (Space)
-            </TooltipContent>
+            <TooltipContent>{isPlaying ? t("player.pause") : t("player.play")} (Space)</TooltipContent>
           </ShadcnTooltip>
 
           <ShadcnTooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                disabled={captions.length === 0}
-                onClick={onPrevCaption}
-              >
+              <Button variant="ghost" size="icon-sm" disabled={captions.length === 0} onClick={onPrevCaption}>
                 <SkipBack size={18} />
               </Button>
             </TooltipTrigger>
@@ -198,12 +182,7 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
 
           <ShadcnTooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                disabled={captions.length === 0}
-                onClick={onNextCaption}
-              >
+              <Button variant="ghost" size="icon-sm" disabled={captions.length === 0} onClick={onNextCaption}>
                 <SkipForward size={18} />
               </Button>
             </TooltipTrigger>
@@ -222,32 +201,22 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
                 <Repeat1 size={18} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              {t("player.singleSentenceLoop")} (L)
-            </TooltipContent>
+            <TooltipContent>{t("player.singleSentenceLoop")} (L)</TooltipContent>
           </ShadcnTooltip>
         </ShadcnTooltipProvider>
 
         <span className="text-xs text-muted-foreground font-mono tabular-nums select-none ml-1">
           {formatTime(currentVideoTime)}
         </span>
-        <span className="text-xs text-muted-foreground font-mono tabular-nums select-none mx-0.5">
-          /
-        </span>
-        <span className="text-xs text-muted-foreground font-mono tabular-nums select-none">
-          {formatTime(duration)}
-        </span>
+        <span className="text-xs text-muted-foreground font-mono tabular-nums select-none mx-0.5">/</span>
+        <span className="text-xs text-muted-foreground font-mono tabular-nums select-none">{formatTime(duration)}</span>
 
         <ShadcnTooltipProvider>
           <Popover>
             <ShadcnTooltip>
               <TooltipTrigger asChild>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="text-xs font-mono w-auto px-1.5"
-                  >
+                  <Button variant="ghost" size="icon-sm" className="text-xs font-mono w-auto px-1.5">
                     {playbackRate}x
                   </Button>
                 </PopoverTrigger>
@@ -262,8 +231,7 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
                     type="button"
                     className={cn(
                       "w-full rounded px-2 py-1 text-xs text-left hover:bg-accent transition-colors",
-                      playbackRate === speed &&
-                        "text-(--player-accent) font-medium",
+                      playbackRate === speed && "text-(--player-accent) font-medium",
                     )}
                     onClick={() => onSpeedChange(speed)}
                   >
@@ -320,19 +288,12 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
 
           <ShadcnTooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={onToggleFullscreen}
-              >
+              <Button variant="ghost" size="icon-sm" onClick={onToggleFullscreen}>
                 {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {isFullscreen
-                ? t("player.exitFullscreen")
-                : t("player.enterFullscreen")}{" "}
-              (F)
+              {isFullscreen ? t("player.exitFullscreen") : t("player.enterFullscreen")} (F)
             </TooltipContent>
           </ShadcnTooltip>
         </ShadcnTooltipProvider>
@@ -358,19 +319,11 @@ export const PlayerControlsBar = memo(function PlayerControlsBar({
                 disabled={isAiProcessing || !videoSrc}
                 onClick={onLoadSubtitle}
               >
-                {isAiProcessing ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : (
-                  <Subtitles size={18} />
-                )}
+                {isAiProcessing ? <Loader2 size={18} className="animate-spin" /> : <Subtitles size={18} />}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {isAiProcessing
-                ? t("ai.processing")
-                : !videoSrc
-                  ? t("ai.noVideo")
-                  : t("subtitle.loadSubtitle")}
+              {isAiProcessing ? t("ai.processing") : !videoSrc ? t("ai.noVideo") : t("subtitle.loadSubtitle")}
             </TooltipContent>
           </ShadcnTooltip>
 
