@@ -2,6 +2,30 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.0] - 2026-06-29
+
+### New Features
+
+- **Sidebar favorites tab**: The subtitle sidebar is now split into "Subtitles" and "Favorites" tabs. The favorites tab supports keyword search, sort by recency / oldest / alphabetical, expand to view translation details, and one-click word pronunciation.
+- **Word pronunciation**: Added a speak button in the favorites tab and the word lookup popover to pronounce words aloud.
+
+### Bug Fixes
+
+- **Lookup panel stays open on bookmark**: The word translation popover now remains visible after clicking the favorite button, so you can continue reading the definition.
+
+### Style
+
+- Removed the unnecessary border from the subtitle mask overlay for a cleaner look.
+
+### Changes
+
+- **License**: Changed from MIT to GPL v3.
+- **Updater key rotation**: Rotated the auto-updater signing public key. Previous versions will not receive automatic updates — manual upgrade to this version is required.
+
+### Internal
+
+- Removed `package-lock.json` (project uses bun exclusively for dependency management).
+
 ## [0.6.6] - 2026-06-24
 
 ### New Features
