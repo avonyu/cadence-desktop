@@ -4,7 +4,7 @@ import { WordTranslatePopover } from "@/components/player/word-translate-popover
 import { CaptionsDisplay } from "@/components/player/captions-display";
 import { CodecInfoBar } from "@/components/player/codec-info-bar";
 import { PlayerControlsBar } from "@/components/player/player-controls-bar";
-import { SettingsDialog } from "@/components/settings-dialog";
+import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { UsageLimitBanner } from "@/components/usage-limit-banner";
 import { SubtitlesSidebar } from "@/components/subtitles/subtitles-sidebar";
 import { Resizable } from "re-resizable";
@@ -28,12 +28,7 @@ import { cn } from "@/lib/utils";
 import { toggleMediaPlayback } from "@/lib/media-playback";
 import { SPEEDS } from "@/lib/player-constants";
 import { Gamepad2 } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTranslation } from "react-i18next";
 
 export const PlayerPage = () => {
@@ -65,35 +60,23 @@ export const PlayerPage = () => {
   const isTranscoded = videoSrc?.includes("_transcoded.mp4") ?? false;
 
   // ---- Transcode ----
-  const {
-    transcodeState,
-    transcodeProgress,
-    handleTranscodeAudio,
-    handleCancelTranscode,
-    resetTranscode,
-  } = useTranscode(setVideoSrc, setCodecInfo, videoFilePathRef, videoRef);
+  const { transcodeState, transcodeProgress, handleTranscodeAudio, handleCancelTranscode, resetTranscode } =
+    useTranscode(setVideoSrc, setCodecInfo, videoFilePathRef, videoRef);
 
   // ---- Subtitle loading ----
-  const { handleLoadSubtitle, handleRegenerateSubtitle, handleClearSubtitleCache } =
-    useSubtitleLoader(setCaptions);
+  const { handleLoadSubtitle, handleRegenerateSubtitle, handleClearSubtitleCache } = useSubtitleLoader(setCaptions);
 
   // ---- Caption sync ----
-  const { handleTimeUpdate, activeCaptionData, activeDisplay } =
-    useCaptionSync(captions);
+  const { handleTimeUpdate, activeCaptionData, activeDisplay } = useCaptionSync(captions);
 
   // ---- Caption navigation ----
-  const { goToPrevCaption, goToNextCaption, handleSeekToCaption } =
-    useCaptionNavigation(captions, videoRef);
+  const { goToPrevCaption, goToNextCaption, handleSeekToCaption } = useCaptionNavigation(captions, videoRef);
 
   // ---- Video element events ----
-  const {
-    currentVideoTime,
-    setCurrentVideoTime,
-    duration,
-    isPlaying,
-    playbackRate,
-    setIsPlaying,
-  } = useVideoEvents(videoRef, videoSrc);
+  const { currentVideoTime, setCurrentVideoTime, duration, isPlaying, playbackRate, setIsPlaying } = useVideoEvents(
+    videoRef,
+    videoSrc,
+  );
 
   // ---- Store ----
   const sidebarOpen = usePlayerStore((s) => s.sidebarOpen);
@@ -106,9 +89,7 @@ export const PlayerPage = () => {
   const cycleBlurMode = usePlayerStore((s) => s.cycleBlurMode);
   const toggleSwap = usePlayerStore((s) => s.toggleSwap);
   const singleSentenceLoop = usePlayerStore((s) => s.singleSentenceLoop);
-  const toggleSingleSentenceLoop = usePlayerStore(
-    (s) => s.toggleSingleSentenceLoop,
-  );
+  const toggleSingleSentenceLoop = usePlayerStore((s) => s.toggleSingleSentenceLoop);
 
   // ---- Single sentence loop ----
   const handleLoopCheck = useSingleSentenceLoop(videoRef, captions);
@@ -127,8 +108,7 @@ export const PlayerPage = () => {
   }, [hydrateActivation]);
 
   // ---- Derived state ----
-  const isAiProcessing =
-    aiProcessing === "processing" || aiProcessing === "loading";
+  const isAiProcessing = aiProcessing === "processing" || aiProcessing === "loading";
 
   // ---- Fullscreen ----
   const isFullscreen = useFullscreen();
@@ -203,16 +183,14 @@ export const PlayerPage = () => {
     const video = videoRef.current;
     if (!video) return;
     const idx = SPEEDS.indexOf(video.playbackRate);
-    video.playbackRate =
-      idx === -1 ? 1 : SPEEDS[(idx + 1) % SPEEDS.length];
+    video.playbackRate = idx === -1 ? 1 : SPEEDS[(idx + 1) % SPEEDS.length];
   }, [videoRef]);
 
   const handleSpeedDown = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
     const idx = SPEEDS.indexOf(video.playbackRate);
-    video.playbackRate =
-      idx === -1 ? 1 : SPEEDS[(idx - 1 + SPEEDS.length) % SPEEDS.length];
+    video.playbackRate = idx === -1 ? 1 : SPEEDS[(idx - 1 + SPEEDS.length) % SPEEDS.length];
   }, [videoRef]);
 
   // ---- Keyboard shortcuts ----
@@ -278,30 +256,12 @@ export const PlayerPage = () => {
     <Player.Provider>
       <section className="flex overflow-hidden h-screen bg-background text-foreground">
         <main className="relative flex flex-col min-h-0 flex-1 min-w-0 border-r border-border bg-card">
-          <div
-            className={cn(
-              "flex-1 px-6 pt-6 pb-0",
-              "flex flex-col min-h-0 items-center h-full",
-            )}
-          >
+          <div className={cn("flex-1 px-6 pt-6 pb-0", "flex flex-col min-h-0 items-center h-full")}>
             <div className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden">
-              <VideoPlayer
-                src={videoSrc}
-                videoRef={videoRef}
-                onTimeUpdate={onTimeUpdate}
-              >
-                {subtitleMaskVisible && (
-                  <SubtitleMask
-                    activeDisplay={activeDisplay}
-                    isFullscreen={isFullscreen}
-                  />
-                )}
+              <VideoPlayer src={videoSrc} videoRef={videoRef} onTimeUpdate={onTimeUpdate}>
+                {subtitleMaskVisible && <SubtitleMask activeDisplay={activeDisplay} isFullscreen={isFullscreen} />}
               </VideoPlayer>
-              <VolumeOSD
-                volume={volumeFeedback.volume}
-                muted={volumeFeedback.muted}
-                visible={volumeFeedback.visible}
-              />
+              <VolumeOSD volume={volumeFeedback.volume} muted={volumeFeedback.muted} visible={volumeFeedback.visible} />
             </div>
 
             <CaptionsDisplay
@@ -348,10 +308,7 @@ export const PlayerPage = () => {
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Gamepad2
-                        size={16}
-                        className="text-(--player-accent) pointer-events-auto mt-0.5"
-                      />
+                      <Gamepad2 size={16} className="text-(--player-accent) pointer-events-auto mt-0.5" />
                     </TooltipTrigger>
                     <TooltipContent>{t("gamepad.connected")}</TooltipContent>
                   </Tooltip>
@@ -387,17 +344,10 @@ export const PlayerPage = () => {
             left: "hover:bg-(--player-accent)/50 transition-colors",
           }}
         >
-          <SubtitlesSidebar
-            captions={captions}
-            onSeekToCaption={handleSeekToCaption}
-            onClose={toggleSidebar}
-          />
+          <SubtitlesSidebar captions={captions} onSeekToCaption={handleSeekToCaption} onClose={toggleSidebar} />
         </Resizable>
 
-        <SettingsDialog
-          open={settingsDialogOpen}
-          onOpenChange={setSettingsDialogOpen}
-        />
+        <SettingsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
 
         <WordTranslatePopover
           word={wordTranslate.word}
