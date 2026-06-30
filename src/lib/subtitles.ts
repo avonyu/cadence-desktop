@@ -58,15 +58,20 @@ function formatTime(seconds: number): string {
 
 /**
  * Sanitize subtitle text for safe HTML rendering.
- * Escapes all HTML characters, then unescapes only <i> / </i> tags.
+ * Escapes all HTML characters, then unescapes only <i>, <b>, <u> tags.
  */
 export function sanitizeSubtitleHtml(text: string): string {
-  return text
+  const allowed = ["i", "b", "u"];
+  let result = text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/&lt;i&gt;/g, "<i>")
-    .replace(/&lt;\/i&gt;/g, "</i>");
+    .replace(/>/g, "&gt;");
+  for (const tag of allowed) {
+    result = result
+      .replace(new RegExp(`&lt;${tag}&gt;`, "g"), `<${tag}>`)
+      .replace(new RegExp(`&lt;/${tag}&gt;`, "g"), `</${tag}>`);
+  }
+  return result;
 }
 
 /**

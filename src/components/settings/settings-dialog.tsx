@@ -17,7 +17,7 @@ import { SettingsTabBasic } from "./settings-tab-basic";
 import { SettingsTabAi } from "./settings-tab-ai";
 import { SettingsTabAbout } from "./settings-tab-about";
 
-const APP_VERSION = import.meta.env.VITE_APP_VERSION;
+const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "";
 const STORAGE_KEY_MODELS = "cadence:deepseek-models";
 const BUILD_MODE = import.meta.env.VITE_BUILD_MODE as string;
 

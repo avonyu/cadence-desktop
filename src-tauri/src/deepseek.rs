@@ -54,12 +54,14 @@ pub async fn fetch_deepseek_models(api_key: String) -> Result<Vec<DeepSeekModel>
 #[tauri::command]
 pub async fn call_deepseek_api(
     content: String,
+    format: String,
     api_key: String,
     model: String,
 ) -> Result<String, String> {
     let system_prompt = include_str!("../prompts/subtitle-processor.md");
+    let user_content = format!("Format: {}\n\n{}", format, content);
 
-    let text = deepseek_chat(&api_key, &model, system_prompt, &content, 0.1, None).await?;
+    let text = deepseek_chat(&api_key, &model, system_prompt, &user_content, 0.1, Some(65536)).await?;
 
     let stripped = strip_markdown_fences(&text)
         .replace("\\r", "")
