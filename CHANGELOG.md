@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.1] - 2026-06-30
+
+### 🚀 New Features
+
+- **Settings dialog**: A new SettingsDialog with three tabs — **Basic** (general preferences), **AI Config** (API keys, models, activation codes), and **About** (version info, update check, download progress).
+- **Progress component**: New `Progress` UI component for visual feedback during update downloads.
+- **Enhanced subtitle processing**: The AI subtitle pipeline now supports JSON output and automatic subtitle format detection (`src-tauri/prompts/subtitle-processor.md`, `src/lib/ai-subtitle.ts`, `src/lib/subtitles.ts`).
+
+### ⚡ Improvements
+
+- **Subtitle mask**: Improved text wrapping behavior (`word-break`/`overflow-wrap`).
+- **Subtitle settings popover**: Refactored for better UI and interaction.
+- **Sidebar subtitles tab**: Refactored for improved UI and functionality.
+
+### 🧹 Internal
+
+- Bumped dependencies and migrated build scripts to Bun APIs (`scripts/download-ffmpeg.ts`, `scripts/generate-latest-json.ts`).
+- Removed stale `prototype/index.html` (~2,490 lines of legacy code).
+
 ## [0.7.0] - 2026-06-29
 
 ### New Features
