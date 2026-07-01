@@ -96,7 +96,8 @@ export function ActivationDialog({ open, onOpenChange }: ActivationDialogProps) 
           console.warn("[activation] activate error:", result.error);
         toast.error(t("activation.invalidCode"));
       }
-    } catch {
+    } catch (e) {
+      console.warn("[activation-dialog] activation failed:", e instanceof Error ? e.message : e);
       setStatus("error");
       toast.error(t("activation.invalidCode"));
     } finally {

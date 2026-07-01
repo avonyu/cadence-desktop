@@ -30,7 +30,8 @@ export async function loadCache(): Promise<Map<string, unknown>> {
       req.onerror = () => resolve(new Map());
       tx.oncomplete = () => db.close();
     });
-  } catch {
+  } catch (e) {
+    console.warn("[word-cache] loadCache failed:", e instanceof Error ? e.message : e);
     return new Map();
   }
 }
@@ -45,7 +46,7 @@ export async function saveToCache(
     const store = tx.objectStore(STORE_NAME);
     store.put({ word: word.toLowerCase(), definition });
     tx.oncomplete = () => db.close();
-  } catch {
-    // Silently fail - cache is best-effort
+  } catch (e) {
+    console.warn("[word-cache] saveToCache failed for", word, ":", e instanceof Error ? e.message : e);
   }
 }

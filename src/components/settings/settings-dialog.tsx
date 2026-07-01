@@ -104,8 +104,9 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
       setUpdateStatus(t("settings.restartPrompt"));
       setDownloading(false);
       setInstalled(true);
-    } catch {
-      setUpdateStatus(t("settings.downloadFailed"));
+    } catch (e) {
+        console.error("Update download failed:", e);
+        setUpdateStatus(t("settings.downloadFailed"));
       setDownloading(false);
       setDownloadProgress(0);
       toast.error(t("settings.downloadFailed"));
@@ -144,7 +145,8 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
         toast.success(t("activation.activateSuccess"));
         setActivationCode("");
       }
-    } catch {
+    } catch (e) {
+      console.warn("[settings] activation failed:", e instanceof Error ? e.message : e);
       setActivateError(true);
       toast.error(t("activation.invalidCode"));
     } finally {
