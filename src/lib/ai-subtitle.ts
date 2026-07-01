@@ -156,6 +156,7 @@ export interface SubtitleInputEntry {
   index: number;
   timestamp: string;
   text: string;
+  preTranslation?: string;
 }
 
 interface SubtitleJSONEntry {
@@ -246,17 +247,19 @@ function preprocessAssEntries(content: string): SubtitleInputEntry[] {
 
     const timestamp = `${fields[1]} --> ${fields[2]}`;
 
-    // Merge \N / \n line breaks into a single line joined by spaces
-    const text = rawText
+    // Split on \N — first part = source, remaining = pre-existing translation
+    const parts = rawText
       .split(/\\N|\\n/)
       .map((l) => l.trim())
-      .filter(Boolean)
-      .join(" ");
+      .filter(Boolean);
+
+    const text = parts[0] || "";
+    const preTranslation = parts.length >= 2 ? parts.slice(1).join(" ") : undefined;
 
     if (!text) continue;
 
     index++;
-    entries.push({ index, timestamp, text });
+    entries.push({ index, timestamp, text, preTranslation });
   }
 
   return entries;
@@ -327,8 +330,9 @@ function parseSubtitleJSON(
     const start = timestampToSeconds(startStr);
     const end = endStr ? timestampToSeconds(endStr) : start + 2;
 
+    const aiTranslation = inputEntry.preTranslation ?? je.t ?? "";
     const styledSource = applyStyle(je.s, je.st);
-    const styledTranslation = applyStyle(je.t ?? "", je.st);
+    const styledTranslation = applyStyle(aiTranslation, je.st);
 
     captions.push({
       time: formatTime(start),
