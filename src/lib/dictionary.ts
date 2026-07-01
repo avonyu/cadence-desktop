@@ -51,7 +51,8 @@ export async function lookupWord(word: string): Promise<WordDefinition | null> {
     wordCache.set(clean, parsed);
     saveToCache(clean, parsed);
     return parsed;
-  } catch {
+  } catch (e) {
+    console.warn("[dictionary] lookupWord failed for", clean, ":", e instanceof Error ? e.message : e);
     return null;
   }
 }

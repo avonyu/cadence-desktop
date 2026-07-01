@@ -70,8 +70,8 @@ async function migrateLegacy(db: Database): Promise<void> {
 
     await store.set("migratedToSqlite", true);
     await store.save();
-  } catch {
-    // Best-effort migration; ignore failures.
+  } catch (e) {
+    console.warn("[favorites-db] migration failed:", e instanceof Error ? e.message : e);
   }
 }
 
@@ -94,10 +94,12 @@ export async function loadFavorites(): Promise<FavoritesMap> {
         };
       } catch {
         // Skip corrupt row.
+        console.debug("[favorites-db] skipping corrupt row for word:", row.word);
       }
     }
     return map;
-  } catch {
+  } catch (e) {
+    console.warn("[favorites-db] loadFavorites failed:", e instanceof Error ? e.message : e);
     return {};
   }
 }
@@ -116,8 +118,8 @@ export async function addFavorite(entry: FavoriteWord): Promise<void> {
         entry.addedAt,
       ],
     );
-  } catch {
-    // Best-effort persistence.
+  } catch (e) {
+    console.warn("[favorites-db] addFavorite failed for", entry.word, ":", e instanceof Error ? e.message : e);
   }
 }
 
@@ -125,7 +127,7 @@ export async function removeFavorite(word: string): Promise<void> {
   try {
     const db = await getDb();
     await db.execute(`DELETE FROM favorites WHERE word = $1`, [word]);
-  } catch {
-    // Best-effort persistence.
+  } catch (e) {
+    console.warn("[favorites-db] removeFavorite failed for", word, ":", e instanceof Error ? e.message : e);
   }
 }

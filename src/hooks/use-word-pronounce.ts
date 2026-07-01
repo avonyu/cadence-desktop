@@ -42,7 +42,8 @@ export function useWordPronounce() {
         audio.onended = () => setPronouncingWord(null);
         audio.onerror = () => setPronouncingWord(null);
         await audio.play();
-      } catch {
+      } catch (e) {
+        console.warn("[word-pronounce] Edge TTS failed, falling back to Web Speech:", e instanceof Error ? e.message : e);
         const utterance = new SpeechSynthesisUtterance(word);
         utterance.lang = "en-US";
         utterance.rate = 0.8;

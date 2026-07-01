@@ -9,9 +9,9 @@
 [![Tauri](https://img.shields.io/badge/Tauri-v2-FFC131?logo=tauri&logoColor=white)](https://tauri.app)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://typescriptlang.org)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE)
 
-English | [简体中文](docs/README-zh-CN.md)
+English | [简体中文](docs/README.zh.md)
 
 </div>
 
@@ -33,6 +33,8 @@ Cadence — rhythm and flow. A desktop video player designed specifically for **
 - 🔄 **Line Swap** — Toggle the order of source and translation lines
 - 📋 **Subtitle Sidebar** — Scrollable full list with timestamp navigation; auto-scrolls to the current caption; resizable width (280–600px)
 - 📖 **Word Dictionary** — Click any word in the subtitle to look up IPA pronunciation, part of speech, Chinese definitions, and example sentences powered by DeepSeek AI; results cached locally
+- ⭐ **Word Favorites** — Bookmark words from the lookup panel; saved words appear in a dedicated Favorites tab with search, sort, and one-click pronunciation
+- 🔊 **Word Pronunciation** — Click the speak button on any saved word or in the lookup popover to hear it pronounced aloud
 - 🔁 **Single Sentence Loop** — Repeat-play the current subtitle sentence for focused listening practice; toggle with button or `L` key
 - 🎭 **Subtitle Mask** — Draggable and resizable overlay to hide hard-burned subtitles on the video
 - 🎵 **Audio Transcoding** — Auto-detect unsupported audio codecs (DTS, AC3, EAC3, FLAC, OPUS, etc.) and transcode to AAC 192kbps with progress bar
@@ -40,6 +42,7 @@ Cadence — rhythm and flow. A desktop video player designed specifically for **
 - 🎮 **Gamepad Support** — Full controller input: play/pause, seek, volume, sidebar, mask, loop, speed, file open, settings
 - 🔊 **Volume Control** — Vertical volume slider with mute toggle and on-screen volume display
 - 🔄 **Auto-Update** — Built-in update checker with download progress and one-click install
+- ⚙️ **Settings Dialog** — Tabbed settings (Basic, AI Config, About) for preferences, API key management, model selection, and update downloads
 - ⌨️ **Keyboard Shortcuts** — Play/pause, caption navigation, speed, volume, fullscreen, mute, loop, sidebar, blur mode, subtitle mask, line swap
 - 📂 **Open Files** — Load local video and subtitle files via native file dialog; remembers last opened video
 - 🎨 **Dark UI** — Immersive dark theme for focused learning
@@ -148,14 +151,11 @@ sudo pacman -S ffmpeg
 
 ### Settings
 
-| Setting          | Options                                        |
-| ---------------- | ---------------------------------------------- |
-| Theme            | System / Light / Dark                          |
-| Language         | English / 中文                                 |
-| Auto-transcode   | On / Off — auto-convert unsupported audio      |
-| DeepSeek Model   | Fetch from API or enter custom model ID        |
-| API Key          | DeepSeek API key (stored locally)              |
-| Check for Update | View current version and check for new release |
+The settings dialog provides three tabs:
+
+- **Basic** — Theme (System / Light / Dark), Language (English / 中文), Auto-transcode toggle
+- **AI Config** — DeepSeek API key, model selection (fetch from API or enter custom ID), activation code
+- **About** — Version info, check for updates, download progress
 
 ### Preview
 

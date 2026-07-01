@@ -1,10 +1,4 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Settings, Sparkles, Info } from "lucide-react";
@@ -23,29 +17,17 @@ import { SettingsTabBasic } from "./settings-tab-basic";
 import { SettingsTabAi } from "./settings-tab-ai";
 import { SettingsTabAbout } from "./settings-tab-about";
 
-const APP_VERSION = import.meta.env.VITE_APP_VERSION;
+const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? "";
 const STORAGE_KEY_MODELS = "cadence:deepseek-models";
 const BUILD_MODE = import.meta.env.VITE_BUILD_MODE as string;
 
 type SettingsTab = "basic" | "ai" | "about";
 
-export function SettingsDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
+export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { setTheme, theme } = useTheme();
   const { t, i18n } = useTranslation();
-  const {
-    deepseekApiKey,
-    deepseekModel,
-    setDeepseekApiKey,
-    setDeepseekModel,
-    autoTranscode,
-    setAutoTranscode,
-  } = usePlayerStore();
+  const { deepseekApiKey, deepseekModel, setDeepseekApiKey, setDeepseekModel, autoTranscode, setAutoTranscode } =
+    usePlayerStore();
   const activated = useActivationStore((s) => s.activated);
   const trialActive = useActivationStore((s) => s.trialActive);
   const trialDaysRemaining = useActivationStore((s) => s.trialDaysRemaining);
@@ -54,16 +36,14 @@ export function SettingsDialog({
   const [activeTab, setActiveTab] = useState<SettingsTab>("basic");
   const [localApiKey, setLocalApiKey] = useState(deepseekApiKey);
   const [localModel, setLocalModel] = useState(deepseekModel);
-  const [availableModels, setAvailableModels] = useState<{ id: string }[]>(
-    () => {
-      try {
-        const cached = localStorage.getItem(STORAGE_KEY_MODELS);
-        return cached ? JSON.parse(cached) : [];
-      } catch {
-        return [];
-      }
-    },
-  );
+  const [availableModels, setAvailableModels] = useState<{ id: string }[]>(() => {
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY_MODELS);
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
   const [modelsLoading, setModelsLoading] = useState(false);
   const [updateStatus, setUpdateStatus] = useState("");
   const [downloading, setDownloading] = useState(false);
@@ -86,9 +66,7 @@ export function SettingsDialog({
       const update = await check();
       if (update) {
         updateRef.current = update;
-        setUpdateStatus(
-          t("settings.newVersionFound", { version: update.version }),
-        );
+        setUpdateStatus(t("settings.newVersionFound", { version: update.version }));
       } else {
         setUpdateStatus(t("settings.upToDate"));
         setTimeout(() => setUpdateStatus(""), 3000);
@@ -115,9 +93,7 @@ export function SettingsDialog({
             break;
           case "Progress":
             downloaded += event.data.chunkLength;
-            setDownloadProgress(
-              totalLength ? Math.round((downloaded / totalLength) * 100) : -1,
-            );
+            setDownloadProgress(totalLength ? Math.round((downloaded / totalLength) * 100) : -1);
             break;
           case "Finished":
             setDownloadProgress(100);
@@ -128,8 +104,9 @@ export function SettingsDialog({
       setUpdateStatus(t("settings.restartPrompt"));
       setDownloading(false);
       setInstalled(true);
-    } catch {
-      setUpdateStatus(t("settings.downloadFailed"));
+    } catch (e) {
+        console.error("Update download failed:", e);
+        setUpdateStatus(t("settings.downloadFailed"));
       setDownloading(false);
       setDownloadProgress(0);
       toast.error(t("settings.downloadFailed"));
@@ -162,14 +139,14 @@ export function SettingsDialog({
       const result = await activate(code);
       if (!result.success) {
         setActivateError(true);
-        if (result.error)
-          console.warn("[activation] activate error:", result.error);
+        if (result.error) console.warn("[activation] activate error:", result.error);
         toast.error(t("activation.invalidCode"));
       } else {
         toast.success(t("activation.activateSuccess"));
         setActivationCode("");
       }
-    } catch {
+    } catch (e) {
+      console.warn("[settings] activation failed:", e instanceof Error ? e.message : e);
       setActivateError(true);
       toast.error(t("activation.invalidCode"));
     } finally {
@@ -198,9 +175,7 @@ export function SettingsDialog({
     [t],
   );
 
-  const tabs = useMemo<
-    { id: SettingsTab; icon: React.ReactNode; label: string }[]
-  >(
+  const tabs = useMemo<{ id: SettingsTab; icon: React.ReactNode; label: string }[]>(
     () => [
       {
         id: "basic",
@@ -249,13 +224,10 @@ export function SettingsDialog({
     if (!open) return;
 
     const listener = new GamepadListener({ analog: false, deadZone: 0.3 });
-    listener.on(
-      "gamepad:button",
-      (e: { detail: { button: number; pressed: boolean } }) => {
-        if (!e.detail.pressed) return;
-        setTimeout(() => handleSettingsGamepadButton(e.detail.button), 0);
-      },
-    );
+    listener.on("gamepad:button", (e: { detail: { button: number; pressed: boolean } }) => {
+      if (!e.detail.pressed) return;
+      setTimeout(() => handleSettingsGamepadButton(e.detail.button), 0);
+    });
     listener.start();
 
     return () => {
@@ -270,19 +242,12 @@ export function SettingsDialog({
           <DialogHeader className="flex flex-row items-center border-border px-6 py-4">
             <div className="flex items-center gap-3">
               <Settings className="text-muted-foreground" size={20} />
-              <DialogTitle className="text-base">
-                {t("settings.title")}
-              </DialogTitle>
+              <DialogTitle className="text-base">{t("settings.title")}</DialogTitle>
             </div>
-            <DialogDescription className="sr-only">
-              {t("settings.title")}
-            </DialogDescription>
+            <DialogDescription className="sr-only">{t("settings.title")}</DialogDescription>
           </DialogHeader>
 
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => setActiveTab(v as SettingsTab)}
-          >
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as SettingsTab)}>
             <div className="px-3">
               <TabsList className="w-full">
                 {tabs.map((tab) => (
