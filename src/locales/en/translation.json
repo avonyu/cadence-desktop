@@ -141,6 +141,27 @@
     "removed": "Removed {{word}}",
     "pronounce": "Pronounce"
   },
+  "explain": {
+    "title": "Sentence Explanation",
+    "loading": "Analyzing...",
+    "error": "Failed to get explanation, please retry",
+    "overallMeaning": "Meaning",
+    "grammar": "Grammar",
+    "vocabulary": "Key Vocabulary",
+    "explainSentence": "Explain sentence"
+  },
+  "sentenceFavorites": {
+    "tabTitle": "Bookmarked",
+    "searchPlaceholder": "Search sentences or videos",
+    "sortRecent": "Recently added",
+    "sortOldest": "Oldest first",
+    "empty": "No bookmarked sentences yet",
+    "emptyHint": "Click the bookmark icon on a subtitle line to save it",
+    "emptySearch": "No matching sentences",
+    "remove": "Remove",
+    "removed": "Bookmark removed",
+    "bookmark": "Bookmark sentence"
+  },
   "gamepad": {
     "connected": "Gamepad connected",
     "disconnected": "Gamepad disconnected"

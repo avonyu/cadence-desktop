@@ -5,25 +5,28 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@/components/ui/tabs";
-import { Subtitles, BookMarked, X, Loader2 } from "lucide-react";
+import { Subtitles, BookMarked, BookmarkCheck, X, Loader2 } from "lucide-react";
 import { type Caption } from "@/lib/subtitles";
 import { usePlayerStore, type SidebarTab } from "@/stores/player-store";
 import { useTranslation } from "react-i18next";
 import { memo } from "react";
 import ShinyText from "@/components/ShinyText";
 import { SidebarSubtitlesTab } from "./sidebar-subtitles-tab";
+import { SidebarBookmarkedSentencesTab } from "./sidebar-bookmarked-sentences-tab";
 import { SidebarFavoritesTab } from "./sidebar-favorites-tab";
 
 interface SubtitlesSidebarProps {
   captions: Caption[];
   onSeekToCaption: (caption: Caption) => void;
   onClose: () => void;
+  videoFileName: string | null;
 }
 
 export const SubtitlesSidebar = memo(function SubtitlesSidebar({
   captions,
   onSeekToCaption,
   onClose,
+  videoFileName,
 }: SubtitlesSidebarProps) {
   const { t } = useTranslation();
   const sidebarTab = usePlayerStore((s) => s.sidebarTab);
@@ -44,6 +47,10 @@ export const SubtitlesSidebar = memo(function SubtitlesSidebar({
             <TabsTrigger value="subtitles">
               <Subtitles data-icon="inline-start" />
               {t("subtitle.subtitlesList")}
+            </TabsTrigger>
+            <TabsTrigger value="bookmarked-sentences">
+              <BookmarkCheck data-icon="inline-start" />
+              {t("sentenceFavorites.tabTitle")}
             </TabsTrigger>
             <TabsTrigger value="favorites">
               <BookMarked data-icon="inline-start" />
@@ -82,7 +89,16 @@ export const SubtitlesSidebar = memo(function SubtitlesSidebar({
           <SidebarSubtitlesTab
             captions={captions}
             onSeekToCaption={onSeekToCaption}
+            videoFileName={videoFileName}
           />
+        </TabsContent>
+
+        <TabsContent
+          value="bookmarked-sentences"
+          forceMount
+          className="relative mt-0 min-h-0 flex-1 data-[state=inactive]:hidden"
+        >
+          <SidebarBookmarkedSentencesTab />
         </TabsContent>
 
         <TabsContent

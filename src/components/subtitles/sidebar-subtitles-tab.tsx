@@ -1,16 +1,20 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { RotateCw } from "lucide-react";
+import { RotateCw, Sparkles } from "lucide-react";
+import { Bookmark, BookmarkCheck } from "lucide-react";
 import { type Caption } from "@/lib/subtitles";
 import { sanitizeSubtitleHtml } from "@/lib/html-sanitize";
 import { usePlayerStore, type BlurMode } from "@/stores/player-store";
+import { useSentenceFavoritesStore } from "@/stores/sentence-favorites-store";
 import { useTranslation } from "react-i18next";
-import { useRef, useEffect, useCallback, memo } from "react";
+import { useRef, useEffect, useCallback, memo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { SentenceExplanationPanel } from "./sentence-explanation-panel";
 
 interface SidebarSubtitlesTabProps {
   captions: Caption[];
   onSeekToCaption: (caption: Caption) => void;
+  videoFileName: string | null;
 }
 
 function getSidebarBlurClasses(blurMode: BlurMode, target: "text" | "translation"): string {
@@ -30,6 +34,7 @@ function formatCaptionTime(seconds: number): string {
 export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
   captions,
   onSeekToCaption,
+  videoFileName,
 }: SidebarSubtitlesTabProps) {
   const { t } = useTranslation();
   const blurMode = usePlayerStore((s) => s.blurMode);
@@ -41,9 +46,16 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
   const setLastActiveCaption = usePlayerStore((s) => s.setLastActiveCaption);
   const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
 
+  const isSentenceFavorited = useSentenceFavoritesStore((s) => s.isFavorited);
+  const toggleSentenceFavorite = useSentenceFavoritesStore((s) => s.toggleFavorite);
+
+  const [explainingIndex, setExplainingIndex] = useState<number | null>(null);
+
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeItemRef = useRef<HTMLDivElement>(null);
   const isProgrammaticScroll = useRef(false);
+
+  const videoName = videoFileName ?? "";
 
   const getViewport = useCallback(() => {
     return sidebarRef.current?.closest("[data-radix-scroll-area-viewport]") as HTMLElement | null;
@@ -140,43 +152,110 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
                 const isActive = index === lastActiveCaption;
                 const ref = isActive ? activeItemRef : null;
                 const { primary, secondary } = getDisplayText(caption);
+                const isFav = videoName
+                  ? isSentenceFavorited(videoName, index)
+                  : false;
+                const isExplaining = explainingIndex === index;
 
                 return (
                   <div
-                    ref={ref}
-                    className={`group/item grid w-full grid-cols-[62px_1fr] items-start gap-1 rounded-md px-2 py-2 text-left transition ${
-                      isActive
-                        ? "bg-accent text-(--player-accent)"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    }`}
                     key={`${caption.start}-${caption.text}`}
                   >
-                    <button
-                      onClick={() => handleCaptionClick(caption, index)}
-                      className={`text-sm font-bold text-center transition cursor-pointer hover:text-(--player-accent) ${
-                        isActive ? "text-(--player-accent)" : "text-muted-foreground"
+                    <div
+                      ref={ref}
+                      className={`group/item grid w-full grid-cols-[62px_1fr_auto] items-start gap-1 rounded-md px-2 py-2 text-left transition ${
+                        isActive
+                          ? "bg-accent text-(--player-accent)"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
                       }`}
                     >
-                      {formatCaptionTime(caption.start)}
-                    </button>
-                    <span>
-                      <span
-                        className={`block text-sm font-bold leading-snug tracking-tight transition-[filter] duration-300 ${
-                          getSidebarBlurClasses(blurMode, "text") || ""
-                        } group-hover/item:blur-none`}
-                        dangerouslySetInnerHTML={{
-                          __html: sanitizeSubtitleHtml(primary),
-                        }}
+                      <button
+                        onClick={() => handleCaptionClick(caption, index)}
+                        className={`text-sm font-bold text-center transition cursor-pointer hover:text-(--player-accent) ${
+                          isActive ? "text-(--player-accent)" : "text-muted-foreground"
+                        }`}
+                      >
+                        {formatCaptionTime(caption.start)}
+                      </button>
+                      <span>
+                        <span
+                          className={`block text-sm font-bold leading-snug tracking-tight transition-[filter] duration-300 ${
+                            getSidebarBlurClasses(blurMode, "text") || ""
+                          } group-hover/item:blur-none`}
+                          dangerouslySetInnerHTML={{
+                            __html: sanitizeSubtitleHtml(primary),
+                          }}
+                        />
+                        <span
+                          className={`mt-2 block text-sm leading-snug tracking-tight transition-[filter] duration-300 ${
+                            isActive ? "text-foreground" : "text-muted-foreground"
+                          } ${
+                            getSidebarBlurClasses(blurMode, "translation") || ""
+                          } group-hover/item:blur-none`}
+                          dangerouslySetInnerHTML={{
+                            __html: sanitizeSubtitleHtml(secondary),
+                          }}
+                        />
+                      </span>
+                      <div className="flex items-start gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          title={t("explain.explainSentence")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExplainingIndex(
+                              isExplaining ? null : index,
+                            );
+                          }}
+                          className={`p-1 rounded transition-colors ${
+                            isExplaining
+                              ? "text-(--player-accent)"
+                              : "text-muted-foreground hover:text-(--player-accent)"
+                          }`}
+                        >
+                          <Sparkles size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          title={
+                            isFav
+                              ? t("sentenceFavorites.remove")
+                              : t("sentenceFavorites.bookmark")
+                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!videoName) return;
+                            toggleSentenceFavorite(
+                              videoName,
+                              index,
+                              caption.text,
+                              caption.translation,
+                              caption.start,
+                              caption.end,
+                            );
+                          }}
+                          className={`p-1 rounded transition-colors ${
+                            isFav
+                              ? "text-(--player-accent)"
+                              : "text-muted-foreground hover:text-amber-400"
+                          }`}
+                        >
+                          {isFav ? (
+                            <BookmarkCheck size={14} />
+                          ) : (
+                            <Bookmark size={14} />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    {isExplaining && (
+                      <SentenceExplanationPanel
+                        sentence={caption.text}
+                        translation={caption.translation}
+                        videoName={videoName}
+                        onClose={() => setExplainingIndex(null)}
                       />
-                      <span
-                        className={`mt-2 block text-sm leading-snug tracking-tight transition-[filter] duration-300 ${
-                          isActive ? "text-foreground" : "text-muted-foreground"
-                        } ${getSidebarBlurClasses(blurMode, "translation") || ""} group-hover/item:blur-none`}
-                        dangerouslySetInnerHTML={{
-                          __html: sanitizeSubtitleHtml(secondary),
-                        }}
-                      />
-                    </span>
+                    )}
                   </div>
                 );
               })}

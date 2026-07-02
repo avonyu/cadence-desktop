@@ -3,7 +3,7 @@ import { flattenActions, type StoreSetter, type StoreGetter } from "./helpers";
 
 export type BlurMode = "off" | "primary" | "secondary" | "all";
 
-export type SidebarTab = "subtitles" | "favorites";
+export type SidebarTab = "subtitles" | "bookmarked-sentences" | "favorites";
 
 export type AiProcessingState =
   | "idle"

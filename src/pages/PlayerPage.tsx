@@ -344,7 +344,7 @@ export const PlayerPage = () => {
             left: "hover:bg-(--player-accent)/50 transition-colors",
           }}
         >
-          <SubtitlesSidebar captions={captions} onSeekToCaption={handleSeekToCaption} onClose={toggleSidebar} />
+          <SubtitlesSidebar captions={captions} onSeekToCaption={handleSeekToCaption} onClose={toggleSidebar} videoFileName={videoFileName} />
         </Resizable>
 
         <SettingsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />
