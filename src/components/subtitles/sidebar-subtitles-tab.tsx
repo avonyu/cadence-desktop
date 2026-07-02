@@ -1,7 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { RotateCw, Sparkles } from "lucide-react";
-import { Bookmark, BookmarkCheck } from "lucide-react";
+import { RotateCw, Sparkles, Bookmark, BookmarkCheck } from "lucide-react";
 import { type Caption } from "@/lib/subtitles";
 import { sanitizeSubtitleHtml } from "@/lib/html-sanitize";
 import { usePlayerStore, type BlurMode } from "@/stores/player-store";
@@ -9,6 +8,7 @@ import { useSentenceFavoritesStore } from "@/stores/sentence-favorites-store";
 import { useTranslation } from "react-i18next";
 import { useRef, useEffect, useCallback, memo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { cn } from "@/lib/utils";
 import { SentenceExplanationPanel } from "./sentence-explanation-panel";
 
 interface SidebarSubtitlesTabProps {
@@ -46,7 +46,7 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
   const setLastActiveCaption = usePlayerStore((s) => s.setLastActiveCaption);
   const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
 
-  const isSentenceFavorited = useSentenceFavoritesStore((s) => s.isFavorited);
+  const sentences = useSentenceFavoritesStore((s) => s.sentences);
   const toggleSentenceFavorite = useSentenceFavoritesStore((s) => s.toggleFavorite);
 
   const [explainingIndex, setExplainingIndex] = useState<number | null>(null);
@@ -153,7 +153,7 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
                 const ref = isActive ? activeItemRef : null;
                 const { primary, secondary } = getDisplayText(caption);
                 const isFav = videoName
-                  ? isSentenceFavorited(videoName, index)
+                  ? sentences.some((s) => s.videoName === videoName && s.subtitleIndex === index)
                   : false;
                 const isExplaining = explainingIndex === index;
 
@@ -197,55 +197,64 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
                           }}
                         />
                       </span>
-                      <div className="flex items-start gap-0.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                        <button
-                          type="button"
-                          title={t("explain.explainSentence")}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setExplainingIndex(
-                              isExplaining ? null : index,
-                            );
-                          }}
-                          className={`p-1 rounded transition-colors ${
-                            isExplaining
-                              ? "text-(--player-accent)"
-                              : "text-muted-foreground hover:text-(--player-accent)"
-                          }`}
-                        >
-                          <Sparkles size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          title={
-                            isFav
-                              ? t("sentenceFavorites.remove")
-                              : t("sentenceFavorites.bookmark")
-                          }
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!videoName) return;
-                            toggleSentenceFavorite(
-                              videoName,
-                              index,
-                              caption.text,
-                              caption.translation,
-                              caption.start,
-                              caption.end,
-                            );
-                          }}
-                          className={`p-1 rounded transition-colors ${
-                            isFav
-                              ? "text-(--player-accent)"
-                              : "text-muted-foreground hover:text-amber-400"
-                          }`}
-                        >
-                          {isFav ? (
-                            <BookmarkCheck size={14} />
-                          ) : (
-                            <Bookmark size={14} />
+                      <div className="flex items-start gap-0.5">
+                        <span className="opacity-0 group-hover/item:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            title={t("explain.explainSentence")}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExplainingIndex(
+                                isExplaining ? null : index,
+                              );
+                            }}
+                            className={`p-1 rounded transition-colors ${
+                              isExplaining
+                                ? "text-(--player-accent)"
+                                : "text-muted-foreground hover:text-(--player-accent)"
+                            }`}
+                          >
+                            <Sparkles size={14} />
+                          </button>
+                        </span>
+                        <span
+                          className={cn(
+                            "transition-opacity",
+                            !isFav && "opacity-0 group-hover/item:opacity-100",
                           )}
-                        </button>
+                        >
+                          <button
+                            type="button"
+                            title={
+                              isFav
+                                ? t("sentenceFavorites.remove")
+                                : t("sentenceFavorites.bookmark")
+                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!videoName) return;
+                              toggleSentenceFavorite(
+                                videoName,
+                                index,
+                                caption.text,
+                                caption.translation,
+                                caption.start,
+                                caption.end,
+                              );
+                            }}
+                            className={`p-1 rounded transition-colors ${
+                              isFav
+                                ? "text-(--player-accent)"
+                                : "text-muted-foreground hover:text-amber-400"
+                            }`}
+                          >
+                            {isFav ? (
+                              <BookmarkCheck size={14} />
+                            ) : (
+                              <Bookmark size={14} />
+                            )}
+                          </button>
+                        </span>
                       </div>
                     </div>
                     {isExplaining && (

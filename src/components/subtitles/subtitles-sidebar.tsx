@@ -98,7 +98,7 @@ export const SubtitlesSidebar = memo(function SubtitlesSidebar({
           forceMount
           className="relative mt-0 min-h-0 flex-1 data-[state=inactive]:hidden"
         >
-          <SidebarBookmarkedSentencesTab />
+          <SidebarBookmarkedSentencesTab currentVideoName={videoFileName} />
         </TabsContent>
 
         <TabsContent

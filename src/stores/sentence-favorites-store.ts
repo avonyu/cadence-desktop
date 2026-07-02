@@ -64,6 +64,19 @@ export class SentenceFavoritesActionImpl {
       this.#set({ sentences: next });
       removeFavoriteSentence(videoName, subtitleIndex);
     } else {
+      const tempId = -Date.now();
+      const optimistic: FavoriteSentence = {
+        id: tempId,
+        videoName,
+        subtitleIndex,
+        text,
+        translation,
+        startTime,
+        endTime,
+        addedAt: Date.now(),
+      };
+      this.#set({ sentences: [optimistic, ...current] });
+
       const entry = await addFavoriteSentence({
         videoName,
         subtitleIndex,
@@ -73,7 +86,13 @@ export class SentenceFavoritesActionImpl {
         endTime,
       });
       if (entry) {
-        this.#set({ sentences: [entry, ...current] });
+        this.#set((s) => ({
+          sentences: s.sentences.map((sent) =>
+            sent.id === tempId ? entry : sent,
+          ),
+        }));
+      } else {
+        this.#set({ sentences: current });
       }
     }
   };

@@ -160,7 +160,9 @@
     "emptySearch": "没有匹配的句子",
     "remove": "移除收藏",
     "removed": "已移除收藏句子",
-    "bookmark": "收藏句子"
+    "bookmark": "收藏句子",
+    "filterCurrentVideo": "仅显示当前视频",
+    "filterAll": "显示全部收藏"
   },
   "gamepad": {
     "connected": "手柄已连接",

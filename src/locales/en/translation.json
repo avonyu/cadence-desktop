@@ -160,7 +160,9 @@
     "emptySearch": "No matching sentences",
     "remove": "Remove",
     "removed": "Bookmark removed",
-    "bookmark": "Bookmark sentence"
+    "bookmark": "Bookmark sentence",
+    "filterCurrentVideo": "Show current video only",
+    "filterAll": "Show all bookmarks"
   },
   "gamepad": {
     "connected": "Gamepad connected",

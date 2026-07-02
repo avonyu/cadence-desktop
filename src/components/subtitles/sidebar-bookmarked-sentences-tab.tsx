@@ -2,10 +2,13 @@ import { useState, useMemo, useEffect, useCallback, memo } from "react";
 import {
   Trash2,
   Search,
+  Sparkles,
   BookmarkCheck,
+  ListFilter,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -14,14 +17,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useSentenceFavoritesStore } from "@/stores/sentence-favorites-store";
 import { usePlayerStore } from "@/stores/player-store";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { FavoriteSentence } from "@/lib/sentence-favorites-db";
 import { cn } from "@/lib/utils";
+import { SentenceExplanationPanel } from "./sentence-explanation-panel";
 
 type SortKey = "recent" | "oldest";
+
+interface SidebarBookmarkedSentencesTabProps {
+  currentVideoName: string | null;
+}
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
@@ -29,8 +43,17 @@ function formatTime(seconds: number): string {
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
+function getDisplayText(item: FavoriteSentence, swap: boolean) {
+  if (swap) {
+    return { primary: item.translation || "", secondary: item.text };
+  }
+  return { primary: item.text, secondary: item.translation || "" };
+}
+
 export const SidebarBookmarkedSentencesTab = memo(
-  function SidebarBookmarkedSentencesTab() {
+  function SidebarBookmarkedSentencesTab({
+    currentVideoName,
+  }: SidebarBookmarkedSentencesTabProps) {
     const { t } = useTranslation();
     const sentences = useSentenceFavoritesStore((s) => s.sentences);
     const hydrate = useSentenceFavoritesStore((s) => s.hydrate);
@@ -38,9 +61,12 @@ export const SidebarBookmarkedSentencesTab = memo(
 
     const setPendingNavigation = usePlayerStore((s) => s.setPendingNavigation);
     const setScrollTracking = usePlayerStore((s) => s.setScrollTracking);
+    const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
 
     const [query, setQuery] = useState("");
     const [sort, setSort] = useState<SortKey>("recent");
+    const [videoFilter, setVideoFilter] = useState(false);
+    const [explainingId, setExplainingId] = useState<number | null>(null);
 
     useEffect(() => {
       hydrate();
@@ -51,6 +77,11 @@ export const SidebarBookmarkedSentencesTab = memo(
     const list = useMemo(() => {
       const q = query.trim().toLowerCase();
       let arr = sentences;
+
+      if (videoFilter && currentVideoName) {
+        arr = arr.filter((s) => s.videoName === currentVideoName);
+      }
+
       if (q) {
         arr = arr.filter(
           (s) =>
@@ -65,7 +96,7 @@ export const SidebarBookmarkedSentencesTab = memo(
         return a.addedAt - b.addedAt;
       });
       return sorted;
-    }, [sentences, query, sort]);
+    }, [sentences, query, sort, videoFilter, currentVideoName]);
 
     const handleRemove = useCallback(
       (item: FavoriteSentence) => {
@@ -89,6 +120,8 @@ export const SidebarBookmarkedSentencesTab = memo(
       [setPendingNavigation, setScrollTracking],
     );
 
+    const filterActive = videoFilter && !!currentVideoName;
+
     return (
       <div className="flex min-h-0 h-full flex-col">
         <div className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-2.5">
@@ -104,6 +137,34 @@ export const SidebarBookmarkedSentencesTab = memo(
               className="h-8 pl-8 text-sm"
             />
           </div>
+          {currentVideoName && (
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className={cn(
+                      "shrink-0",
+                      filterActive
+                        ? "text-(--player-accent)"
+                        : "text-muted-foreground",
+                    )}
+                    onClick={() => setVideoFilter((v) => !v)}
+                  >
+                    <ListFilter size={14} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p className="text-xs">
+                    {filterActive
+                      ? t("sentenceFavorites.filterAll")
+                      : t("sentenceFavorites.filterCurrentVideo")}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
             <SelectTrigger size="sm" className="w-auto shrink-0">
               <SelectValue />
@@ -145,11 +206,14 @@ export const SidebarBookmarkedSentencesTab = memo(
         ) : (
           <ScrollArea className="min-h-0 flex-1">
             <div className="space-y-1 px-3 py-3">
-              {list.map((item) => (
+              {list.map((item) => {
+                const isExplaining = explainingId === item.id;
+                const { primary, secondary } = getDisplayText(item, swapSubtitles);
+                return (
                 <div
                   key={item.id}
-                  className="rounded-md transition-colors hover:bg-accent"
                 >
+                <div className="rounded-md transition-colors hover:bg-accent">
                   <div className="group/sent flex items-start gap-2 px-2 py-2">
                     <span
                       onClick={() => handleSeek(item)}
@@ -161,28 +225,58 @@ export const SidebarBookmarkedSentencesTab = memo(
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold leading-snug text-foreground line-clamp-3">
-                        {item.text}
+                        {primary}
                       </p>
-                      {item.translation && (
+                      {secondary && (
                         <p className="mt-1 text-sm leading-snug text-muted-foreground line-clamp-2">
-                          {item.translation}
+                          {secondary}
                         </p>
                       )}
-                      <p className="mt-1 text-xs text-muted-foreground/50">
-                        {item.videoName}
-                      </p>
+                      {!filterActive && (
+                        <p className="mt-1 text-xs text-muted-foreground/50">
+                          {item.videoName}
+                        </p>
+                      )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemove(item)}
-                      title={t("sentenceFavorites.remove")}
-                      className="shrink-0 text-muted-foreground opacity-0 transition-[color,opacity] hover:text-destructive group-hover/sent:opacity-100 mt-0.5"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
+                    <div className="flex items-start gap-0.5 opacity-0 group-hover/sent:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        title={t("explain.explainSentence")}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExplainingId(isExplaining ? null : item.id);
+                        }}
+                        className={cn(
+                          "p-1 rounded transition-colors",
+                          isExplaining
+                            ? "text-(--player-accent)"
+                            : "text-muted-foreground hover:text-(--player-accent)",
+                        )}
+                      >
+                        <Sparkles size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemove(item)}
+                        title={t("sentenceFavorites.remove")}
+                        className="shrink-0 text-muted-foreground p-1 rounded transition-colors hover:text-destructive mt-0"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              ))}
+                {isExplaining && (
+                  <SentenceExplanationPanel
+                    sentence={item.text}
+                    translation={item.translation}
+                    videoName={item.videoName}
+                    onClose={() => setExplainingId(null)}
+                  />
+                )}
+                </div>
+                );
+              })}
             </div>
           </ScrollArea>
         )}
