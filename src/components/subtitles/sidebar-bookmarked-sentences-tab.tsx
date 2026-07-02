@@ -61,6 +61,8 @@ export const SidebarBookmarkedSentencesTab = memo(
 
     const setPendingNavigation = usePlayerStore((s) => s.setPendingNavigation);
     const setScrollTracking = usePlayerStore((s) => s.setScrollTracking);
+    const setActiveCaption = usePlayerStore((s) => s.setActiveCaption);
+    const setLastActiveCaption = usePlayerStore((s) => s.setLastActiveCaption);
     const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
 
     const [query, setQuery] = useState("");
@@ -114,10 +116,12 @@ export const SidebarBookmarkedSentencesTab = memo(
         if (video && video.src) {
           setPendingNavigation(true);
           setScrollTracking(true);
+          setActiveCaption(item.subtitleIndex);
+          setLastActiveCaption(item.subtitleIndex);
           video.currentTime = item.startTime;
         }
       },
-      [setPendingNavigation, setScrollTracking],
+      [setPendingNavigation, setScrollTracking, setActiveCaption, setLastActiveCaption],
     );
 
     const filterActive = videoFilter && !!currentVideoName;
