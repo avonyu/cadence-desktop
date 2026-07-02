@@ -104,7 +104,7 @@ export const SubtitlesSidebar = memo(function SubtitlesSidebar({
               </Button>
             </DrawerClose>
           </DrawerHeader>
-          <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4">
+          <div className="no-scrollbar flex-1 min-h-0 overflow-y-auto px-4 pb-4">
             {drawerProps && (
               <SentenceExplanationPanel
                 sentence={drawerProps.sentence}
