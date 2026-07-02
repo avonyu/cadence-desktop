@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { flattenActions, type StoreSetter, type StoreGetter } from "./helpers";
+import type { NativeLanguage, LearningLanguage } from "@/lib/subtitles";
 
 export type BlurMode = "off" | "primary" | "secondary" | "all";
 
@@ -24,6 +25,8 @@ interface PlayerState {
   sidebarTab: SidebarTab;
   blurMode: BlurMode;
   swapSubtitles: boolean;
+  nativeLanguage: NativeLanguage;
+  learningLanguage: LearningLanguage;
   activeCaption: number | null;
   lastActiveCaption: number | null;
   pendingNavigation: boolean;
@@ -67,6 +70,8 @@ interface PlayerUIPersist {
   sidebarTab: SidebarTab;
   blurMode: BlurMode;
   swapSubtitles: boolean;
+  nativeLanguage: NativeLanguage;
+  learningLanguage: LearningLanguage;
   singleSentenceLoop: boolean;
   sentencesVideoFilter: boolean;
 }
@@ -76,6 +81,8 @@ const defaultPlayerUI: PlayerUIPersist = {
   sidebarTab: "subtitles",
   blurMode: "off",
   swapSubtitles: false,
+  nativeLanguage: "zh",
+  learningLanguage: "en",
   singleSentenceLoop: false,
   sentencesVideoFilter: false,
 };
@@ -97,6 +104,8 @@ function persistPlayerUI(state: PlayerUIState) {
       sidebarTab: state.sidebarTab,
       blurMode: state.blurMode,
       swapSubtitles: state.swapSubtitles,
+      nativeLanguage: state.nativeLanguage,
+      learningLanguage: state.learningLanguage,
       singleSentenceLoop: state.singleSentenceLoop,
       sentencesVideoFilter: state.sentencesVideoFilter,
     };
@@ -112,6 +121,8 @@ interface PlayerUIState {
   sidebarTab: SidebarTab;
   blurMode: BlurMode;
   swapSubtitles: boolean;
+  nativeLanguage: NativeLanguage;
+  learningLanguage: LearningLanguage;
   singleSentenceLoop: boolean;
   sentencesVideoFilter: boolean;
 }
@@ -123,6 +134,8 @@ const initialState: PlayerState = {
   sidebarTab: persistedUI.sidebarTab,
   blurMode: persistedUI.blurMode,
   swapSubtitles: persistedUI.swapSubtitles,
+  nativeLanguage: persistedUI.nativeLanguage,
+  learningLanguage: persistedUI.learningLanguage,
   activeCaption: null,
   lastActiveCaption: null,
   pendingNavigation: false,
@@ -194,6 +207,20 @@ export class PlayerActionImpl {
       const next = !s.swapSubtitles;
       persistPlayerUI({ ...s, swapSubtitles: next });
       return { swapSubtitles: next };
+    });
+  };
+
+  setNativeLanguage = (lang: NativeLanguage) => {
+    this.#set((s) => {
+      persistPlayerUI({ ...s, nativeLanguage: lang });
+      return { nativeLanguage: lang };
+    });
+  };
+
+  setLearningLanguage = (lang: LearningLanguage) => {
+    this.#set((s) => {
+      persistPlayerUI({ ...s, learningLanguage: lang });
+      return { learningLanguage: lang };
     });
   };
 

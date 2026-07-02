@@ -2,7 +2,7 @@ import { useRef, useState, useCallback } from "react";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { open } from "@tauri-apps/plugin-dialog";
-import { type Caption } from "@/lib/subtitles";
+import { type Caption, normalizeCaptionLanguages } from "@/lib/subtitles";
 import { getSubtitlesForVideo } from "@/lib/ai-subtitle";
 import {
   type VideoCodecResult,
@@ -42,6 +42,8 @@ export function useVideoFile(): UseVideoFileReturn {
 
   const setActiveCaption = usePlayerStore((s) => s.setActiveCaption);
   const setLastActiveCaption = usePlayerStore((s) => s.setLastActiveCaption);
+  const nativeLanguage = usePlayerStore((s) => s.nativeLanguage);
+  const learningLanguage = usePlayerStore((s) => s.learningLanguage);
 
   // Shared logic for loading a video by file path
   const loadVideoByPath = useCallback(
@@ -82,10 +84,11 @@ export function useVideoFile(): UseVideoFileReturn {
 
       const cached = await getSubtitlesForVideo(fileName);
       if (cached && cached.length > 0) {
-        setCaptions(cached);
+        const normalized = normalizeCaptionLanguages(cached, nativeLanguage, learningLanguage);
+        setCaptions(normalized);
       }
     },
-    [setActiveCaption, setLastActiveCaption],
+    [setActiveCaption, setLastActiveCaption, nativeLanguage, learningLanguage],
   );
 
   const handleOpenFile = useCallback(async () => {

@@ -64,7 +64,7 @@
   },
   "settings": {
     "title": "设置",
-    "language": "语言",
+    "language": "界面语言",
     "theme": "主题",
     "themeDark": "暗色",
     "themeLight": "亮色",
@@ -83,6 +83,8 @@
     "cancel": "取消",
     "langZh": "中文",
     "langEn": "English",
+    "nativeLanguage": "母语",
+    "learningLanguage": "学习语",
     "tabBasic": "基础",
     "tabAi": "AI",
     "tabAbout": "关于",

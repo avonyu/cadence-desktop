@@ -2,6 +2,10 @@
  * Subtitle parsing utilities for SRT and ASS formats.
  * Converts raw subtitle files into a frontend-friendly format.
  */
+import { detectTextLanguage } from "./language-detect";
+
+export type NativeLanguage = "zh" | "en";
+export type LearningLanguage = "zh" | "en";
 
 export interface Caption {
   /** Display time string in "MM:SS" format */
@@ -286,4 +290,40 @@ export function parseASS(content: string): Caption[] {
 export function parseSubtitles(content: string): Caption[] {
   const format = detectFormat(content);
   return format === "ass" ? parseASS(content) : parseSRT(content);
+}
+
+function swapCaptionFields(c: Caption): Caption {
+  return {
+    ...c,
+    text: c.translation,
+    translation: c.text,
+    textHtml: sanitizeSubtitleHtml(c.translation),
+    translationHtml: sanitizeSubtitleHtml(c.text),
+  };
+}
+
+/**
+ * Normalize caption language ordering so that `text` always contains the
+ * learning language and `translation` always contains the native language.
+ */
+export function normalizeCaptionLanguages(
+  captions: Caption[],
+  nativeLanguage: NativeLanguage,
+  learningLanguage: LearningLanguage,
+): Caption[] {
+  if (!captions.length) return captions;
+
+  return captions.map((c) => {
+    const textLang = detectTextLanguage(c.text);
+    const transLang = detectTextLanguage(c.translation);
+
+    if (
+      textLang === nativeLanguage &&
+      transLang === learningLanguage
+    ) {
+      return swapCaptionFields(c);
+    }
+
+    return c;
+  });
 }
