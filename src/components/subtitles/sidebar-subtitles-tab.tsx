@@ -6,15 +6,16 @@ import { sanitizeSubtitleHtml } from "@/lib/html-sanitize";
 import { usePlayerStore, type BlurMode } from "@/stores/player-store";
 import { useSentenceFavoritesStore } from "@/stores/sentence-favorites-store";
 import { useTranslation } from "react-i18next";
-import { useRef, useEffect, useCallback, memo, useState } from "react";
+import { useRef, useEffect, useCallback, memo } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { SentenceExplanationPanel } from "./sentence-explanation-panel";
 
 interface SidebarSubtitlesTabProps {
   captions: Caption[];
   onSeekToCaption: (caption: Caption) => void;
   videoFileName: string | null;
+  onExplainSentence: (index: number, sentence: string, translation: string, videoName: string) => void;
+  activeExplainingIndex: number | null;
 }
 
 function getSidebarBlurClasses(blurMode: BlurMode, target: "text" | "translation"): string {
@@ -35,6 +36,8 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
   captions,
   onSeekToCaption,
   videoFileName,
+  onExplainSentence,
+  activeExplainingIndex,
 }: SidebarSubtitlesTabProps) {
   const { t } = useTranslation();
   const blurMode = usePlayerStore((s) => s.blurMode);
@@ -48,8 +51,6 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
 
   const sentences = useSentenceFavoritesStore((s) => s.sentences);
   const toggleSentenceFavorite = useSentenceFavoritesStore((s) => s.toggleFavorite);
-
-  const [explainingIndex, setExplainingIndex] = useState<number | null>(null);
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const activeItemRef = useRef<HTMLDivElement>(null);
@@ -155,7 +156,7 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
                 const isFav = videoName
                   ? sentences.some((s) => s.videoName === videoName && s.subtitleIndex === index)
                   : false;
-                const isExplaining = explainingIndex === index;
+                const isExplaining = activeExplainingIndex === index;
 
                 return (
                   <div
@@ -204,9 +205,7 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
                             title={t("explain.explainSentence")}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setExplainingIndex(
-                                isExplaining ? null : index,
-                              );
+                              onExplainSentence(index, caption.text, caption.translation, videoName);
                             }}
                             className={`p-1 rounded transition-colors ${
                               isExplaining
@@ -257,14 +256,6 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
                         </span>
                       </div>
                     </div>
-                    {isExplaining && (
-                      <SentenceExplanationPanel
-                        sentence={caption.text}
-                        translation={caption.translation}
-                        videoName={videoName}
-                        onClose={() => setExplainingIndex(null)}
-                      />
-                    )}
                   </div>
                 );
               })}

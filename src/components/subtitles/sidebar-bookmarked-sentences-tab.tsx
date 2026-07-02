@@ -29,12 +29,13 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { FavoriteSentence } from "@/lib/sentence-favorites-db";
 import { cn } from "@/lib/utils";
-import { SentenceExplanationPanel } from "./sentence-explanation-panel";
 
 type SortKey = "recent" | "oldest";
 
 interface SidebarBookmarkedSentencesTabProps {
   currentVideoName: string | null;
+  onExplainBookmark: (bookmarkId: number, sentence: string, translation: string, videoName: string) => void;
+  activeExplainingBookmarkId: number | null;
 }
 
 function formatTime(seconds: number): string {
@@ -53,6 +54,8 @@ function getDisplayText(item: FavoriteSentence, swap: boolean) {
 export const SidebarBookmarkedSentencesTab = memo(
   function SidebarBookmarkedSentencesTab({
     currentVideoName,
+    onExplainBookmark,
+    activeExplainingBookmarkId,
   }: SidebarBookmarkedSentencesTabProps) {
     const { t } = useTranslation();
     const sentences = useSentenceFavoritesStore((s) => s.sentences);
@@ -69,7 +72,6 @@ export const SidebarBookmarkedSentencesTab = memo(
 
     const [query, setQuery] = useState("");
     const [sort, setSort] = useState<SortKey>("recent");
-    const [explainingId, setExplainingId] = useState<number | null>(null);
 
     useEffect(() => {
       hydrate();
@@ -212,7 +214,7 @@ export const SidebarBookmarkedSentencesTab = memo(
           <ScrollArea className="min-h-0 flex-1">
             <div className="space-y-1 px-3 py-3">
               {list.map((item) => {
-                const isExplaining = explainingId === item.id;
+                const isExplaining = activeExplainingBookmarkId === item.id;
                 const { primary, secondary } = getDisplayText(item, swapSubtitles);
                 return (
                 <div
@@ -249,7 +251,7 @@ export const SidebarBookmarkedSentencesTab = memo(
                         title={t("explain.explainSentence")}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setExplainingId(isExplaining ? null : item.id);
+                          onExplainBookmark(item.id, item.text, item.translation, item.videoName);
                         }}
                         className={cn(
                           "p-1 rounded transition-colors",
@@ -271,14 +273,6 @@ export const SidebarBookmarkedSentencesTab = memo(
                     </div>
                   </div>
                 </div>
-                {isExplaining && (
-                  <SentenceExplanationPanel
-                    sentence={item.text}
-                    translation={item.translation}
-                    videoName={item.videoName}
-                    onClose={() => setExplainingId(null)}
-                  />
-                )}
                 </div>
                 );
               })}

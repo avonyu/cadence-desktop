@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from "react";
-import { Loader2, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { explainSentence, type SentenceExplanation } from "@/lib/sentence-explanation";
 import { useTranslation } from "react-i18next";
 
@@ -7,14 +7,12 @@ interface SentenceExplanationPanelProps {
   sentence: string;
   translation: string;
   videoName: string;
-  onClose: () => void;
 }
 
 export const SentenceExplanationPanel = memo(function SentenceExplanationPanel({
   sentence,
   translation,
   videoName,
-  onClose,
 }: SentenceExplanationPanelProps) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -44,45 +42,40 @@ export const SentenceExplanationPanel = memo(function SentenceExplanationPanel({
   }, [sentence, translation, videoName]);
 
   return (
-    <div className="mt-2 rounded-md border border-border bg-muted/30 px-3 py-3 space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-(--player-accent) uppercase tracking-wide">
-          {t("explain.title")}
-        </span>
-        <button
-          onClick={onClose}
-          className="text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <X size={14} />
-        </button>
-      </div>
-
+    <div className="space-y-4">
       {loading ? (
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="size-3.5 animate-spin" />
-          <span className="text-xs">{t("explain.loading")}</span>
+          <Loader2 className="size-4 animate-spin" />
+          <span className="text-sm">{t("explain.loading")}</span>
         </div>
       ) : error ? (
-        <p className="text-xs text-muted-foreground">{t("explain.error")}</p>
+        <p className="text-sm text-muted-foreground">{t("explain.error")}</p>
       ) : explanation ? (
         <>
+          <div className="rounded-md bg-muted/50 px-3 py-2 space-y-1">
+            <p className="text-sm font-medium text-foreground">{sentence}</p>
+            {translation && (
+              <p className="text-sm text-muted-foreground">{translation}</p>
+            )}
+          </div>
+
           <div>
-            <p className="text-xs font-semibold text-foreground">
+            <p className="text-sm font-semibold text-foreground">
               {t("explain.overallMeaning")}
             </p>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
               {explanation.overallMeaning}
             </p>
           </div>
 
           {explanation.grammarPoints.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-foreground">
+              <p className="text-sm font-semibold text-foreground">
                 {t("explain.grammar")}
               </p>
               <ul className="mt-1 space-y-1.5">
                 {explanation.grammarPoints.map((gp, i) => (
-                  <li key={i} className="text-xs">
+                  <li key={i} className="text-sm">
                     <span className="font-medium text-(--player-accent)">
                       {gp.pattern}
                     </span>
@@ -97,12 +90,12 @@ export const SentenceExplanationPanel = memo(function SentenceExplanationPanel({
 
           {explanation.keyVocabulary.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-foreground">
+              <p className="text-sm font-semibold text-foreground">
                 {t("explain.vocabulary")}
               </p>
               <ul className="mt-1 space-y-1">
                 {explanation.keyVocabulary.map((v, i) => (
-                  <li key={i} className="text-xs">
+                  <li key={i} className="text-sm">
                     <span className="font-medium text-foreground">
                       {v.word}
                     </span>
