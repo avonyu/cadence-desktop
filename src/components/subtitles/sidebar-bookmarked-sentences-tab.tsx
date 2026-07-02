@@ -64,10 +64,11 @@ export const SidebarBookmarkedSentencesTab = memo(
     const setActiveCaption = usePlayerStore((s) => s.setActiveCaption);
     const setLastActiveCaption = usePlayerStore((s) => s.setLastActiveCaption);
     const swapSubtitles = usePlayerStore((s) => s.swapSubtitles);
+    const videoFilter = usePlayerStore((s) => s.sentencesVideoFilter);
+    const toggleVideoFilter = usePlayerStore((s) => s.toggleSentencesVideoFilter);
 
     const [query, setQuery] = useState("");
     const [sort, setSort] = useState<SortKey>("recent");
-    const [videoFilter, setVideoFilter] = useState(false);
     const [explainingId, setExplainingId] = useState<number | null>(null);
 
     useEffect(() => {
@@ -141,12 +142,25 @@ export const SidebarBookmarkedSentencesTab = memo(
               className="h-8 pl-8 text-sm"
             />
           </div>
+          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+            <SelectTrigger size="sm" className="w-auto shrink-0">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="recent">
+                {t("sentenceFavorites.sortRecent")}
+              </SelectItem>
+              <SelectItem value="oldest">
+                {t("sentenceFavorites.sortOldest")}
+              </SelectItem>
+            </SelectContent>
+          </Select>
           {currentVideoName && (
             <TooltipProvider delayDuration={300}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="icon-sm"
                     className={cn(
                       "shrink-0",
@@ -154,7 +168,7 @@ export const SidebarBookmarkedSentencesTab = memo(
                         ? "text-(--player-accent)"
                         : "text-muted-foreground",
                     )}
-                    onClick={() => setVideoFilter((v) => !v)}
+                    onClick={() => toggleVideoFilter()}
                   >
                     <ListFilter size={14} />
                   </Button>
@@ -169,19 +183,6 @@ export const SidebarBookmarkedSentencesTab = memo(
               </Tooltip>
             </TooltipProvider>
           )}
-          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-            <SelectTrigger size="sm" className="w-auto shrink-0">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value="recent">
-                {t("sentenceFavorites.sortRecent")}
-              </SelectItem>
-              <SelectItem value="oldest">
-                {t("sentenceFavorites.sortOldest")}
-              </SelectItem>
-            </SelectContent>
-          </Select>
           {totalCount > 0 && (
             <Badge variant="secondary" className="shrink-0">
               {totalCount}

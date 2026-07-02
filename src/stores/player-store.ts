@@ -36,6 +36,7 @@ interface PlayerState {
   subtitleMaskRect: MaskRect;
   autoTranscode: boolean;
   singleSentenceLoop: boolean;
+  sentencesVideoFilter: boolean;
 }
 
 type PlayerAction = Pick<PlayerActionImpl, keyof PlayerActionImpl>;
@@ -67,6 +68,7 @@ interface PlayerUIPersist {
   blurMode: BlurMode;
   swapSubtitles: boolean;
   singleSentenceLoop: boolean;
+  sentencesVideoFilter: boolean;
 }
 
 const defaultPlayerUI: PlayerUIPersist = {
@@ -75,6 +77,7 @@ const defaultPlayerUI: PlayerUIPersist = {
   blurMode: "off",
   swapSubtitles: false,
   singleSentenceLoop: false,
+  sentencesVideoFilter: false,
 };
 
 function loadPlayerUI(): PlayerUIPersist {
@@ -95,6 +98,7 @@ function persistPlayerUI(state: PlayerUIState) {
       blurMode: state.blurMode,
       swapSubtitles: state.swapSubtitles,
       singleSentenceLoop: state.singleSentenceLoop,
+      sentencesVideoFilter: state.sentencesVideoFilter,
     };
     localStorage.setItem(STORAGE_KEY_PLAYER_STATE, JSON.stringify(data));
   } catch {
@@ -109,6 +113,7 @@ interface PlayerUIState {
   blurMode: BlurMode;
   swapSubtitles: boolean;
   singleSentenceLoop: boolean;
+  sentencesVideoFilter: boolean;
 }
 
 const persistedUI = loadPlayerUI();
@@ -133,6 +138,7 @@ const initialState: PlayerState = {
   subtitleMaskRect: loadMaskRect(),
   autoTranscode: localStorage.getItem(STORAGE_KEY_AUTO_TRANSCODE) !== "false",
   singleSentenceLoop: persistedUI.singleSentenceLoop,
+  sentencesVideoFilter: persistedUI.sentencesVideoFilter,
 };
 
 const blurModes: BlurMode[] = ["off", "primary", "secondary", "all"];
@@ -247,6 +253,14 @@ export class PlayerActionImpl {
       const next = !s.singleSentenceLoop;
       persistPlayerUI({ ...s, singleSentenceLoop: next });
       return { singleSentenceLoop: next };
+    });
+  };
+
+  toggleSentencesVideoFilter = () => {
+    this.#set((s) => {
+      const next = !s.sentencesVideoFilter;
+      persistPlayerUI({ ...s, sentencesVideoFilter: next });
+      return { sentencesVideoFilter: next };
     });
   };
 }
