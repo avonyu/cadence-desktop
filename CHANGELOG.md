@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7.2] - 2026-07-01
+
+### 🚀 New Features
+
+- **ASS pre-translation support**: The AI subtitle pipeline now detects pre-existing translations in bilingual ASS files (text after the first `\N`). When the AI returns empty translations, the system falls back to these pre-existing translations, improving accuracy for already-translated subtitle tracks (`src/lib/ai-subtitle.ts`).
+
+### ⚡ Improvements
+
+- **Error handling with logging**: All `catch` blocks now log errors via `console.warn`/`console.error`/`console.debug` with contextual messages. Previously, many failures were silently ignored, making debugging difficult. Affected modules: activation dialog, settings dialog, word pronunciation, dictionary lookup, favorites database, word cache database.
+
+### 📖 Documentation
+
+- **README updates**: Fixed license badge (MIT → GPL v3), added entries for Word Favorites, Word Pronunciation, and Settings Dialog features; restructured settings section into tabbed format (Basic, AI Config, About).
+
+### 🧹 Internal
+
+- Bumped version (0.7.1 → 0.7.2).
+
 ## [0.7.1] - 2026-06-30
 
 ### 🚀 New Features
