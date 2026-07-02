@@ -37,6 +37,8 @@ export async function explainSentence(
 
   const apiKey = usePlayerStore.getState().deepseekApiKey;
   const model = usePlayerStore.getState().deepseekModel || "deepseek-v4-flash";
+  const nativeLanguage = usePlayerStore.getState().nativeLanguage;
+  const learningLanguage = usePlayerStore.getState().learningLanguage;
 
   if (!apiKey) return null;
 
@@ -55,6 +57,8 @@ export async function explainSentence(
     const text: string = await invoke("call_deepseek_explain_sentence", {
       sentence: clean,
       translation: translation.trim(),
+      learningLanguage,
+      nativeLanguage,
       apiKey,
       model,
     });

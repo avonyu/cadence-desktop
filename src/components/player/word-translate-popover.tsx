@@ -200,6 +200,22 @@ export function WordTranslatePopover({
                 </ol>
               </div>
             ))}
+            {definition?.conjugations && (
+              <div className="mt-3 pt-2 border-t border-border flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                {definition.conjugations.presentThirdPerson && (
+                  <span>三单: {definition.conjugations.presentThirdPerson}</span>
+                )}
+                {definition.conjugations.presentParticiple && (
+                  <span>现在分词: {definition.conjugations.presentParticiple}</span>
+                )}
+                {definition.conjugations.pastTense && (
+                  <span>过去式: {definition.conjugations.pastTense}</span>
+                )}
+                {definition.conjugations.pastParticiple && (
+                  <span>过去分词: {definition.conjugations.pastParticiple}</span>
+                )}
+              </div>
+            )}
           </div>
         </ScrollArea>
       </PopoverContent>

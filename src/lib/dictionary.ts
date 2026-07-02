@@ -13,6 +13,12 @@ loadCache().then((entries) => {
 export interface WordDefinition {
   word: string;
   phonetic?: string;
+  conjugations?: {
+    presentThirdPerson?: string;
+    presentParticiple?: string;
+    pastTense?: string;
+    pastParticiple?: string;
+  };
   meanings: {
     partOfSpeech: string;
     definitions: {
