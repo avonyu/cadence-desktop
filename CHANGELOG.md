@@ -2,6 +2,52 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.8.1] - 2026-07-03
+
+### 🚀 New Features
+
+- **Native / learning language settings**: The settings dialog now lets you configure your native language and learning language. The subtitle pipeline auto-normalizes the `text` / `translation` fields on every caption entry, ensuring the learning language is always shown as the primary text regardless of the source file's column arrangement (`src/lib/subtitles.ts`, `src/hooks/use-video-file.ts`, `src/stores/player-store.ts`).
+- **Word pronunciation in lookup panel**: The word translation popover now includes a pronunciation feature for opened words, allowing you to hear vocabulary spoken without navigating to the favorites page (`src/lib/word-pronunciation.ts`).
+
+### 🐛 Bug Fixes
+
+- **Truncated AI JSON recovery**: AI subtitle responses truncated by token limits are now partially recovered — the parser scans remaining text for individual `{...}` objects and salvages as many entries as possible instead of discarding the entire response (`src/lib/ai-subtitle.ts`).
+- **Non-dialogue positioning tags**: ASS subtitle lines containing positioning override tags (`\an8`, `\pos(`, `\move(`) are now correctly skipped during AI preprocessing. Previously, these on-screen text overlays (chapter titles, location labels) were incorrectly treated as dialogue (`src/lib/ai-subtitle.ts`).
+- **Transcoded filename suffix**: Video files with duplicated `_transcoded` suffixes in their names are now normalized to display the correct original filename (`src/hooks/use-video-file.ts`).
+
+### ⚡ Improvements
+
+- **Enhanced non-dialogue detection**: The AI subtitle prompt now recognizes additional on-screen text overlay patterns (bracketed book titles, descriptive meta-text) and filters them from the output (`src-tauri/prompts/subtitle-processor.md`).
+- **Language-agnostic AI explainer**: Sentence explanations now work for any source language. The verb conjugation analysis adapts to the detected language (`src-tauri/prompts/subtitle-processor.md`, `src/lib/sentence-explanation.ts`).
+- **Verb conjugation display**: Conjugation forms are rendered with the shadcn `Badge` component for better visual hierarchy, and the base form is shown in the popover header (`src/components/word-translate-popover.tsx`).
+- **Loading state polish**: The sentence explanation drawer shows a shiny text effect during loading for visual feedback (`src/components/subtitles/sentence-explanation-drawer.tsx`).
+
+### 🎨 Style
+
+- Hide scrollbar in the explanation drawer (`src/components/subtitles/sentence-explanation-drawer.tsx`).
+- Use muted foreground for the base form text in the word translate header.
+
+### 🧹 Refactoring
+
+- **Database consolidation**: Subtitle favorites and word favorites now share a single database (`data.db` instead of `favorites.db`). Tables renamed for clarity: `favorites` → `words`, `favorite_sentences` → `sentences` (`src/lib/favorites-db.ts`, `src/lib/sentence-favorites-db.ts`).
+- **Captions interface cleanup**: Removed HTML-safe fields (`htmlText`, `htmlTranslation`) from the `Caption` interface — HTML wrapping is now handled closer to the render layer (`src/lib/subtitles.ts`, `src/components/player/captions-display.tsx`).
+
+### 📖 Documentation
+
+- Added subtitle pipeline architecture document (`documents/subtitle-pipeline.html`) covering the full processing flow, data types, AI integration, and file references.
+
+## [0.8.0] - 2026-07-02
+
+### 🚀 New Features
+
+- **Sentence explanation (AI-powered)**: Select any subtitle sentence to get an AI-generated explanation including context, grammar analysis, and key vocabulary via the DeepSeek API. The explanation appears in a left-side drawer that opens from the player page (`src/lib/sentence-explanation.ts`, `src/components/subtitles/sentence-explanation-drawer.tsx`).
+- **Sentence bookmarking**: Bookmark subtitle sentences for later review. Bookmarked sentences appear in the sidebar favorites tab with search, sort, and one-click seek-to-time functionality (`src/lib/sentence-favorites-db.ts`, `src/components/subtitles/sidebar-subtitles-tab.tsx`).
+
+### ⚡ Improvements
+
+- **Video filter toggle persistence**: The video filter (e.g. black-and-white, high-contrast) toggle state is now persisted in the player store, surviving page navigation (`src/stores/player-store.ts`).
+- Clicking a bookmarked sentence's timestamp syncs the active caption and seeks the video to the exact time.
+
 ## [0.7.2] - 2026-07-01
 
 ### 🚀 New Features
