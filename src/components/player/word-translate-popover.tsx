@@ -126,7 +126,7 @@ export function WordTranslatePopover({
               definition.conjugations.baseForm !== word && (
                 <>
                   <span className="text-xs text-muted-foreground">→</span>
-                  <span className="text-base font-semibold text-(--player-accent) shrink-0">
+                   <span className="text-base font-semibold text-muted-foreground shrink-0">
                     {definition.conjugations.baseForm}
                   </span>
                 </>
@@ -213,16 +213,24 @@ export function WordTranslatePopover({
             {definition?.conjugations && (
               <div className="mt-3 pt-2 border-t border-border flex flex-wrap gap-1.5">
                 {definition.conjugations.presentThirdPerson && (
-                  <Badge variant="outline">{definition.conjugations.presentThirdPerson}</Badge>
+                  <Badge variant="outline">
+                    {definition.conjugations.presentThirdPerson}
+                  </Badge>
                 )}
                 {definition.conjugations.presentParticiple && (
-                  <Badge variant="outline">{definition.conjugations.presentParticiple}</Badge>
+                  <Badge variant="outline">
+                    {definition.conjugations.presentParticiple}
+                  </Badge>
                 )}
                 {definition.conjugations.pastTense && (
-                  <Badge variant="outline">{definition.conjugations.pastTense}</Badge>
+                  <Badge variant="outline">
+                    {definition.conjugations.pastTense}
+                  </Badge>
                 )}
                 {definition.conjugations.pastParticiple && (
-                  <Badge variant="outline">{definition.conjugations.pastParticiple}</Badge>
+                  <Badge variant="outline">
+                    {definition.conjugations.pastParticiple}
+                  </Badge>
                 )}
               </div>
             )}
