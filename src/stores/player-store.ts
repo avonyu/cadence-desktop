@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import { flattenActions, type StoreSetter, type StoreGetter } from "./helpers";
+import type { NativeLanguage, LearningLanguage } from "@/lib/subtitles";
 
 export type BlurMode = "off" | "primary" | "secondary" | "all";
 
-export type SidebarTab = "subtitles" | "favorites";
+export type SidebarTab = "subtitles" | "bookmarked-sentences" | "favorites";
 
 export type AiProcessingState =
   | "idle"
@@ -24,6 +25,8 @@ interface PlayerState {
   sidebarTab: SidebarTab;
   blurMode: BlurMode;
   swapSubtitles: boolean;
+  nativeLanguage: NativeLanguage;
+  learningLanguage: LearningLanguage;
   activeCaption: number | null;
   lastActiveCaption: number | null;
   pendingNavigation: boolean;
@@ -36,6 +39,7 @@ interface PlayerState {
   subtitleMaskRect: MaskRect;
   autoTranscode: boolean;
   singleSentenceLoop: boolean;
+  sentencesVideoFilter: boolean;
 }
 
 type PlayerAction = Pick<PlayerActionImpl, keyof PlayerActionImpl>;
@@ -66,7 +70,10 @@ interface PlayerUIPersist {
   sidebarTab: SidebarTab;
   blurMode: BlurMode;
   swapSubtitles: boolean;
+  nativeLanguage: NativeLanguage;
+  learningLanguage: LearningLanguage;
   singleSentenceLoop: boolean;
+  sentencesVideoFilter: boolean;
 }
 
 const defaultPlayerUI: PlayerUIPersist = {
@@ -74,7 +81,10 @@ const defaultPlayerUI: PlayerUIPersist = {
   sidebarTab: "subtitles",
   blurMode: "off",
   swapSubtitles: false,
+  nativeLanguage: "zh",
+  learningLanguage: "en",
   singleSentenceLoop: false,
+  sentencesVideoFilter: false,
 };
 
 function loadPlayerUI(): PlayerUIPersist {
@@ -94,7 +104,10 @@ function persistPlayerUI(state: PlayerUIState) {
       sidebarTab: state.sidebarTab,
       blurMode: state.blurMode,
       swapSubtitles: state.swapSubtitles,
+      nativeLanguage: state.nativeLanguage,
+      learningLanguage: state.learningLanguage,
       singleSentenceLoop: state.singleSentenceLoop,
+      sentencesVideoFilter: state.sentencesVideoFilter,
     };
     localStorage.setItem(STORAGE_KEY_PLAYER_STATE, JSON.stringify(data));
   } catch {
@@ -108,7 +121,10 @@ interface PlayerUIState {
   sidebarTab: SidebarTab;
   blurMode: BlurMode;
   swapSubtitles: boolean;
+  nativeLanguage: NativeLanguage;
+  learningLanguage: LearningLanguage;
   singleSentenceLoop: boolean;
+  sentencesVideoFilter: boolean;
 }
 
 const persistedUI = loadPlayerUI();
@@ -118,6 +134,8 @@ const initialState: PlayerState = {
   sidebarTab: persistedUI.sidebarTab,
   blurMode: persistedUI.blurMode,
   swapSubtitles: persistedUI.swapSubtitles,
+  nativeLanguage: persistedUI.nativeLanguage,
+  learningLanguage: persistedUI.learningLanguage,
   activeCaption: null,
   lastActiveCaption: null,
   pendingNavigation: false,
@@ -133,6 +151,7 @@ const initialState: PlayerState = {
   subtitleMaskRect: loadMaskRect(),
   autoTranscode: localStorage.getItem(STORAGE_KEY_AUTO_TRANSCODE) !== "false",
   singleSentenceLoop: persistedUI.singleSentenceLoop,
+  sentencesVideoFilter: persistedUI.sentencesVideoFilter,
 };
 
 const blurModes: BlurMode[] = ["off", "primary", "secondary", "all"];
@@ -188,6 +207,20 @@ export class PlayerActionImpl {
       const next = !s.swapSubtitles;
       persistPlayerUI({ ...s, swapSubtitles: next });
       return { swapSubtitles: next };
+    });
+  };
+
+  setNativeLanguage = (lang: NativeLanguage) => {
+    this.#set((s) => {
+      persistPlayerUI({ ...s, nativeLanguage: lang });
+      return { nativeLanguage: lang };
+    });
+  };
+
+  setLearningLanguage = (lang: LearningLanguage) => {
+    this.#set((s) => {
+      persistPlayerUI({ ...s, learningLanguage: lang });
+      return { learningLanguage: lang };
     });
   };
 
@@ -247,6 +280,14 @@ export class PlayerActionImpl {
       const next = !s.singleSentenceLoop;
       persistPlayerUI({ ...s, singleSentenceLoop: next });
       return { singleSentenceLoop: next };
+    });
+  };
+
+  toggleSentencesVideoFilter = () => {
+    this.#set((s) => {
+      const next = !s.sentencesVideoFilter;
+      persistPlayerUI({ ...s, sentencesVideoFilter: next });
+      return { sentencesVideoFilter: next };
     });
   };
 }

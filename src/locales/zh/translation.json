@@ -64,7 +64,7 @@
   },
   "settings": {
     "title": "设置",
-    "language": "语言",
+    "language": "界面语言",
     "theme": "主题",
     "themeDark": "暗色",
     "themeLight": "亮色",
@@ -83,6 +83,8 @@
     "cancel": "取消",
     "langZh": "中文",
     "langEn": "English",
+    "nativeLanguage": "母语",
+    "learningLanguage": "学习语",
     "tabBasic": "基础",
     "tabAi": "AI",
     "tabAbout": "关于",
@@ -140,6 +142,29 @@
     "remove": "移除收藏",
     "removed": "已移除 {{word}}",
     "pronounce": "发音"
+  },
+  "explain": {
+    "title": "句子解释",
+    "loading": "AI 分析中...",
+    "error": "获取解释失败，请重试",
+    "overallMeaning": "句意",
+    "grammar": "语法",
+    "vocabulary": "重点词汇",
+    "explainSentence": "解释句子"
+  },
+  "sentenceFavorites": {
+    "tabTitle": "收藏字幕",
+    "searchPlaceholder": "搜索句子或视频",
+    "sortRecent": "最近添加",
+    "sortOldest": "最早添加",
+    "empty": "还没有收藏句子",
+    "emptyHint": "在字幕列表中点击书签按钮即可收藏",
+    "emptySearch": "没有匹配的句子",
+    "remove": "移除收藏",
+    "removed": "已移除收藏句子",
+    "bookmark": "收藏句子",
+    "filterCurrentVideo": "仅显示当前视频",
+    "filterAll": "显示全部收藏"
   },
   "gamepad": {
     "connected": "手柄已连接",

@@ -138,3 +138,42 @@ pub async fn call_deepseek_dictionary(
     )
     .await
 }
+
+#[tauri::command]
+pub async fn call_deepseek_explain_sentence(
+    sentence: String,
+    translation: String,
+    learning_language: String,
+    native_language: String,
+    api_key: String,
+    model: String,
+) -> Result<String, String> {
+    let system_prompt = include_str!("../prompts/sentence-explainer.md");
+    let learning_name = match learning_language.as_str() {
+        "zh" => "Chinese",
+        "en" => "English",
+        _ => &learning_language,
+    };
+    let native_name = match native_language.as_str() {
+        "zh" => "Chinese",
+        "en" => "English",
+        _ => &native_language,
+    };
+    let user_content = format!(
+        "The student is learning {}. Their native language is {}.\n\nSentence: {}\nTranslation: {}",
+        learning_name,
+        native_name,
+        sentence.trim(),
+        translation.trim()
+    );
+
+    deepseek_chat(
+        &api_key,
+        &model,
+        system_prompt,
+        &user_content,
+        0.3,
+        Some(2048),
+    )
+    .await
+}

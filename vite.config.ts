@@ -34,16 +34,46 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks: {
-          "vendor-react": ["react", "react-dom", "react-router"],
-          "vendor-video": ["@videojs/react"],
-          "vendor-ui": [
-            "radix-ui",
-            "lucide-react",
-            "class-variance-authority",
-            "clsx",
-            "tailwind-merge",
-          ],
+        manualChunks(id: string) {
+          if (!id.includes("node_modules")) return;
+
+          const reactPackages = [
+            "node_modules/react/",
+            "node_modules/react-dom/",
+            "node_modules/scheduler/",
+          ];
+          if (reactPackages.some((pkg) => id.includes(pkg))) {
+            return "vendor-react";
+          }
+
+          if (id.includes("node_modules/react-router/") || id.includes("node_modules/@remix-run/")) {
+            return "vendor-router";
+          }
+
+          if (id.includes("@videojs") || id.includes("video.js") || id.includes("@videojs/react")) {
+            return "vendor-video";
+          }
+
+          if (
+            id.includes("radix-ui") ||
+            id.includes("lucide-react") ||
+            id.includes("class-variance-authority") ||
+            id.includes("clsx") ||
+            id.includes("tailwind-merge") ||
+            id.includes("tw-animate-css")
+          ) {
+            return "vendor-ui";
+          }
+
+          if (id.includes("@tauri-apps")) {
+            return "vendor-tauri";
+          }
+
+          if (id.includes("i18next")) {
+            return "vendor-i18n";
+          }
+
+          return "vendor-common";
         },
       },
     },

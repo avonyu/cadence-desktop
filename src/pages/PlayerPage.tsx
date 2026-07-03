@@ -8,7 +8,7 @@ import { SettingsDialog } from "@/components/settings/settings-dialog";
 import { UsageLimitBanner } from "@/components/usage-limit-banner";
 import { SubtitlesSidebar } from "@/components/subtitles/subtitles-sidebar";
 import { Resizable } from "re-resizable";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { usePlayerStore } from "@/stores/player-store";
 import { useActivationStore } from "@/stores/activation-store";
 import { useVideoFile } from "@/hooks/use-video-file";
@@ -25,6 +25,7 @@ import { useSingleSentenceLoop } from "@/hooks/use-single-sentence-loop";
 import { useWordTranslate } from "@/hooks/use-word-translate";
 import { useDisableContextMenu } from "@/hooks/use-disable-context-menu";
 import { cn } from "@/lib/utils";
+import { normalizeCaptionLanguages } from "@/lib/subtitles";
 import { toggleMediaPlayback } from "@/lib/media-playback";
 import { SPEEDS } from "@/lib/player-constants";
 import { Gamepad2 } from "lucide-react";
@@ -88,6 +89,8 @@ export const PlayerPage = () => {
   const toggleSubtitleMask = usePlayerStore((s) => s.toggleSubtitleMask);
   const cycleBlurMode = usePlayerStore((s) => s.cycleBlurMode);
   const toggleSwap = usePlayerStore((s) => s.toggleSwap);
+  const nativeLanguage = usePlayerStore((s) => s.nativeLanguage);
+  const learningLanguage = usePlayerStore((s) => s.learningLanguage);
   const singleSentenceLoop = usePlayerStore((s) => s.singleSentenceLoop);
   const toggleSingleSentenceLoop = usePlayerStore((s) => s.toggleSingleSentenceLoop);
 
@@ -106,6 +109,19 @@ export const PlayerPage = () => {
   useEffect(() => {
     hydrateActivation();
   }, [hydrateActivation]);
+
+  const prevLangRef = useRef(`${nativeLanguage}:${learningLanguage}`);
+
+  useEffect(() => {
+    const key = `${nativeLanguage}:${learningLanguage}`;
+    if (key === prevLangRef.current) return;
+    prevLangRef.current = key;
+
+    if (captions.length > 0) {
+      const normalized = normalizeCaptionLanguages(captions, nativeLanguage, learningLanguage);
+      setCaptions(normalized);
+    }
+  }, [nativeLanguage, learningLanguage]);
 
   // ---- Derived state ----
   const isAiProcessing = aiProcessing === "processing" || aiProcessing === "loading";
@@ -344,7 +360,7 @@ export const PlayerPage = () => {
             left: "hover:bg-(--player-accent)/50 transition-colors",
           }}
         >
-          <SubtitlesSidebar captions={captions} onSeekToCaption={handleSeekToCaption} onClose={toggleSidebar} />
+          <SubtitlesSidebar captions={captions} onSeekToCaption={handleSeekToCaption} onClose={toggleSidebar} videoFileName={videoFileName} />
         </Resizable>
 
         <SettingsDialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen} />

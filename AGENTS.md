@@ -20,6 +20,16 @@
 - Lucide: Icon Library
 - react-i18next
 
+## Git 分支命名规范
+
+主分支：main
+开发分支：dev
+功能分支：feat/<feature-name>
+修复分支：fix/<fix-name>
+发布分支：release/<release-name>
+热修复分支：hotfix/<hotfix-name>
+支持分支：support/<support-name>
+
 ## Tauri 注意事项
 
 ### CSP 限制

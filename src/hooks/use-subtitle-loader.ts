@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { type Caption } from "@/lib/subtitles";
+import { type Caption, normalizeCaptionLanguages } from "@/lib/subtitles";
 import {
   processSubtitle,
   clearCachedSubtitleForVideo,
@@ -22,6 +22,8 @@ export function useSubtitleLoader(
 ): UseSubtitleLoaderReturn {
   const deepseekApiKey = usePlayerStore((s) => s.deepseekApiKey);
   const deepseekModel = usePlayerStore((s) => s.deepseekModel);
+  const nativeLanguage = usePlayerStore((s) => s.nativeLanguage);
+  const learningLanguage = usePlayerStore((s) => s.learningLanguage);
   const setAiProcessing = usePlayerStore((s) => s.setAiProcessing);
   const setActiveCaption = usePlayerStore((s) => s.setActiveCaption);
   const setLastActiveCaption = usePlayerStore((s) => s.setLastActiveCaption);
@@ -60,7 +62,8 @@ export function useSubtitleLoader(
           subtitlePath,
         );
         if (result.length > 0) {
-          setCaptions(result);
+          const normalized = normalizeCaptionLanguages(result, nativeLanguage, learningLanguage);
+          setCaptions(normalized);
           setActiveCaption(null);
           setLastActiveCaption(null);
           setAiProcessing("done");
@@ -78,6 +81,8 @@ export function useSubtitleLoader(
     [
       deepseekApiKey,
       deepseekModel,
+      nativeLanguage,
+      learningLanguage,
       setAiProcessing,
       setActiveCaption,
       setLastActiveCaption,

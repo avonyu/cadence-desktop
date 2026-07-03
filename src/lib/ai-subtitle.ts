@@ -156,6 +156,7 @@ export interface SubtitleInputEntry {
   index: number;
   timestamp: string;
   text: string;
+  preTranslation?: string;
 }
 
 interface SubtitleJSONEntry {
@@ -246,17 +247,19 @@ function preprocessAssEntries(content: string): SubtitleInputEntry[] {
 
     const timestamp = `${fields[1]} --> ${fields[2]}`;
 
-    // Merge \N / \n line breaks into a single line joined by spaces
-    const text = rawText
+    // Split on \N — first part = source, remaining = pre-existing translation
+    const parts = rawText
       .split(/\\N|\\n/)
       .map((l) => l.trim())
-      .filter(Boolean)
-      .join(" ");
+      .filter(Boolean);
+
+    const text = parts[0] || "";
+    const preTranslation = parts.length >= 2 ? parts.slice(1).join(" ") : undefined;
 
     if (!text) continue;
 
     index++;
-    entries.push({ index, timestamp, text });
+    entries.push({ index, timestamp, text, preTranslation });
   }
 
   return entries;
@@ -327,8 +330,9 @@ function parseSubtitleJSON(
     const start = timestampToSeconds(startStr);
     const end = endStr ? timestampToSeconds(endStr) : start + 2;
 
+    const aiTranslation = inputEntry.preTranslation ?? je.t ?? "";
     const styledSource = applyStyle(je.s, je.st);
-    const styledTranslation = applyStyle(je.t ?? "", je.st);
+    const styledTranslation = applyStyle(aiTranslation, je.st);
 
     captions.push({
       time: formatTime(start),
@@ -364,7 +368,19 @@ function tryParseJSONResponse(raw: string): SubtitleJSON | null {
       jsonStr = fenceEnd !== -1 ? bodyStart.slice(0, fenceEnd) : bodyStart;
     }
 
-    const json = JSON.parse(jsonStr) as SubtitleJSON;
+    let json: SubtitleJSON;
+    try {
+      json = JSON.parse(jsonStr) as SubtitleJSON;
+    } catch (e) {
+      console.warn("[ai-subtitle] JSON.parse failed, attempting salvage:", e instanceof Error ? e.message : e);
+      const salvaged = salvageSubtitleJSON(jsonStr);
+      if (salvaged) {
+        console.warn("[ai-subtitle] salvaged", salvaged.e.length, "entries from truncated/malformed JSON");
+        return salvaged;
+      }
+      console.warn("[ai-subtitle] salvage failed, raw response length:", raw.length);
+      return null;
+    }
 
     if (!json.f || !Array.isArray(json.e)) {
       console.warn("[ai-subtitle] JSON parse: missing f or e fields");
@@ -391,9 +407,73 @@ function tryParseJSONResponse(raw: string): SubtitleJSON | null {
   }
 }
 
+/**
+ * Recover as many complete entry objects as possible from a truncated or
+ * malformed JSON response. The AI occasionally hits the output token limit,
+ * leaving the trailing entries (and closing brackets) cut off. Rather than
+ * discarding the whole response, we scan the `e` array and JSON.parse each
+ * complete `{...}` object individually.
+ */
+function salvageSubtitleJSON(jsonStr: string): SubtitleJSON | null {
+  const fMatch = jsonStr.match(/"f"\s*:\s*"(srt|ass)"/);
+  const format: SubtitleJSON["f"] = fMatch?.[1] === "ass" ? "ass" : "srt";
+
+  const eKey = jsonStr.search(/"e"\s*:\s*\[/);
+  if (eKey === -1) return null;
+  const arrStart = jsonStr.indexOf("[", eKey);
+  if (arrStart === -1) return null;
+
+  const entries: SubtitleJSONEntry[] = [];
+  let depth = 0;
+  let objStart = -1;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = arrStart + 1; i < jsonStr.length; i++) {
+    const ch = jsonStr[i];
+
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+    } else if (ch === "{") {
+      if (depth === 0) objStart = i;
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0 && objStart !== -1) {
+        try {
+          const obj = JSON.parse(jsonStr.slice(objStart, i + 1)) as SubtitleJSONEntry;
+          if (
+            typeof obj.i === "number" &&
+            typeof obj.s === "string" &&
+            (obj.t === null || obj.t === undefined || typeof obj.t === "string") &&
+            (obj.st === undefined || ["i", "b", "u"].includes(obj.st))
+          ) {
+            entries.push({ ...obj, sh: obj.sh !== false });
+          }
+        } catch {
+          // skip incomplete/invalid object
+        }
+        objStart = -1;
+      }
+    } else if (ch === "]" && depth === 0) {
+      break;
+    }
+  }
+
+  if (entries.length === 0) return null;
+  return { f: format, e: entries };
+}
+
 // ─── AI invocation & main processing ────────────────────────────────────────
 
-const CHUNK_SIZE = 300;
+const CHUNK_SIZE = 200;
 
 export async function processSubtitleWithAI(
   content: string,
