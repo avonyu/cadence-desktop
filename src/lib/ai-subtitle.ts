@@ -1,4 +1,4 @@
-import { type Caption, parseSubtitles, sanitizeSubtitleHtml } from "./subtitles";
+import { type Caption, parseSubtitles } from "./subtitles";
 import { invoke } from "@tauri-apps/api/core";
 
 const DB_NAME = "cadence-subtitles";
@@ -340,8 +340,6 @@ function parseSubtitleJSON(
       end,
       text: styledSource,
       translation: styledTranslation,
-      textHtml: sanitizeSubtitleHtml(styledSource),
-      translationHtml: sanitizeSubtitleHtml(styledTranslation),
     });
   }
 
