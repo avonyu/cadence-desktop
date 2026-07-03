@@ -242,7 +242,13 @@ function preprocessAssEntries(content: string): SubtitleInputEntry[] {
       prevIdx = idx + 1;
     }
 
-    const rawText = stripAssStyleTags(contentPart.slice(prevIdx).trim());
+    const rawWithTags = contentPart.slice(prevIdx).trim();
+
+    // Skip on-screen text overlays / annotations: lines with positioning
+    // or alignment tags (\an8, \pos, \move) are never spoken dialogue.
+    if (/\\pos\(|\\move\(|\\an8/.test(rawWithTags)) continue;
+
+    const rawText = stripAssStyleTags(rawWithTags);
     if (!rawText) continue;
 
     const timestamp = `${fields[1]} --> ${fields[2]}`;

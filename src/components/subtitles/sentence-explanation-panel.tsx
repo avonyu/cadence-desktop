@@ -1,5 +1,6 @@
 import { useState, useEffect, memo } from "react";
 import { Loader2 } from "lucide-react";
+import ShinyText from "@/components/ShinyText";
 import { explainSentence, type SentenceExplanation } from "@/lib/sentence-explanation";
 import { useTranslation } from "react-i18next";
 
@@ -44,9 +45,14 @@ export const SentenceExplanationPanel = memo(function SentenceExplanationPanel({
   return (
     <div className="space-y-4">
       {loading ? (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" />
-          <span className="text-sm">{t("explain.loading")}</span>
+        <div className="flex min-h-full items-center justify-center gap-2 py-12">
+          <Loader2 className="size-5 animate-spin text-(--player-accent)" />
+          <ShinyText
+            text={t("explain.loading")}
+            speed={2}
+            shineColor="var(--player-accent)"
+            className="text-lg"
+          />
         </div>
       ) : error ? (
         <p className="text-sm text-muted-foreground">{t("explain.error")}</p>
