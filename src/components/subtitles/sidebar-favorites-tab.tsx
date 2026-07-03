@@ -153,6 +153,18 @@ export const SidebarFavoritesTab = memo(function SidebarFavoritesTab() {
                       <span className="truncate text-sm font-semibold text-foreground">
                         {item.display}
                       </span>
+                      {item.definition.conjugations?.baseForm &&
+                        item.definition.conjugations.baseForm !==
+                          item.display && (
+                          <>
+                            <span className="shrink-0 text-xs text-muted-foreground">
+                              →
+                            </span>
+                            <span className="shrink-0 text-sm font-semibold text-muted-foreground">
+                              {item.definition.conjugations.baseForm}
+                            </span>
+                          </>
+                        )}
                       {item.phonetic && (
                         <span className="shrink-0 text-xs text-muted-foreground">
                           {item.phonetic}
@@ -203,6 +215,36 @@ export const SidebarFavoritesTab = memo(function SidebarFavoritesTab() {
                           </ol>
                         </div>
                       ))}
+                      {item.definition.conjugations && (
+                        <div className="mt-3 pt-2 border-t border-border flex flex-wrap gap-1.5">
+                          {item.definition.conjugations
+                            .presentThirdPerson && (
+                            <Badge variant="outline">
+                              {item.definition.conjugations
+                                .presentThirdPerson}
+                            </Badge>
+                          )}
+                          {item.definition.conjugations
+                            .presentParticiple && (
+                            <Badge variant="outline">
+                              {item.definition.conjugations
+                                .presentParticiple}
+                            </Badge>
+                          )}
+                          {item.definition.conjugations.pastTense && (
+                            <Badge variant="outline">
+                              {item.definition.conjugations.pastTense}
+                            </Badge>
+                          )}
+                          {item.definition.conjugations
+                            .pastParticiple && (
+                            <Badge variant="outline">
+                              {item.definition.conjugations
+                                .pastParticiple}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

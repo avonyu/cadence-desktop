@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.8.2] - 2026-07-03
+
+### 🚀 New Features
+
+- **Auto-pronounce word setting**: A new "Auto-pronounce word" switch in Settings > Basic controls whether the word translate popover automatically plays pronunciation when opening a word. Defaults to on.
+
+### ⚡ Improvements
+
+- **Word conjugations in favorites**: The sidebar favorites tab now displays the base form (lemma) and conjugation badges (third-person singular, present participle, past tense, past participle) for bookmarked words, matching the display in the word translate popover.
+
+### 🐛 Bug Fixes
+
+- **Bilingual SRT block splitting**: Bilingual SRT files containing both original text and translation on separate subtitle blocks are now correctly detected and split into `text` / `preTranslation` fields, ensuring AI subtitle processing receives accurate source text.
+- **Hyphen preservation in translations**: The AI subtitle prompt no longer converts hyphens to em dashes in translated text, preserving punctuation fidelity.
+
+### 🧹 Refactoring
+
+- **Static language config**: Language selection in settings has been replaced with a static language configuration file, removing runtime language selectors.
+
 ## [0.8.1] - 2026-07-03
 
 ### 🚀 New Features

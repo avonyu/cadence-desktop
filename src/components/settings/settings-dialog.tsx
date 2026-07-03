@@ -26,7 +26,7 @@ type SettingsTab = "basic" | "ai" | "about";
 export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { setTheme, theme } = useTheme();
   const { t, i18n } = useTranslation();
-  const { deepseekApiKey, deepseekModel, setDeepseekApiKey, setDeepseekModel, autoTranscode, setAutoTranscode } =
+  const { deepseekApiKey, deepseekModel, setDeepseekApiKey, setDeepseekModel, autoTranscode, setAutoTranscode, autoPronounceWord, setAutoPronounceWord } =
     usePlayerStore();
   const activated = useActivationStore((s) => s.activated);
   const trialActive = useActivationStore((s) => s.trialActive);
@@ -264,9 +264,11 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
                 theme={theme}
                 currentLng={currentLng}
                 autoTranscode={autoTranscode}
+                autoPronounceWord={autoPronounceWord}
                 setTheme={setTheme}
                 onChangeLanguage={i18n.changeLanguage}
                 setAutoTranscode={setAutoTranscode}
+                setAutoPronounceWord={setAutoPronounceWord}
                 t={t}
               />
             </TabsContent>

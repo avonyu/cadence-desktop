@@ -98,7 +98,9 @@
     "apiKeyRequired": "Please provide an API Key",
     "saved": "Configuration saved",
     "autoTranscode": "Auto audio transcoding",
-    "autoTranscodeDesc": "When playing unsupported audio formats, automatically convert them to AAC"
+    "autoTranscodeDesc": "When playing unsupported audio formats, automatically convert them to AAC",
+    "autoPronounceWord": "Auto-pronounce words",
+    "autoPronounceWordDesc": "Automatically pronounce words when looking them up in subtitles"
   },
   "ai": {
     "processing": "AI Processing...",

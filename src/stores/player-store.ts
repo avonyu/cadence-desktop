@@ -39,6 +39,7 @@ interface PlayerState {
   subtitleMaskVisible: boolean;
   subtitleMaskRect: MaskRect;
   autoTranscode: boolean;
+  autoPronounceWord: boolean;
   singleSentenceLoop: boolean;
   sentencesVideoFilter: boolean;
 }
@@ -54,6 +55,7 @@ const defaultMaskRect: MaskRect = {
 
 const STORAGE_KEY_MASK = "cadence:subtitle-mask-rect";
 const STORAGE_KEY_AUTO_TRANSCODE = "cadence:auto-transcode";
+const STORAGE_KEY_AUTO_PRONOUNCE_WORD = "cadence:auto-pronounce-word";
 const STORAGE_KEY_PLAYER_STATE = "cadence:player-state";
 
 function loadMaskRect(): MaskRect {
@@ -143,6 +145,7 @@ const initialState: PlayerState = {
   subtitleMaskVisible: false,
   subtitleMaskRect: loadMaskRect(),
   autoTranscode: localStorage.getItem(STORAGE_KEY_AUTO_TRANSCODE) !== "false",
+  autoPronounceWord: localStorage.getItem(STORAGE_KEY_AUTO_PRONOUNCE_WORD) !== "false",
   singleSentenceLoop: persistedUI.singleSentenceLoop,
   sentencesVideoFilter: persistedUI.sentencesVideoFilter,
 };
@@ -252,6 +255,11 @@ export class PlayerActionImpl {
   setAutoTranscode = (enabled: boolean) => {
     localStorage.setItem(STORAGE_KEY_AUTO_TRANSCODE, String(enabled));
     this.#set({ autoTranscode: enabled });
+  };
+
+  setAutoPronounceWord = (enabled: boolean) => {
+    localStorage.setItem(STORAGE_KEY_AUTO_PRONOUNCE_WORD, String(enabled));
+    this.#set({ autoPronounceWord: enabled });
   };
 
   toggleSingleSentenceLoop = () => {

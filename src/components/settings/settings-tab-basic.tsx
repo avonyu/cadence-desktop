@@ -8,9 +8,11 @@ interface SettingsTabBasicProps {
   theme: string;
   currentLng: string;
   autoTranscode: boolean;
+  autoPronounceWord: boolean;
   setTheme: (v: "system" | "dark" | "light") => void;
   onChangeLanguage: (v: string) => void;
   setAutoTranscode: (v: boolean) => void;
+  setAutoPronounceWord: (v: boolean) => void;
   t: TFunction;
 }
 
@@ -18,9 +20,11 @@ export function SettingsTabBasic({
   theme,
   currentLng,
   autoTranscode,
+  autoPronounceWord,
   setTheme,
   onChangeLanguage,
   setAutoTranscode,
+  setAutoPronounceWord,
   t,
 }: SettingsTabBasicProps) {
   return (
@@ -102,6 +106,23 @@ export function SettingsTabBasic({
         <Switch
           checked={autoTranscode}
           onCheckedChange={setAutoTranscode}
+        />
+      </div>
+
+      <Separator />
+
+      <div className="flex items-center justify-between py-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm text-muted-foreground">
+            {t("settings.autoPronounceWord")}
+          </span>
+          <span className="text-xs text-muted-foreground/70">
+            {t("settings.autoPronounceWordDesc")}
+          </span>
+        </div>
+        <Switch
+          checked={autoPronounceWord}
+          onCheckedChange={setAutoPronounceWord}
         />
       </div>
     </div>

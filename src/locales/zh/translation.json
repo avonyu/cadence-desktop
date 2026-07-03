@@ -98,7 +98,9 @@
     "apiKeyRequired": "请提供 API Key",
     "saved": "配置已保存",
     "autoTranscode": "自动音频转码",
-    "autoTranscodeDesc": "播放不支持的音频格式时，自动将其转换为 AAC 编码"
+    "autoTranscodeDesc": "播放不支持的音频格式时，自动将其转换为 AAC 编码",
+    "autoPronounceWord": "自动朗读单词",
+    "autoPronounceWordDesc": "点击字幕中的单词查询释义后，自动朗读该单词"
   },
   "ai": {
     "processing": "AI 处理中...",

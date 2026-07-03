@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
 import { useWordPronounce } from "@/hooks/use-word-pronounce";
 import { useFavoritesStore } from "@/stores/favorites-store";
+import { usePlayerStore } from "@/stores/player-store";
 import {
   Popover,
   PopoverContent,
@@ -43,16 +44,17 @@ export function WordTranslatePopover({
   );
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const hydrateFavorites = useFavoritesStore((s) => s.hydrate);
+  const autoPronounceWord = usePlayerStore((s) => s.autoPronounceWord);
 
   useEffect(() => {
     hydrateFavorites();
   }, [hydrateFavorites]);
 
   useEffect(() => {
-    if (open && word) {
+    if (open && word && autoPronounceWord) {
       pronounce(word);
     }
-  }, [open, word]);
+  }, [open, word, autoPronounceWord]);
 
   // Close immediately when the anchor word leaves the DOM on any re-render
   // (e.g. navigating to the next caption replaces the subtitle text).
