@@ -67,6 +67,7 @@ Use short key names to minimize output size:
 - **When sh is false**: Set `t` to `null`. Do NOT translate non-dialogue entries.
 - **Process completely**: Output EVERY entry from the input — one JSON entry per input line. Never skip, abbreviate, or summarize. The `e` array length MUST equal the input line count.
 - Keep translations natural. When a sentence spans multiple entries, translate each entry on its own as a natural fragment — do not pad it into a full sentence.
+- **Punctuation**: Preserve the English hyphen `-` as-is in translations. Do NOT convert it to em dash `—` or `——` in any language.
 
 ## Non-dialogue detection (set `sh: false`)
 
