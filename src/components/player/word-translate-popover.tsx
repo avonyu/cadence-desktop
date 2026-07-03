@@ -2,6 +2,7 @@ import { useRef, useLayoutEffect, useEffect } from "react";
 import { Loader2, Volume2, Heart } from "lucide-react";
 import type { WordDefinition } from "@/lib/dictionary";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
 import { useWordPronounce } from "@/hooks/use-word-pronounce";
 import { useFavoritesStore } from "@/stores/favorites-store";
@@ -121,6 +122,15 @@ export function WordTranslatePopover({
             <span className="text-base font-semibold text-(--player-accent) truncate">
               {word}
             </span>
+            {definition?.conjugations?.baseForm &&
+              definition.conjugations.baseForm !== word && (
+                <>
+                  <span className="text-xs text-muted-foreground">→</span>
+                  <span className="text-base font-semibold text-(--player-accent) shrink-0">
+                    {definition.conjugations.baseForm}
+                  </span>
+                </>
+              )}
             {definition?.phonetic && (
               <span className="text-sm text-muted-foreground shrink-0">
                 {definition.phonetic}
@@ -201,18 +211,18 @@ export function WordTranslatePopover({
               </div>
             ))}
             {definition?.conjugations && (
-              <div className="mt-3 pt-2 border-t border-border flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+              <div className="mt-3 pt-2 border-t border-border flex flex-wrap gap-1.5">
                 {definition.conjugations.presentThirdPerson && (
-                  <span>三单: {definition.conjugations.presentThirdPerson}</span>
+                  <Badge variant="outline">{definition.conjugations.presentThirdPerson}</Badge>
                 )}
                 {definition.conjugations.presentParticiple && (
-                  <span>现在分词: {definition.conjugations.presentParticiple}</span>
+                  <Badge variant="outline">{definition.conjugations.presentParticiple}</Badge>
                 )}
                 {definition.conjugations.pastTense && (
-                  <span>过去式: {definition.conjugations.pastTense}</span>
+                  <Badge variant="outline">{definition.conjugations.pastTense}</Badge>
                 )}
                 {definition.conjugations.pastParticiple && (
-                  <span>过去分词: {definition.conjugations.pastParticiple}</span>
+                  <Badge variant="outline">{definition.conjugations.pastParticiple}</Badge>
                 )}
               </div>
             )}
