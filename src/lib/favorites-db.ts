@@ -2,7 +2,7 @@ import Database from "@tauri-apps/plugin-sql";
 import { load as loadStore } from "@tauri-apps/plugin-store";
 import type { WordDefinition } from "./dictionary";
 
-const DB_PATH = "sqlite:favorites.db";
+const DB_PATH = "sqlite:data.db";
 const LEGACY_STORE_PATH = "favorites.json";
 
 export interface FavoriteWord {
@@ -28,7 +28,7 @@ let dbPromise: Promise<Database> | null = null;
 async function init(): Promise<Database> {
   const db = await Database.load(DB_PATH);
   await db.execute(
-    `CREATE TABLE IF NOT EXISTS favorites (
+    `CREATE TABLE IF NOT EXISTS words (
       word TEXT PRIMARY KEY,
       display TEXT NOT NULL,
       phonetic TEXT,
@@ -55,7 +55,7 @@ async function migrateLegacy(db: Database): Promise<void> {
     if (words) {
       for (const entry of Object.values(words)) {
         await db.execute(
-          `INSERT OR IGNORE INTO favorites (word, display, phonetic, definition, added_at)
+          `INSERT OR IGNORE INTO words (word, display, phonetic, definition, added_at)
            VALUES ($1, $2, $3, $4, $5)`,
           [
             entry.word,
@@ -80,7 +80,7 @@ export async function loadFavorites(): Promise<FavoritesMap> {
     const db = await getDb();
     const rows = await db.select<FavoriteRow[]>(
       `SELECT word, display, phonetic, definition, added_at
-       FROM favorites ORDER BY added_at DESC`,
+       FROM words ORDER BY added_at DESC`,
     );
     const map: FavoritesMap = {};
     for (const row of rows) {
@@ -108,7 +108,7 @@ export async function addFavorite(entry: FavoriteWord): Promise<void> {
   try {
     const db = await getDb();
     await db.execute(
-      `INSERT OR REPLACE INTO favorites (word, display, phonetic, definition, added_at)
+      `INSERT OR REPLACE INTO words (word, display, phonetic, definition, added_at)
        VALUES ($1, $2, $3, $4, $5)`,
       [
         entry.word,
@@ -126,7 +126,7 @@ export async function addFavorite(entry: FavoriteWord): Promise<void> {
 export async function removeFavorite(word: string): Promise<void> {
   try {
     const db = await getDb();
-    await db.execute(`DELETE FROM favorites WHERE word = $1`, [word]);
+    await db.execute(`DELETE FROM words WHERE word = $1`, [word]);
   } catch (e) {
     console.warn("[favorites-db] removeFavorite failed for", word, ":", e instanceof Error ? e.message : e);
   }

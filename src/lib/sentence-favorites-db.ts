@@ -1,6 +1,6 @@
 import Database from "@tauri-apps/plugin-sql";
 
-const DB_PATH = "sqlite:favorites.db";
+const DB_PATH = "sqlite:data.db";
 
 export interface FavoriteSentence {
   id: number;
@@ -29,7 +29,7 @@ let dbPromise: Promise<Database> | null = null;
 async function init(): Promise<Database> {
   const db = await Database.load(DB_PATH);
   await db.execute(
-    `CREATE TABLE IF NOT EXISTS favorite_sentences (
+    `CREATE TABLE IF NOT EXISTS sentences (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       video_name TEXT NOT NULL,
       subtitle_index INTEGER NOT NULL,
@@ -54,7 +54,7 @@ export async function loadFavoriteSentences(): Promise<FavoriteSentence[]> {
     const db = await getDb();
     const rows = await db.select<FavoriteSentenceRow[]>(
       `SELECT id, video_name, subtitle_index, text, translation, start_time, end_time, added_at
-       FROM favorite_sentences ORDER BY added_at DESC`,
+       FROM sentences ORDER BY added_at DESC`,
     );
     return rows.map((row) => ({
       id: row.id,
@@ -82,7 +82,7 @@ export async function addFavoriteSentence(
     const db = await getDb();
     const now = Date.now();
     await db.execute(
-      `INSERT OR REPLACE INTO favorite_sentences
+      `INSERT OR REPLACE INTO sentences
        (video_name, subtitle_index, text, translation, start_time, end_time, added_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
@@ -97,7 +97,7 @@ export async function addFavoriteSentence(
     );
     const rows = await db.select<FavoriteSentenceRow[]>(
       `SELECT id, video_name, subtitle_index, text, translation, start_time, end_time, added_at
-       FROM favorite_sentences
+       FROM sentences
        WHERE video_name = $1 AND subtitle_index = $2`,
       [entry.videoName, entry.subtitleIndex],
     );
@@ -129,7 +129,7 @@ export async function removeFavoriteSentence(
   try {
     const db = await getDb();
     await db.execute(
-      `DELETE FROM favorite_sentences WHERE video_name = $1 AND subtitle_index = $2`,
+      `DELETE FROM sentences WHERE video_name = $1 AND subtitle_index = $2`,
       [videoName, subtitleIndex],
     );
   } catch (e) {
@@ -143,7 +143,7 @@ export async function removeFavoriteSentence(
 export async function removeFavoriteSentenceById(id: number): Promise<void> {
   try {
     const db = await getDb();
-    await db.execute(`DELETE FROM favorite_sentences WHERE id = $1`, [id]);
+    await db.execute(`DELETE FROM sentences WHERE id = $1`, [id]);
   } catch (e) {
     console.warn(
       "[sentence-favorites-db] removeFavoriteSentenceById failed:",
