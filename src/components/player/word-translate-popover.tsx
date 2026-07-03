@@ -48,6 +48,12 @@ export function WordTranslatePopover({
     hydrateFavorites();
   }, [hydrateFavorites]);
 
+  useEffect(() => {
+    if (open && word) {
+      pronounce(word);
+    }
+  }, [open, word]);
+
   // Close immediately when the anchor word leaves the DOM on any re-render
   // (e.g. navigating to the next caption replaces the subtitle text).
   useLayoutEffect(() => {

@@ -70,11 +70,12 @@ Use short key names to minimize output size:
 
 ## Non-dialogue detection (set `sh: false`)
 
-An entry is non-dialogue when it consists ONLY of non-speech metadata:
+An entry is non-dialogue when it consists ONLY of non-speech content:
 
 - **Square brackets** `[...]`: `[phone buzzing]`, `[music plays]`, `[sighs]`, `[groans]`, `[grunts]`, `[exhales]`, `[inhales deeply]`, `[keyboard clacking]`, `[footsteps]`, `[door creaks]`, `[laughter]`, `[coughing]`.
 - **Parentheses** `(...)` or `（...）`: Actor credits, scene descriptions, director/crew info.
 - **Book-name marks** `《...》`: Episode/series titles.
+- **On-screen text overlays**: Visible text on screen that is never spoken aloud — letters, documents, signs, title cards, quote attributions, episode notes. These often consist of complete sentences or proper names with no conversational context. Examples: letter body text ("根据您和霍华德·哈姆林先生的谈话"), document amounts ("26000元"), quote sources ("语出1976年电影《电视台风云》"), law firm names as letterhead.
 - Keep entries that mix metadata with actual dialogue: `[woman] Hello.` → `sh: true`, `s: "Hello."`.
 
 ## Examples
