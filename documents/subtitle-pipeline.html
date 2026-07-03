@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadence Desktop — 字幕处理管线</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d2991d;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --orange: #f0883e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 2rem; margin-bottom: 0.5rem; color: var(--accent); }
+  h2 { font-size: 1.4rem; margin: 2rem 0 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--border); color: var(--accent); }
+  h3 { font-size: 1.1rem; margin: 1.5rem 0 0.8rem; color: var(--purple); }
+  h4 { font-size: 1rem; margin: 1rem 0 0.5rem; color: var(--text); }
+  p, li { margin-bottom: 0.5rem; }
+  a { color: var(--accent); }
+
+  .overview {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  /* Pipeline diagram */
+  .pipeline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    margin: 1.5rem 0;
+  }
+  .pipe-node {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    text-align: center;
+    min-width: 100px;
+  }
+  .pipe-node.func { border-color: var(--accent); color: var(--accent); }
+  .pipe-node.data { border-color: var(--green); color: var(--green); }
+  .pipe-node.ai   { border-color: var(--purple); color: var(--purple); }
+  .pipe-node.ui   { border-color: var(--orange); color: var(--orange); }
+  .pipe-arrow {
+    color: var(--muted);
+    font-size: 1.2rem;
+    margin: 0 0.25rem;
+  }
+
+  /* Flow section */
+  .flow-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .flow-section h3 { margin-top: 0; }
+  .flow-step {
+    display: flex;
+    gap: 0.8rem;
+    margin: 0.6rem 0;
+    align-items: flex-start;
+  }
+  .step-num {
+    background: var(--accent);
+    color: var(--bg);
+    border-radius: 50%;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .step-content { flex: 1; }
+  .step-func { color: var(--accent); font-family: monospace; font-size: 0.9rem; }
+  .step-desc { color: var(--muted); font-size: 0.85rem; margin-top: 0.15rem; }
+
+  /* Code blocks */
+  .code-block {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+    margin: 0.8rem 0;
+    font-family: "Cascadia Code", "Fira Code", monospace;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* Type boxes */
+  .type-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .type-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem;
+  }
+  .type-card h4 { margin-top: 0; color: var(--green); }
+  .type-key { color: var(--accent); }
+  .type-val { color: var(--text); }
+  .type-comment { color: var(--muted); font-style: italic; }
+
+  /* Two-column layout */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    padding: 0.15rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-right: 0.3rem;
+  }
+  .tag-func { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .tag-type { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-ui   { background: rgba(240,136,62,0.15); color: var(--orange); }
+  .tag-hook { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .tag-file { background: rgba(210,153,29,0.15); color: var(--yellow); }
+
+  /* File listing */
+  .file-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+  }
+  .file-list li {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.82rem;
+  }
+  .file-path { color: var(--accent); font-family: monospace; }
+  .file-role { color: var(--muted); font-size: 0.75rem; display: block; margin-top: 0.15rem; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .two-col, .type-grid, .file-list { grid-template-columns: 1fr; }
+    body { padding: 1rem; }
+  }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+
+  .note {
+    background: rgba(88,166,255,0.08);
+    border-left: 3px solid var(--accent);
+    padding: 0.8rem 1rem;
+    margin: 1rem 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>Cadence Desktop — 字幕处理管线</h1>
+
+<div class="overview">
+  <p>
+    本应用的字幕系统采用<strong>双通道</strong>设计：
+  </p>
+  <ul>
+    <li><strong>通道 A（本地解析）</strong>：直接解析 SRT/ASS 文件，不依赖 AI，适用于已有翻译的常规字幕文件</li>
+    <li><strong>通道 B（AI 处理）</strong>：将字幕发送至 DeepSeek API，获得双语翻译 + 样式 + 非对话过滤，生成更高质量的字幕</li>
+  </ul>
+  <p style="margin-top: 0.5rem;">两个通道最终都产出 <code>Caption[]</code> 数组，统一交给 UI 层渲染。</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>1. 核心数据类型</h2>
+
+<h3>Caption（字幕条目）</h3>
+<div class="code-block">// src/lib/subtitles.ts
+
+export interface Caption {
+  time: string;         // 显示时间 "MM:SS"
+  start: number;        // 起始时间（秒）
+  end: number;          // 结束时间（秒）
+  text: string;         // 当前字幕文本（可能含 &lt;i&gt;&lt;b&gt; 标签）
+  translation: string;  // 翻译文本
+}</div>
+
+<h3>SubtitleInputEntry（AI 预处理中间格式）</h3>
+<div class="code-block">// src/lib/ai-subtitle.ts
+
+export interface SubtitleInputEntry {
+  index: number;            // 序号（从 1 开始）
+  timestamp: string;        // "00:01:23.45 --> 00:01:25.67"
+  text: string;             // 剥离了 ASS {} 标签的纯文本
+  preTranslation?: string;  // ASS 中已有的翻译（\N 分隔的第二部分）
+}</div>
+
+<h3>AI JSON 响应格式</h3>
+<div class="code-block">// src-tauri/prompts/subtitle-processor.md
+
+{
+  "f": "srt",              // 格式: "srt" | "ass"
+  "e": [                   // 条目数组
+    {
+      "i": 1,              // index — 与输入序号对应
+      "s": "Hello World",  // source — 剥离 HTML 标签的纯原文
+      "t": "你好世界",     // translation — AI 翻译结果
+      "sh": true,          // show — 是否显示（非对话→false）
+      "st": "i"            // style — 可选，"i"|"b"|"u"
+    }
+  ]
+}</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>2. 完整处理流程</h2>
+
+<div class="pipeline" style="flex-wrap:wrap;font-size:0.8rem;">
+  <span class="pipe-node data">SRT / ASS文件</span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node func">readTextFile</span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node func">processSubtitle</span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node func">preprocessSubtitleEntries</span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node ai">AI (DeepSeek)</span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node func">parseAIResponse</span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node func">parseSubtitleJSON</span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node func">normalizeCaptionLanguages</span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node data">Caption[]</span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node ui">setCaptions()</span>
+  <span class="pipe-arrow">→</span>
+  <span class="pipe-node ui">CaptionsDisplay</span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>3. 分阶段详解</h2>
+
+<!-- Phase 1 -->
+<div class="flow-section">
+  <h3>阶段 A：字幕加载（useSubtitleLoader）</h3>
+
+  <div class="flow-step">
+    <span class="step-num">1</span>
+    <div class="step-content">
+      <div class="step-func">useSubtitleLoader.handleLoadSubtitle()</div>
+      <div class="step-desc">
+        <span class="tag tag-hook">hook</span>
+        用户在 UI 中选择字幕文件后触发。<br>
+        调用 <code>readTextFile(path)</code> (Tauri Rust 后端) 读取文件内容为字符串。
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <span class="step-num">2</span>
+    <div class="step-content">
+      <div class="step-func">processSubtitle(content, videoFileName, apiKey, model)</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span>
+        AI 处理管线的入口。位于 <code>src/lib/ai-subtitle.ts:498</code><br>
+        先计算内容 SHA-256 哈希，与 IndexedDB 缓存比较。命中则直接返回缓存，未命中则进入 AI 流程。
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>缓存策略：</strong> 以 videoFileName + SHA-256 为 key 存储在 IndexedDB（<code>cadence-subtitles</code> DB）。相同内容不重复调用 AI。
+  </div>
+</div>
+
+<!-- Phase 2 -->
+<div class="flow-section">
+  <h3>阶段 B：预处理（发送给 AI 之前）</h3>
+
+  <div class="flow-step">
+    <span class="step-num">1</span>
+    <div class="step-content">
+      <div class="step-func">preprocessSubtitleEntries(content) → SubtitleInputEntry[]</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span> <code>src/lib/ai-subtitle.ts:181</code><br>
+        基于文件内容自动检测格式（[Script Info] / [V4 开头 → ASS；否则 SRT）<br>
+        分发到 <code>preprocessSrtEntries()</code> 或 <code>preprocessAssEntries()</code>。
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <span class="step-num">2</span>
+    <div class="step-content">
+      <div class="step-func">preprocessAssEntries() 特殊处理</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span> <code>src/lib/ai-subtitle.ts:222</code><br>
+        <strong>过滤定位标签：</strong> 含 <code>\an8</code> / <code>\pos(</code> / <code>\move(</code> 的行直接跳过（非对话屏幕覆盖层）<br>
+        <strong>剥离 ASS 样式标签：</strong> <code>stripAssStyleTags()</code> 移除 <code>{…}</code> 部分<br>
+        <strong>处理 \N 分隔：</strong> <code>\N</code> 分隔的第一个部分为源文本，后续为已有翻译（<code>preTranslation</code>）
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <span class="step-num">3</span>
+    <div class="step-content">
+      <div class="step-func">buildEntriesForAI(entries) → string</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span> <code>src/lib/ai-subtitle.ts:272</code><br>
+        拼接为紧凑的编号列表，发送给 AI：
+      </div>
+      <div class="code-block">1: Hello World
+2: [phone buzzing]
+3: &lt;i&gt;I was saying&lt;/i&gt;
+4: How are you?</div>
+    </div>
+  </div>
+</div>
+
+<!-- Phase 3 -->
+<div class="flow-section">
+  <h3>阶段 C：AI 调用</h3>
+
+  <div class="flow-step">
+    <span class="step-num">1</span>
+    <div class="step-content">
+      <div class="step-func">processSubtitleWithAI(aiInput, format, apiKey, model)</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span> <code>src/lib/ai-subtitle.ts:482</code><br>
+        通过 Tauri <code>invoke("call_deepseek_api", …)</code> 调用 Rust 后端发送请求到 DeepSeek。<br>
+        使用 <code>src-tauri/prompts/subtitle-processor.md</code> 作为 system prompt。
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <span class="step-num">2</span>
+    <div class="step-content">
+      <div class="step-func">分块处理（CHUNK_SIZE = 200）</div>
+      <div class="step-desc">
+        <span class="tag tag-func">逻辑</span> <code>src/lib/ai-subtitle.ts:474,570-588</code><br>
+        超过 200 条的字幕会分成多个块，每块独立调用 AI 并并行执行（<code>Promise.all</code>），最后 <code>flat</code> 合并并按 start 时间排序。
+      </div>
+    </div>
+  </div>
+
+  <div class="step-num" style="background:var(--purple); color:var(--bg);">AI</div>
+  <div class="step-content" style="margin-left:0.5rem;">
+    <div class="step-func" style="color:var(--purple);">AI 处理任务（由 prompt 定义）</div>
+    <div class="step-desc">
+      1. 翻译：中文 → 英文 / 英文 → 中文（自动检测源语言）<br>
+      2. 非对话检测（sh=false）：方括号 [sound]、括号 (note)、《书名号》、屏幕覆盖文字<br>
+      3. 样式保留：&lt;i&gt;&lt;b&gt;&lt;u&gt; 提取到 st 字段，从 s 中移除标签<br>
+      4. 返回值：严格 JSON，e 数组长度必须等于输入行数
+    </div>
+  </div>
+</div>
+
+<!-- Phase 4 -->
+<div class="flow-section">
+  <h3>阶段 D：AI 响应解析</h3>
+
+  <div class="flow-step">
+    <span class="step-num">1</span>
+    <div class="step-content">
+      <div class="step-func">parseAIResponse(rawResponse, entries) → Caption[]</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span> <code>src/lib/ai-subtitle.ts:591</code><br>
+        先尝试 JSON 解析，失败则回退到传统的 SRT/ASS 文本解析。
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <span class="step-num">2a</span>
+    <div class="step-content">
+      <div class="step-func">tryParseJSONResponse(raw) → SubtitleJSON | null</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span> <code>src/lib/ai-subtitle.ts:354</code><br>
+        - 剥离 markdown 代码围栏 <code>```</code><br>
+        - JSON.parse 解析<br>
+        - <strong>失败则触发 salvageSubtitleJSON()：</strong> 逐对象扫描 e 数组中的 <code>{…}</code>，逐个 JSON.parse，恢复因 token 限制被截断的 JSON<br>
+        - 字段校验：i 必须为 number，s 必须为 string，sh 必须为 boolean，st 必须在 [i,b,u] 内
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <span class="step-num">2b</span>
+    <div class="step-content">
+      <div class="step-func">parseSubtitleJSON(json, inputEntries) → Caption[]</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span> <code>src/lib/ai-subtitle.ts:313</code><br>
+        - 过滤 <code>sh === false</code> 的条目（非对话内容）<br>
+        - 将 inputEntry 的 timestamp 与 AI 返回的翻译/样式合并<br>
+        - <code>applyStyle(s, st)</code> 将样式字段还原为 HTML 标签（st="i" → <code>&lt;i&gt;text&lt;/i&gt;</code>）<br>
+        - 产出 <code>Caption[]</code>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <span class="step-num">3</span>
+    <div class="step-content">
+      <div class="step-func">回退路径：parseSubtitles(rawResponse) → Caption[]</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span> <code>src/lib/subtitles.ts:290</code><br>
+        当 AI 返回的不是有效 JSON 时，作为传统字幕文本解析：<br>
+        <code>detectFormat()</code> → <code>parseSRT()</code> 或 <code>parseASS()</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Phase 5 -->
+<div class="flow-section">
+  <h3>阶段 E：后处理 & 语言标准化</h3>
+
+  <div class="flow-step">
+    <span class="step-num">1</span>
+    <div class="step-content">
+      <div class="step-func">normalizeCaptionLanguages(captions, nativeLang, learningLang) → Caption[]</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span> <code>src/lib/subtitles.ts:299</code><br>
+        确保每条 Caption 中 <code>text</code> 始终是学习语言，<code>translation</code> 始终是母语。<br>
+        调用 <code>detectTextLanguage()</code> 对每条字幕做 CJK vs Latin 启发式检测：<br>
+        - 若 text 是母语而 translation 是学习语言 → 交换两个字段<br>
+        - 否则保持不变
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <span class="step-num">2</span>
+    <div class="step-content">
+      <div class="step-func">detectTextLanguage(text) → "zh" | "en" | "unknown"</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span> <code>src/lib/language-detect.ts:1</code><br>
+        计数 CJK 字符 vs 拉丁字母，哪个多返回哪个。纯数字/符号返回 unknown。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Phase 6 -->
+<div class="flow-section">
+  <h3>阶段 F：持久化 & 状态更新</h3>
+
+  <div class="flow-step">
+    <span class="step-num">1</span>
+    <div class="step-content">
+      <div class="step-func">setCachedSubtitle(hash, videoFileName, captions)</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span> <code>src/lib/ai-subtitle.ts:76</code><br>
+        将处理结果写入 IndexedDB，key = videoFileName（去扩展名 + 去 _transcoded 后缀）。
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <span class="step-num">2</span>
+    <div class="step-content">
+      <div class="step-func">setCaptions(normalized) ← React useState</div>
+      <div class="step-desc">
+        <span class="tag tag-hook">state</span> <code>src/hooks/use-video-file.ts:37</code><br>
+        <code>Caption[]</code> 就存在这个局部 React state 中，通过 prop 向下流转到各个组件。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>4. 运行时：字幕同步和渲染</h2>
+
+<div class="flow-section">
+  <h3>时间同步（useCaptionSync）</h3>
+
+  <div class="pipeline">
+    <span class="pipe-node func">VideoPlayer.onTimeUpdate</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-node data">currentTime</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-node func">handleTimeUpdate()</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-node func">查找 Caption</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-node func">setActiveCaption(index)</span>
+  </div>
+
+  <p>
+    每当视频播放时间更新，<code>useCaptionSync</code> 遍历 <code>captions</code> 数组，
+    找到 <code>currentTime ∈ [caption.start, caption.end)</code> 的字幕条目，
+    更新 Zustand store 中的 <code>activeCaption</code> 索引，并派生出
+    <code>activeDisplay = { primary, secondary }</code>（根据 <code>swapSubtitles</code> 开关决定主副语言排列）。
+  </p>
+</div>
+
+<div class="flow-section">
+  <h3>视频上字幕渲染（CaptionsDisplay）</h3>
+
+  <div class="pipeline">
+    <span class="pipe-node data">activeDisplay</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-node func">sanitizeSubtitleHtml()</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-node func">wrapSubtitleWords()</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-node func">dangerouslySetInnerHTML</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-node ui">DOM渲染</span>
+  </div>
+
+  <div class="flow-step">
+    <span class="step-num">1</span>
+    <div class="step-content">
+      <div class="step-func">sanitizeSubtitleHtml(text) → string</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span> <code>src/lib/html-sanitize.ts:1</code><br>
+        先转义所有 HTML 特殊字符（&lt; &gt; &amp;），再仅解转 &lt;i&gt;&lt;b&gt;&lt;u&gt; 三个白名单标签，防止 XSS。
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-step">
+    <span class="step-num">2</span>
+    <div class="step-content">
+      <div class="step-func">wrapSubtitleWords(sanitizedHtml, isFavorited?) → string</div>
+      <div class="step-desc">
+        <span class="tag tag-func">函数</span> <code>src/lib/wrap-subtitle-words.ts:1</code><br>
+        用正则匹配每个英文单词，包裹为 <code>&lt;span class="sub-word"&gt;</code>。<br>
+        已收藏单词标记 <code>class="sub-word sub-word--fav"</code>。<br>
+        保留 HTML 实体和标签原样。
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>点击翻译：</strong> <code>CaptionsDisplay</code> 和 <code>SidebarSubtitleTab</code> 都通过 <code>onClick</code> 捕获
+    <code>.sub-word</code> span 的点击事件，触发 <code>useWordTranslate</code> hook 弹出查词面板。
+  </div>
+</div>
+
+<div class="flow-section">
+  <h3>字幕遮罩（SubtitleMask）</h3>
+
+  <p>
+    当播放器启用 <strong>字幕遮罩</strong> 时，<code>SubtitleMask</code> 组件会在视频上叠加一个可拖拽、可缩放的黑色矩形，
+    用于<strong>遮挡硬编码字幕</strong>（hard-subbed）。在全屏模式下，遮罩内会显示当前活动字幕的文本，
+    使用 <code>sanitizeSubtitleHtml()</code> 安全渲染。
+  </p>
+  <p style="color:var(--muted);font-size:0.85rem;">
+    遮罩位置以视频容器百分比存储于 <code>playerStore.subtitleMaskRect</code> Zustand state 中。
+  </p>
+</div>
+
+<div class="flow-section">
+  <h3>字幕导航（useCaptionNavigation）</h3>
+
+  <div class="pipeline">
+    <span class="pipe-node func">键盘/手柄 触发</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-node func">getPrev/NextCaptionIndex()</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-node func">setPendingNavigation(true)</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-node func">setActiveCaption(index)</span>
+    <span class="pipe-arrow">→</span>
+    <span class="pipe-node func">seek → caption.start</span>
+  </div>
+
+  <p>
+    当用户按上下键或点击侧边栏条目时，<code>getPreviousCaptionIndex</code> / <code>getNextCaptionIndex</code>
+    返回目标索引。设置 <code>pendingNavigation = true</code> 后执行 seek，等播放器到达目标时间，
+    <code>useCaptionSync</code> 检测到稳定后清除 pending 标记，恢复正常的 time-driven 同步。
+  </p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>5. SRT & ASS 本地解析</h2>
+
+<div class="two-col">
+  <div class="flow-section">
+    <h3>parseSRT(content)</h3>
+    <p><span class="tag tag-func">函数</span> <code>src/lib/subtitles.ts:129</code></p>
+    <div class="flow-step">
+      <span class="step-num">1</span>
+      <div class="step-content">
+        <p>按双空行分割字幕块</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="step-num">2</span>
+      <div class="step-content">
+        <p>每个块中找 <code>--&gt;</code> 表示时间戳</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="step-num">3</span>
+      <div class="step-content">
+        <p>时间戳后的行为字幕文本</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="step-num">4</span>
+      <div class="step-content">
+        <p><code>\N</code> 分隔 = 双语字幕，第一部分=原文，其余=翻译</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="step-num">5</span>
+      <div class="step-content">
+        <p>剥离 ASS 样式标签 <code>{…}</code>（某些 SRT 混用 ASS 标签）</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="step-num">6</span>
+      <div class="step-content">
+        <p>缺少 end 时间 → 默认 start + 2s</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-section">
+    <h3>parseASS(content)</h3>
+    <p><span class="tag tag-func">函数</span> <code>src/lib/subtitles.ts:204</code></p>
+    <div class="flow-step">
+      <span class="step-num">1</span>
+      <div class="step-content">
+        <p>逐行处理，仅解析 <code>Dialogue:</code> 开头的行</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="step-num">2</span>
+      <div class="step-content">
+        <p>按前 9 个逗号分割：Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="step-num">3</span>
+      <div class="step-content">
+        <p>过滤定位标签：<code>\an8</code> / <code>\pos(</code> / <code>\move(</code> → 跳过</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="step-num">4</span>
+      <div class="step-content">
+        <p>剥离 ASS 标签：<code>{\b1}</code> <code>{\i1}</code> <code>{\c&H…&}</code> <code>{\fn…}</code> 等</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="step-num">5</span>
+      <div class="step-content">
+        <p><code>\N</code> 分隔 = 双语，同 SRT 逻辑</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>6. 文件清单</h2>
+
+<ul class="file-list">
+  <li><span class="file-path">src/lib/subtitles.ts</span><span class="file-role">Caption 类型、parseSRT、parseASS、parseSubtitles、normalizeCaptionLanguages、sanitizeSubtitleHtml、stripAssTags、timestampToSeconds</span></li>
+  <li><span class="file-path">src/lib/ai-subtitle.ts</span><span class="file-role">AI 管线：preprocessSubtitleEntries、processSubtitle、parseAIResponse、parseSubtitleJSON、tryParseJSONResponse、salvageSubtitleJSON、词库缓存（IndexedDB）</span></li>
+  <li><span class="file-path">src/lib/language-detect.ts</span><span class="file-role">detectTextLanguage（CJK vs Latin 启发式检测）</span></li>
+  <li><span class="file-path">src/lib/caption-navigation.ts</span><span class="file-role">getPreviousCaptionIndex、getNextCaptionIndex</span></li>
+  <li><span class="file-path">src/lib/wrap-subtitle-words.ts</span><span class="file-role">wrapSubtitleWords（为每个英文单词包 span 用于点击翻译）</span></li>
+  <li><span class="file-path">src/lib/html-sanitize.ts</span><span class="file-role">sanitizeSubtitleHtml（安全 HTML 渲染：仅允许 i/b/u 标签）</span></li>
+  <li><span class="file-path">src/hooks/use-video-file.ts</span><span class="file-role">captions React state（useState）、视频加载时检查 cached 字幕</span></li>
+  <li><span class="file-path">src/hooks/use-subtitle-loader.ts</span><span class="file-role">文件加载入口：readTextFile → processSubtitle → setCaptions</span></li>
+  <li><span class="file-path">src/hooks/use-caption-sync.ts</span><span class="file-role">时间驱动的 activeCaption 同步、activeDisplay 派生</span></li>
+  <li><span class="file-path">src/hooks/use-caption-navigation.ts</span><span class="file-role">用户手动导航（上下键）、pendingNavigation 锁定</span></li>
+  <li><span class="file-path">src/components/player/captions-display.tsx</span><span class="file-role">视频上双行字幕渲染（primary + secondary），sanitize + wrap + dangerouslySetInnerHTML</span></li>
+  <li><span class="file-path">src/components/player/subtitle-mask.tsx</span><span class="file-role">可拖拽/缩放的黑色遮罩，用于遮挡硬编码字幕</span></li>
+  <li><span class="file-path">src/components/subtitles/sidebar-subtitles-tab.tsx</span><span class="file-role">侧边栏字幕列表，支持模糊模式、句子收藏、点击跳转</span></li>
+  <li><span class="file-path">src/stores/player-store.ts</span><span class="file-role">activeCaption、setActiveCaption、swapSubtitles、subtitleMaskRect（Zustand）</span></li>
+  <li><span class="file-path">src-tauri/prompts/subtitle-processor.md</span><span class="file-role">AI system prompt：翻译规则、非对话检测规则（sh 字段）、输出格式</span></li>
+  <li><span class="file-path">src-tauri/src/deepseek.rs</span><span class="file-role">Rust 后端：call_deepseek_api（Tauri command），发送 HTTP 请求到 DeepSeek</span></li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>7. 输入输出格式速查</h2>
+
+<div class="type-grid">
+  <div class="type-card">
+    <h4>输入：SRT 文件</h4>
+    <div class="code-block">1
+00:00:01,000 --&gt; 00:00:03,500
+&lt;i&gt;Hello World&lt;/i&gt;\N你好世界
+
+2
+00:00:04,000 --&gt; 00:00:06,000
+[phone buzzing]</div>
+    <p style="color:var(--muted);font-size:0.8rem;">\N = 双语分隔符（AI 输出格式）<br>[] = 非对话音效</p>
+  </div>
+
+  <div class="type-card">
+    <h4>输入：ASS 文件</h4>
+    <div class="code-block">Dialogue: 0,0:00:01.00,0:00:03.50,Default,,0,0,0,,{\i1}Hello\N你好
+
+Dialogue: 0,0:00:04.00,0:00:06.00,*Default,NTP,0,0,0,,{\an8}麦吉尔先生
+; ↑ 含 \an8 → 预处理跳过</div>
+    <p style="color:var(--muted);font-size:0.8rem;">{style tags} = ASS 覆盖标签<br>\an8 → 非对话屏幕覆盖</p>
+  </div>
+
+  <div class="type-card">
+    <h4>中间格式：AI Input</h4>
+    <div class="code-block">[
+  { index: 1, timestamp: "00:00:01.00 --> ...",
+    text: "Hello", preTranslation: "你好" },
+  { index: 2, timestamp: "00:00:04.00 --> ...",
+    text: "[phone buzzing]" }
+]</div>
+    <p style="color:var(--muted);font-size:0.8rem;">SubtitleInputEntry[]<br>text = 已剥离 ASS {} 标签</p>
+  </div>
+
+  <div class="type-card">
+    <h4>输出：Caption[]</h4>
+    <div class="code-block">[
+  {
+    time: "00:01", start: 1.0, end: 3.5,
+    text: "&lt;i&gt;Hello&lt;/i&gt;",
+    translation: "你好"
+  },
+  {
+    time: "00:04", start: 4.0, end: 6.0,
+    text: "[phone buzzing]",
+    translation: "(已过滤...)"
+  }
+]</div>
+    <p style="color:var(--muted);font-size:0.8rem;">最终格式，直接传递给 UI 组件<br>text 可能含 &lt;i&gt;&lt;b&gt; HTML 标签</p>
+  </div>
+</div>
+
+<hr>
+<p style="color:var(--muted);font-size:0.8rem;text-align:center;">
+  生成时间: 2026-07-03 &nbsp;|&nbsp; Cadence Desktop v0.8.0
+</p>
+
+</body>
+</html>

@@ -51,7 +51,9 @@ export function useVideoFile(): UseVideoFileReturn {
       const converted = convertFileSrc(filePath);
       setVideoSrc(converted);
       videoFilePathRef.current = filePath;
-      const fileName = filePath.split(/[\\/]/).pop() || filePath;
+      const rawName = filePath.split(/[\\/]/).pop() || filePath;
+      const normalizedName = rawName.replace(/(_transcoded)+(\.\w+)$/, "$2");
+      const fileName = normalizedName || rawName;
       setVideoFileName(fileName);
 
       // Update window title
