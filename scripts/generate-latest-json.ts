@@ -100,13 +100,8 @@ async function main() {
     },
     {
       key: "darwin-aarch64",
-      sigPath: resolve(bundleDir, "macos", `${productName}_${version}_aarch64.dmg.sig`),
-      assetName: `${productNameDots}_${version}_aarch64.dmg`,
-    },
-    {
-      key: "darwin-x86_64",
-      sigPath: resolve(bundleDir, "macos", `${productName}_${version}_x64.dmg.sig`),
-      assetName: `${productNameDots}_${version}_x64.dmg`,
+      sigPath: resolve(bundleDir, "macos", `${productName}.app.tar.gz.sig`),
+      assetName: `${productNameDots}.app.tar.gz`,
     },
     {
       key: "linux-x86_64",
