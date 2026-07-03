@@ -260,7 +260,7 @@ export const SidebarBookmarkedSentencesTab = memo(
                             : "text-muted-foreground hover:text-(--player-accent)",
                         )}
                       >
-                        <Sparkles size={14} />
+                        <Sparkles className="size-4" />
                       </button>
                       <button
                         type="button"
@@ -268,7 +268,7 @@ export const SidebarBookmarkedSentencesTab = memo(
                         title={t("sentenceFavorites.remove")}
                         className="shrink-0 text-muted-foreground p-1 rounded transition-colors hover:text-destructive mt-0"
                       >
-                        <Trash2 className="size-3.5" />
+                        <Trash2 className="size-4" />
                       </button>
                     </div>
                   </div>

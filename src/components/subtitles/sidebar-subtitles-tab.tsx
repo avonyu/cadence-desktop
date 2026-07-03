@@ -213,7 +213,7 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
                                 : "text-muted-foreground hover:text-(--player-accent)"
                             }`}
                           >
-                            <Sparkles size={14} />
+                            <Sparkles className="size-4" />
                           </button>
                         </span>
                         <span
@@ -248,9 +248,9 @@ export const SidebarSubtitlesTab = memo(function SidebarSubtitlesTab({
                             }`}
                           >
                             {isFav ? (
-                              <BookmarkCheck size={14} />
+                              <BookmarkCheck className="size-4" />
                             ) : (
-                              <Bookmark size={14} />
+                              <Bookmark className="size-4" />
                             )}
                           </button>
                         </span>
