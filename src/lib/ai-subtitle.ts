@@ -1,4 +1,5 @@
 import { type Caption, parseSubtitles } from "./subtitles";
+import { detectTextLanguage } from "./language-detect";
 import { invoke } from "@tauri-apps/api/core";
 
 const DB_NAME = "cadence-subtitles";
@@ -212,6 +213,21 @@ function preprocessSrtEntries(content: string): SubtitleInputEntry[] {
 
     if (timestamp && textLines.length > 0) {
       index++;
+
+      if (textLines.length === 2) {
+        const lang0 = detectTextLanguage(textLines[0]);
+        const lang1 = detectTextLanguage(textLines[1]);
+        if (lang0 !== lang1 && lang0 !== "unknown" && lang1 !== "unknown") {
+          entries.push({
+            index,
+            timestamp,
+            text: textLines[0],
+            preTranslation: textLines[1],
+          });
+          continue;
+        }
+      }
+
       entries.push({ index, timestamp, text: textLines.join(" ") });
     }
   }

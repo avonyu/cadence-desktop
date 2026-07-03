@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseSRT, parseASS, parseSubtitles, type Caption } from "./subtitles";
+import { preprocessSubtitleEntries } from "./ai-subtitle";
 
 /** Helper to build a Caption snapshot without relying on Object instance */
 function strip(c: Caption) {
@@ -816,5 +817,118 @@ describe("parseSubtitles", () => {
 
   it("returns empty array for whitespace-only input", () => {
     expect(parseSubtitles("   \n\n  ")).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// preprocessSubtitleEntries - bilingual SRT detection
+// ---------------------------------------------------------------------------
+describe("preprocessSubtitleEntries - bilingual SRT", () => {
+  it("splits bilingual SRT block (zh + en) into text and preTranslation", () => {
+    const src = [
+      "1",
+      "00:00:02,000 --> 00:00:05,000",
+      "这细节真不错",
+      "Yeah, that is some detail.",
+      "",
+      "2",
+      "00:00:05,000 --> 00:00:08,000",
+      "真是具有西部风情的细节",
+      "That is some western detail right there --",
+    ].join("\n");
+
+    const result = preprocessSubtitleEntries(src);
+    expect(result).toHaveLength(2);
+    expect(result[0].text).toBe("这细节真不错");
+    expect(result[0].preTranslation).toBe("Yeah, that is some detail.");
+    expect(result[1].text).toBe("真是具有西部风情的细节");
+    expect(result[1].preTranslation).toBe("That is some western detail right there --");
+  });
+
+  it("splits bilingual SRT block (en + zh) into text and preTranslation", () => {
+    const src = [
+      "1",
+      "00:00:02,000 --> 00:00:05,000",
+      "Hello World",
+      "你好世界",
+    ].join("\n");
+
+    const result = preprocessSubtitleEntries(src);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Hello World");
+    expect(result[0].preTranslation).toBe("你好世界");
+  });
+
+  it("keeps single-language multi-line block joined with space", () => {
+    const src = [
+      "1",
+      "00:00:02,000 --> 00:00:05,000",
+      "Line A",
+      "Line B",
+      "Line C",
+    ].join("\n");
+
+    const result = preprocessSubtitleEntries(src);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Line A Line B Line C");
+    expect(result[0].preTranslation).toBeUndefined();
+  });
+
+  it("keeps two-line same-language block joined with space", () => {
+    const src = [
+      "1",
+      "00:00:02,000 --> 00:00:05,000",
+      "First line",
+      "Second line",
+    ].join("\n");
+
+    const result = preprocessSubtitleEntries(src);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("First line Second line");
+    expect(result[0].preTranslation).toBeUndefined();
+  });
+
+  it("keeps single-line block unchanged", () => {
+    const src = [
+      "1",
+      "00:00:02,000 --> 00:00:05,000",
+      "Just one line",
+    ].join("\n");
+
+    const result = preprocessSubtitleEntries(src);
+    expect(result).toHaveLength(1);
+    expect(result[0].text).toBe("Just one line");
+    expect(result[0].preTranslation).toBeUndefined();
+  });
+
+  it("handles mixed blocks: bilingual and non-bilingual together", () => {
+    const src = [
+      "1",
+      "00:00:01,000 --> 00:00:03,000",
+      "你好",
+      "Hello",
+      "",
+      "2",
+      "00:00:04,000 --> 00:00:06,000",
+      "Single line only",
+      "",
+      "3",
+      "00:00:07,000 --> 00:00:10,000",
+      "Multi",
+      "Line",
+      "SameLang",
+    ].join("\n");
+
+    const result = preprocessSubtitleEntries(src);
+    expect(result).toHaveLength(3);
+
+    expect(result[0].text).toBe("你好");
+    expect(result[0].preTranslation).toBe("Hello");
+
+    expect(result[1].text).toBe("Single line only");
+    expect(result[1].preTranslation).toBeUndefined();
+
+    expect(result[2].text).toBe("Multi Line SameLang");
+    expect(result[2].preTranslation).toBeUndefined();
   });
 });
